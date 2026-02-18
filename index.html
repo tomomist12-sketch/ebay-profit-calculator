@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eBay利益計算ツール</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f7;--card:#fff;--border:#e0e0e0;
+  --primary:#2563eb;--primary-light:#dbeafe;
+  --green:#16a34a;--green-bg:#dcfce7;
+  --red:#dc2626;--red-bg:#fee2e2;
+  --text:#1e293b;--text2:#475569;--text3:#94a3b8;
+  --sp:#f97316;--sp-bg:#fff7ed;--sp-border:#fdba74;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --shadow2:0 4px 6px rgba(0,0,0,.07);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:10px 16px;margin:0 auto;max-width:1400px}
+h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
+.subtitle{text-align:center;font-size:.82rem;color:var(--text3);margin-bottom:10px}
+.card{background:var(--card);border-radius:10px;padding:12px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.card h2{font-size:.95rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--primary);color:var(--primary);display:flex;align-items:center;gap:6px}
+.card h2 .icon{font-size:1rem}
+
+/* ===== 2-column PC layout ===== */
+.main-layout{display:grid;grid-template-columns:380px 1fr;gap:10px;align-items:start}
+
+.field{display:flex;flex-direction:column;gap:2px}
+.field label{font-size:.8rem;color:var(--text2);font-weight:600;white-space:nowrap}
+.field input{border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;transition:border-color .15s;background:#fafafa}
+.field input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
+.field input.highlight{background:#fffbeb;border-color:#f59e0b}
+.field .unit{font-size:.7rem;color:var(--text3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+
+/* ===== Summary bar — horizontal ===== */
+.summary-row{display:flex;gap:8px;margin-bottom:8px}
+.summary-cell{flex:1;padding:8px 10px;border-radius:6px;text-align:center;min-width:0}
+.summary-cell .s-label{font-size:.72rem;color:var(--text2);white-space:nowrap}
+.summary-cell .s-val{font-size:1.05rem;font-weight:700;font-family:"SF Mono",Consolas,monospace;white-space:nowrap}
+
+.fee-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.85rem}
+.fee-row .fee-label{color:var(--text2)}
+.fee-row .fee-val{font-weight:600;font-family:"SF Mono",Consolas,monospace}
+.fee-total{border-top:1.5px solid var(--border);margin-top:4px;padding-top:5px;font-weight:700;font-size:.9rem}
+.divider{border:none;border-top:1px dashed var(--border);margin:5px 0}
+
+.toggle-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.78rem;cursor:pointer;color:var(--text3);transition:all .15s}
+.toggle-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+.toggle-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.settings-content{display:none;margin-top:8px}
+.settings-content.show{display:block}
+.note{font-size:.72rem;color:var(--text3);margin-top:5px;padding:5px 8px;background:#f8fafc;border-radius:6px;line-height:1.4}
+
+/* ===== Group Section ===== */
+.group-section{margin-bottom:12px}
+.group-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 12px;border-radius:6px;font-weight:700;font-size:.95rem}
+.group-header .g-icon{font-size:1rem}
+.group-header .g-label{white-space:nowrap}
+.group-header .g-note{font-size:.78rem;font-weight:400;opacity:.7;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group-header .g-tag{font-size:.72rem;padding:2px 8px;border-radius:99px;font-weight:600}
+.group-speedpak{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#c2410c;border:1.5px solid var(--sp-border)}
+.group-speedpak .g-tag{background:#c2410c;color:#fff}
+.group-elogi{background:#f5f0ff;color:#6d28d9;border:1px solid #c4b5fd}
+.group-elogi .g-tag{background:#7c3aed;color:#fff}
+.group-dhl{background:#fefce8;color:#a16207;border:1px solid #fde68a}
+.group-dhl .g-tag{background:#a16207;color:#fff}
+.group-jppost{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.group-jppost .g-tag{background:#15803d;color:#fff}
+
+.group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+
+/* ===== Method Row ===== */
+.method-row{display:grid;grid-template-columns:1fr auto;gap:0;border-radius:8px;padding:9px 12px;border:1.5px solid var(--border);background:var(--card);transition:all .15s;align-items:center}
+.method-row.best{border-color:var(--green);background:var(--green-bg);box-shadow:var(--shadow2)}
+.method-row.ng{opacity:.45;background:#f8fafc}
+.method-row .mr-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+.method-row .mr-name{font-size:1rem;font-weight:700}
+.method-row .mr-sub{font-size:.78rem;color:var(--text3);line-height:1.4}
+.method-row .mr-right{display:grid;grid-template-columns:auto auto;gap:2px 10px;font-size:.95rem;text-align:right;white-space:nowrap}
+.method-row .mr-right .lbl{color:var(--text2);text-align:left}
+.method-row .mr-right .val{font-weight:700;font-family:"SF Mono",Consolas,monospace}
+.method-row .mr-right .val-profit{color:var(--green)}
+.method-row .mr-right .val-refund{color:var(--primary)}
+.method-row .mr-right .val-neg{color:var(--red);background:var(--red-bg);border-radius:4px;padding:0 4px}
+.method-row .mr-na{font-size:.88rem;color:var(--text3)}
+.badge{font-size:.72rem;padding:2px 7px;border-radius:99px;font-weight:700;display:inline-block;vertical-align:middle;margin-left:4px}
+.badge-ok{background:var(--green-bg);color:var(--green)}
+.badge-ng{background:var(--red-bg);color:var(--red)}
+.badge-best{background:var(--green);color:#fff}
+.badge-na{background:#f1f5f9;color:var(--text3)}
+
+.group-section.grp-fedex .method-row:not(.ng){border-color:#c4b5fd;background:#f5f0ff}
+.group-section.grp-dhl .method-row:not(.ng){border-color:#fde68a;background:#fefce8}
+.group-section .method-row.best{border-color:var(--green);background:var(--green-bg);box-shadow:var(--shadow2)}
+
+.group-section.collapsed .group-grid{display:none}
+.group-toggle{font-size:.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:5px;background:var(--card);cursor:pointer;color:var(--text3);margin-left:auto}
+.group-toggle:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+.group-unavail{background:#fef2f2;color:var(--red);border:1.5px solid #fca5a5}
+.group-unavail .g-tag{background:var(--red);color:#fff}
+.unavail-note{font-size:.78rem;color:var(--red);padding:4px 12px;margin-bottom:6px}
+.group-section.grp-speedpak .method-row:not(.ng){border-color:var(--sp-border);background:var(--sp-bg)}
+
+.mode-bar{display:flex;gap:6px;margin-bottom:10px}
+.mode-btn{flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text3);text-align:center;transition:all .15s}
+.mode-btn:hover{border-color:var(--primary);color:var(--primary)}
+.mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pricing-info{font-size:.78rem;color:var(--text2);padding:6px 8px;background:#f8fafc;border-radius:6px;margin-top:4px;line-height:1.5}
+.pricing-info strong{color:var(--text);font-family:"SF Mono",Consolas,monospace}
+
+/* ===== Shopping Search Bar ===== */
+.shop-search-bar{background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:6px 12px;margin-bottom:10px}
+.shop-search-top{display:flex;align-items:center;gap:8px}
+.shop-search-top input[type="text"]{flex:1;border:1.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:.9rem;min-width:0}
+.shop-search-top input[type="text"]:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-light)}
+.shop-search-btn{font-size:.78rem;padding:5px 14px;border:1.5px solid var(--primary);border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-weight:600;white-space:nowrap}
+.shop-search-btn:hover{background:#1d4ed8}
+.shop-sites{display:flex;flex-wrap:wrap;gap:2px 6px;margin-top:4px}
+.shop-sites label{font-size:.72rem;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:4px;transition:background .1s;white-space:nowrap;user-select:none}
+.shop-sites label:hover{background:var(--primary-light)}
+.shop-sites input[type="checkbox"]{width:12px;height:12px;margin:0;accent-color:var(--primary)}
+.shop-toggle{font-size:.7rem;color:var(--text3);cursor:pointer;border:none;background:none;padding:0;text-decoration:underline}
+.shop-toggle:hover{color:var(--primary)}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr}
+  .group-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<h1>eBay 利益計算ツール</h1>
+<p class="subtitle">日本→海外発送の利益・送料を自動計算</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+  <!-- 1. キーワードガチャ -->
+  <div style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--primary)">
+    <div style="font-size:.72rem;margin-bottom:4px"><span style="font-weight:700;color:var(--primary)">🎲 ランダムキーワード生成</span> <span style="color:var(--text3)">— キーワードを押すとコピーできます</span></div>
+    <div id="kwResult" style="font-size:.95rem;font-weight:700;color:var(--primary);font-family:'SF Mono',Consolas,monospace;min-height:28px;line-height:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px">-</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <select id="kwCount" style="font-size:.75rem;padding:3px 6px;border:1px solid var(--border);border-radius:5px;background:#fafafa;color:var(--text2)">
+        <option value="1">1語</option><option value="2" selected>2語</option><option value="3">3語</option><option value="5">5語</option>
+      </select>
+      <button onclick="rollKw()" style="font-size:.75rem;padding:4px 12px;border:1.5px solid var(--primary);border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-weight:600;white-space:nowrap">ガチャ</button>
+    </div>
+  </div>
+  <!-- 2. eBay販売履歴 -->
+  <a href="https://www.ebay.com/sh/research?marketplace=EBAY-US&tabName=SOLD" target="_blank" style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--green);text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .15s" onmouseover="this.style.background='var(--green-bg)'" onmouseout="this.style.background='var(--card)'">
+    <div style="font-size:.72rem;font-weight:700;color:var(--green)">📊 eBay販売履歴</div>
+    <div style="font-size:1.3rem;font-weight:700">Research Products</div>
+    <div style="font-size:.68rem;color:var(--text3)">90日間で2個以上売れている商品をピックアップ</div>
+  </a>
+  <!-- 3. ショッピング一括検索 -->
+  <div style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--sp)">
+    <div style="font-size:.72rem;margin-bottom:4px"><span style="font-weight:700;color:var(--sp)">🔍 ショッピング一括検索</span> <span style="color:var(--text3)">— 国内の最安値を検索</span></div>
+    <div style="display:flex;gap:4px;margin-bottom:4px">
+      <input type="text" id="shopQuery" placeholder="キーワード..." style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.82rem;min-width:0" onkeydown="if(event.key==='Enter')shopSearch()">
+      <button class="shop-search-btn" onclick="shopSearch()" style="font-size:.72rem;padding:4px 10px">検索</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+      <button class="shop-toggle" onclick="toggleShopAll(true)">全選択</button>
+      <button class="shop-toggle" onclick="toggleShopAll(false)">全解除</button>
+    </div>
+    <div class="shop-sites" id="shopSites"></div>
+  </div>
+</div>
+
+<div class="main-layout">
+<!-- ===== LEFT COLUMN ===== -->
+<div class="left-col">
+
+  <!-- 商品情報 -->
+  <div class="card">
+    <h2><span class="icon">📦</span> 商品情報</h2>
+    <div class="mode-bar">
+      <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')">🇺🇸 アメリカ向け</button>
+      <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')">🌍 アメリカ以外</button>
+    </div>
+    <div class="grid2" style="margin-bottom:6px">
+      <div class="field">
+        <label>仕入額 <span class="unit">(¥・税込)</span></label>
+        <input type="number" id="purchasePrice" value="0" class="highlight" min="0" step="100">
+      </div>
+      <div class="field">
+        <label>売値 <span class="unit">($)※競合最安値</span></label>
+        <input type="number" id="sellingPrice" value="0" class="highlight" min="0" step="0.01">
+      </div>
+    </div>
+    <!-- 🇺🇸 アメリカ向け: 競合送料 -->
+    <div id="usSection" style="margin-bottom:6px">
+      <div class="field" style="width:130px;margin-bottom:6px">
+        <label>送料 <span class="unit">($)※競合送料</span></label>
+        <input type="number" id="compShipping" value="0" class="highlight" min="0" step="0.01">
+      </div>
+      <div id="usPricingInfo" style="display:flex;gap:6px">
+        <div style="flex:1;padding:8px 10px;border-radius:6px;background:var(--primary-light);border:1.5px solid var(--primary);text-align:center">
+          <div style="font-size:.68rem;color:var(--primary);font-weight:600">📋 eBay出品価格</div>
+          <div id="listPrice" style="font-size:1.1rem;font-weight:700;color:var(--primary);font-family:'SF Mono',Consolas,monospace">-</div>
+        </div>
+        <div style="flex:1;padding:8px 10px;border-radius:6px;background:#fef3c7;border:1.5px solid #f59e0b;text-align:center">
+          <div style="font-size:.68rem;color:#b45309;font-weight:600">📋 eBay出品送料</div>
+          <div id="listShipping" style="font-size:1.1rem;font-weight:700;color:#b45309;font-family:'SF Mono',Consolas,monospace">-</div>
+        </div>
+      </div>
+    </div>
+    <!-- 🌍 アメリカ以外: 関税率 -->
+    <div id="otherSection" style="margin-bottom:6px;display:none">
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div class="field" style="width:160px">
+          <label>米国向け関税率 <span class="unit">(%)</span></label>
+          <input type="number" id="usTariffRate" value="20" class="highlight" min="0" step="1">
+        </div>
+        <div class="pricing-info" id="otherPricingInfo" style="flex:1">🇺🇸米国向け送料: <strong>-</strong></div>
+      </div>
+    </div>
+    <div class="grid4">
+      <div class="field">
+        <label>実重量 <span class="unit">(kg)</span></label>
+        <input type="number" id="weight" value="0.5" class="highlight" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label>縦 <span class="unit">(cm)</span></label>
+        <input type="number" id="length" value="10" class="highlight" min="0" step="0.1">
+      </div>
+      <div class="field">
+        <label>横 <span class="unit">(cm)</span></label>
+        <input type="number" id="width" value="10" class="highlight" min="0" step="0.1">
+      </div>
+      <div class="field">
+        <label>高さ <span class="unit">(cm)</span></label>
+        <input type="number" id="height" value="5" class="highlight" min="0" step="0.1">
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--text3)">
+      <span>体積重量(÷5000): <strong id="volWeight" style="color:var(--text2)">-</strong></span>
+      <span>Economy(÷8000): <strong id="volWeightEco" style="color:var(--text2)">-</strong></span>
+    </div>
+  </div>
+
+  <!-- 手数料設定 -->
+  <div class="card">
+    <h2><span class="icon">⚙️</span> 手数料・レート</h2>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:5px">
+      <div class="field" style="width:110px">
+        <label>カテゴリNo.</label>
+        <input type="number" id="categoryNo" value="20561" placeholder="例: 20561" class="highlight">
+      </div>
+      <div class="field" style="flex:1;min-width:0">
+        <label>カテゴリ名</label>
+        <div id="categoryName" style="font-size:.82rem;padding:6px 0;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">-</div>
+      </div>
+    </div>
+    <div style="font-size:.75rem;color:var(--text2);margin-bottom:6px;padding:4px 8px;background:#f8fafc;border-radius:4px" id="feeDescription">-</div>
+    <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:5px">
+      <div class="field" style="width:140px">
+        <label>為替レート <span class="unit">(¥/$)</span></label>
+        <input type="number" id="exchangeRate" value="153.5115" class="highlight" step="0.0001">
+      </div>
+      <button onclick="fetchRate()" style="font-size:.72rem;padding:5px 10px;border:1px solid var(--border);border-radius:5px;background:#fafafa;cursor:pointer;color:var(--text3);white-space:nowrap;margin-bottom:0">自動取得</button>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:5px">
+      <div class="field" style="width:140px">
+        <label>燃油サーチャージ <span class="unit">(%)</span></label>
+        <input type="number" id="fuelSurcharge" value="28.75" class="highlight" step="0.25">
+      </div>
+      <button onclick="fetchFuelSurcharge(false)" style="font-size:.72rem;padding:5px 10px;border:1px solid var(--border);border-radius:5px;background:#fafafa;cursor:pointer;color:var(--text3);white-space:nowrap;margin-bottom:0">FedEx取得</button>
+      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">FedEx/DHL共通・基本送料に加算<br><span id="fuelStatus" style="color:var(--text3)">-</span></div>
+    </div>
+    <button class="toggle-btn" id="settingsToggle" onclick="toggleSettings()">詳細設定 ▼</button>
+    <div class="settings-content" id="settingsContent">
+      <div class="grid2" style="gap:6px;margin-top:6px">
+        <div class="field"><label>eBay手数料 (%)</label><input type="number" id="ebayFeeRate" value="12.7" step="0.01"></div>
+        <div class="field"><label>閾値 ($)</label><input type="number" id="feeThreshold" value="2500" step="100"></div>
+        <div class="field"><label>eBay手数料2 (%)</label><input type="number" id="ebayFeeRate2" value="2.35" step="0.01"></div>
+        <div class="field"><label>1注文あたり ($)</label><input type="number" id="perOrderFee" value="0.40" step="0.01"></div>
+        <div class="field"><label>Promoted (%)</label><input type="number" id="promotedRate" value="2" step="0.1" class="highlight"></div>
+        <div class="field"><label>海外手数料 (%)</label><input type="number" id="intlFeeRate" value="0.95" step="0.01" class="highlight"></div>
+        <div class="field"><label>Payoneer (%)</label><input type="number" id="payoneerRate" value="2" step="0.1" class="highlight"></div>
+        <div class="field"><label>消費税率 (%)</label><input type="number" id="taxRate" value="10" step="1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 利益サマリー -->
+  <div class="card">
+    <h2><span class="icon">💰</span> 利益サマリー</h2>
+    <div class="summary-row">
+      <div class="summary-cell" id="summaryProfit" style="background:var(--green-bg)">
+        <div class="s-label">推奨便 利益</div>
+        <div class="s-val" style="color:var(--green)" id="bestProfitYen">-</div>
+      </div>
+      <div class="summary-cell" id="summaryRefund" style="background:#dbeafe">
+        <div class="s-label">還付込み</div>
+        <div class="s-val" style="color:var(--primary)" id="bestProfitRefundYen">-</div>
+      </div>
+      <div class="summary-cell" style="background:#f0fdf4">
+        <div class="s-label">利益率</div>
+        <div class="s-val" style="color:var(--green)" id="bestProfitRate">-</div>
+      </div>
+    </div>
+    <button class="toggle-btn" id="feeToggle" onclick="toggleFeeDetail()">内訳 ▼</button>
+    <div class="settings-content" id="feeDetailContent">
+      <div class="fee-row"><span class="fee-label">売上</span><span class="fee-val" id="revenueYen">-</span></div>
+      <div class="fee-row"><span class="fee-label">手数料計</span><span class="fee-val" style="color:var(--red)" id="totalFeesYen">-</span></div>
+      <hr class="divider">
+      <div class="fee-row"><span class="fee-label">eBay FVF</span><span class="fee-val" id="feeEbay">-</span></div>
+      <div class="fee-row"><span class="fee-label">Promoted</span><span class="fee-val" id="feePromoted">-</span></div>
+      <div class="fee-row"><span class="fee-label">海外手数料</span><span class="fee-val" id="feeIntl">-</span></div>
+      <hr class="divider">
+      <div class="fee-row"><span class="fee-label">Payoneer</span><span class="fee-val" id="feePayoneer">-</span></div>
+      <div class="fee-row fee-total"><span class="fee-label">合計</span><span class="fee-val" id="feeTotalUsd">-</span></div>
+      <div class="note">※eBay系手数料には消費税10%込。Payoneerは為替変換時控除。</div>
+    </div>
+  </div>
+
+</div><!-- /left-col -->
+
+<!-- ===== RIGHT COLUMN ===== -->
+<div class="right-col">
+  <div class="card" style="padding:12px 16px">
+    <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
+    <div id="resultsContainer"></div>
+  </div>
+  <div class="note" style="text-align:center;margin-top:3px">
+    ※送料はSpeedPAK公式PDF準拠（米国本土48州向け）。FedEx/DHLは燃油サーチャージ加算済。利益OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
+  </div>
+</div><!-- /right-col -->
+
+</div><!-- /main-layout -->
+
+<script src="ebay_categories.js"></script>
+<script>
+// ========== Shopping Site Bulk Search ==========
+const SHOP_SITES = [
+  { id:'amazon_jp', name:'Amazon JP',    url:'https://www.amazon.co.jp/s?k={q}', checked:true },
+  { id:'rakuten',   name:'楽天',          url:'https://search.rakuten.co.jp/search/mall/{q}/', checked:true },
+  { id:'yahoo_shop',name:'Yahooショッピング', url:'https://shopping.yahoo.co.jp/search?p={q}', checked:false },
+  { id:'mercari',   name:'メルカリ',       url:'https://jp.mercari.com/search?keyword={q}', checked:true },
+  { id:'yahoo_auc', name:'ヤフオク',       url:'https://auctions.yahoo.co.jp/search/search?p={q}', checked:true },
+  { id:'paypay',    name:'PayPayフリマ',   url:'https://paypayfleamarket.yahoo.co.jp/search/{q}', checked:false },
+  { id:'rakuma',    name:'ラクマ',         url:'https://fril.jp/search/{q}', checked:false },
+  { id:'kakaku',    name:'価格.com',      url:'https://kakaku.com/search_results/{q}/', checked:false },
+  { id:'yodobashi', name:'ヨドバシ',       url:'https://www.yodobashi.com/?word={q}', checked:false },
+  { id:'surugaya',  name:'駿河屋',        url:'https://www.suruga-ya.jp/search?category=&search_word={q}', checked:false },
+  { id:'google',    name:'Google',       url:'https://www.google.com/search?q={q}', checked:false },
+  { id:'amazon_us', name:'Amazon US',    url:'https://www.amazon.com/s?k={q}', checked:false },
+  { id:'ebay',      name:'eBay',         url:'https://www.ebay.com/sch/i.html?_nkw={q}', checked:true },
+  { id:'aliexpress',name:'AliExpress',   url:'https://www.aliexpress.com/wholesale?SearchText={q}', checked:false },
+];
+
+function initShopSites() {
+  const container = document.getElementById('shopSites');
+  const saved = JSON.parse(localStorage.getItem('shop_sites_checked') || 'null');
+  SHOP_SITES.forEach(s => {
+    const checked = saved ? (saved[s.id] !== undefined ? saved[s.id] : s.checked) : s.checked;
+    const lbl = document.createElement('label');
+    lbl.innerHTML = `<input type="checkbox" data-shop="${s.id}" ${checked?'checked':''} onchange="saveShopChecks()"> ${s.name}`;
+    container.appendChild(lbl);
+  });
+}
+
+function saveShopChecks() {
+  const obj = {};
+  document.querySelectorAll('#shopSites input[type="checkbox"]').forEach(cb => {
+    obj[cb.dataset.shop] = cb.checked;
+  });
+  localStorage.setItem('shop_sites_checked', JSON.stringify(obj));
+}
+
+function toggleShopAll(on) {
+  document.querySelectorAll('#shopSites input[type="checkbox"]').forEach(cb => { cb.checked = on; });
+  saveShopChecks();
+}
+
+function shopSearch() {
+  const q = document.getElementById('shopQuery').value.trim();
+  if (!q) { alert('キーワードを入力してください'); return; }
+  const encoded = encodeURIComponent(q);
+  let opened = 0;
+  document.querySelectorAll('#shopSites input[type="checkbox"]:checked').forEach(cb => {
+    const site = SHOP_SITES.find(s => s.id === cb.dataset.shop);
+    if (site) { window.open(site.url.replace('{q}', encoded), '_blank'); opened++; }
+  });
+  if (opened === 0) alert('検索するサイトを選択してください');
+}
+
+initShopSites();
+
+// ========== Keyword Gacha ==========
+const KW_LIST = [
+  // Electronics & Gadgets
+  'vintage','camera','lens','turntable','amplifier','headphones','speaker','microphone','radio','cassette',
+  'walkman','gameboy','nintendo','sega','playstation','controller','console','cartridge','adapter','charger',
+  'transformer','oscilloscope','multimeter','soldering','transistor','vacuum tube','calculator','typewriter',
+  // Watches & Jewelry
+  'watch','seiko','casio','citizen','orient','chronograph','automatic','mechanical','quartz','pocket watch',
+  'pendant','necklace','bracelet','ring','brooch','earring','cufflinks','pearl','silver','gold',
+  // Collectibles
+  'figurine','statue','doll','plush','stuffed','miniature','diecast','model kit','gundam','bandai',
+  'pokemon','card','trading card','stamp','coin','medal','badge','pin','patch','sticker',
+  'poster','print','lithograph','painting','calligraphy','scroll','woodblock','ukiyo-e',
+  // Fashion & Accessories
+  'kimono','obi','haori','geta','tabi','tenugui','furoshiki','bag','wallet','purse',
+  'backpack','tote','leather','silk','denim','vintage jacket','sneakers','boots','hat','scarf',
+  // Kitchen & Home
+  'knife','chef knife','santoku','whetstone','ceramic','teapot','tea cup','matcha','cast iron','tetsubin',
+  'bento','chopsticks','lacquerware','bamboo','cutting board','rice cooker','thermos','zojirushi',
+  // Tools & Instruments
+  'chisel','plane','saw','hammer','wrench','pliers','drill','clamp','file','sandpaper',
+  'guitar','violin','flute','harmonica','ukulele','keyboard','synthesizer','drum','cymbal','pedal',
+  // Anime & Manga
+  'manga','anime','cosplay','wig','figure','nendoroid','scale figure','art book','soundtrack','cel',
+  // Automotive & Bicycle
+  'carburetor','exhaust','headlight','mirror','emblem','wheel','tire','brake','suspension','seat',
+  'bicycle','shimano','derailleur','pedal','saddle','handlebar','frame','fork','chain','spoke',
+  // Stationery & Art
+  'fountain pen','ink','notebook','sketchbook','watercolor','acrylic','oil paint','brush','easel','canvas',
+  'washi tape','origami','calligraphy pen','seal','stamp pad',
+  // Outdoor & Sports
+  'fishing reel','fishing rod','lure','tackle','tent','sleeping bag','lantern','compass','binoculars',
+  'golf club','baseball glove','kendo','judo','karate','bokken','shinai',
+  // Misc
+  'antique','retro','rare','limited edition','unused','mint condition','NOS','OEM','genuine','original',
+  'handmade','crafted','custom','restoration','repair','parts','accessories','set','lot','bulk',
+  'japanese','japan','tokyo','osaka','kyoto',
+];
+
+function rollKw() {
+  const count = parseInt(document.getElementById('kwCount').value) || 2;
+  const shuffled = [...KW_LIST].sort(() => Math.random() - 0.5);
+  const picked = shuffled.slice(0, count);
+  document.getElementById('kwResult').innerHTML = picked.map(w => '<span style="background:var(--primary-light);padding:2px 8px;border-radius:4px;margin-right:4px;display:inline-block;cursor:pointer" onclick="copyOneKw(this)" title="クリックでコピー">' + w + '</span>').join('');
+}
+
+function copyOneKw(span) {
+  const text = span.textContent.trim();
+  if (!text) return;
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  const orig = span.textContent;
+  const origBg = span.style.background;
+  span.textContent = '✓ copy';
+  span.style.background = 'var(--green-bg)';
+  setTimeout(() => { span.textContent = orig; span.style.background = origBg; }, 800);
+}
+
+rollKw(); // 初期表示
+
+// ========== Category Lookup ==========
+
+function onCategoryNoInput() {
+  const no = parseInt(document.getElementById('categoryNo').value);
+  const nameEl = document.getElementById('categoryName');
+  if (typeof ebayCategoryMap !== 'undefined' && ebayCategoryMap[no]) {
+    const cat = ebayCategoryMap[no]; // [name, rate1%, threshold, rate2%]
+    nameEl.textContent = cat[0] || '(名称なし)';
+    // Auto-set fee rates from category data
+    document.getElementById('ebayFeeRate').value = cat[1];
+    document.getElementById('feeThreshold').value = cat[2];
+    document.getElementById('ebayFeeRate2').value = cat[3];
+  } else {
+    nameEl.textContent = no ? '不明なカテゴリ' : '-';
+  }
+  updateFeeDescription();
+  calculate();
+}
+
+function updateFeeDescription() {
+  const r1 = getVal('ebayFeeRate');
+  const th = getVal('feeThreshold');
+  const r2 = getVal('ebayFeeRate2');
+  const po = getVal('perOrderFee');
+  document.getElementById('feeDescription').textContent =
+    'FVF: $' + th.toLocaleString() + 'まで ' + r1 + '% → 残り ' + r2 + '% + $' + po + '/注文';
+}
+
+// ========== Shipping Rate Tables (US向け・2025年版PDF準拠) ==========
+
+// --- SpeedPAK Economy 米国本土48州 (÷8,000 容積重量, 最大$1,300, 最大25kg) ---
+const speedpakEconomyRates = [
+  [100,1227],[200,1367],[300,1581],[400,1778],[500,2060],
+  [600,2222],[700,2321],[800,2703],[900,2820],[1000,3020],
+  [1100,3136],[1200,3250],[1300,3366],[1400,3704],[1500,3816],
+  [1600,3935],[1700,4046],[1800,4165],[1900,5056],[2000,5245],
+  [2500,5582],[3000,6333],[3500,6958],[4000,7704],
+  [4500,9135],[5000,11733],[5500,12500],[6000,13335],
+  [6500,14160],[7000,15209],[7500,16058],[8000,16893],
+  [8500,17562],[9000,18152],[9500,19106],[10000,19639],
+  [10500,20276],[11000,20864],[11500,21565],[12000,22199],
+  [12500,22887],[13000,23466],[13500,24054],[14000,24869],
+  [14500,25200],[15000,25988],[15500,26656],[16000,28149],
+  [16500,28775],[17000,29495],[17500,30196],[18000,30902],
+  [18500,31478],[19000,32204],[19500,32936],[20000,33947],
+  [20500,34655],[21000,35426],[21500,36145],[22000,36859],
+  [22500,37602],[23000,38516],[23500,39084],[24000,39678],
+  [24500,40374],[25000,40955]
+];
+
+// --- SpeedPAK FedEx FICP (International Connect Plus) Zone F=USE/CA (÷5,000, 最大68kg, DDP) ---
+const speedpakFicpRates = [
+  [500,2115],[1000,2599],[1500,2840],[2000,3108],[2500,3383],
+  [3000,3540],[3500,3593],[4000,4022],[4500,4451],[5000,4718],
+  [5500,5043],[6000,5366],[6500,5735],[7000,6184],[7500,6683],
+  [8000,6871],[8500,7060],[9000,7249],[9500,8865],[10000,9089],
+  [10500,9346],[11000,9602],[11500,9861],[12000,10116],
+  [12500,11439],[13000,11723],[13500,12006],[14000,12289],
+  [14500,12573],[15000,12857],[15500,13140],[16000,14631],
+  [16500,14940],[17000,15249],[17500,15559],[18000,15867],
+  [18500,16177],[19000,16485],[19500,16794],[20000,17104],
+  [21000,20625],[22000,21657],[23000,22689],[24000,23721],
+  [25000,24754],[26000,25787],[27000,26819],[28000,27852],
+  [29000,28885],[30000,29916],
+  [31000,30950],[32000,31983],[33000,34201],[34000,35237],
+  [35000,36274],[36000,37310],[37000,38346],[38000,39383],
+  [39000,40419],[40000,41455],[41000,42492],[42000,43528],
+  [43000,44565],[44000,45601],[45000,45624],
+  [46000,45624],[47000,45624],[48000,45792],[49000,46746],
+  [50000,47700],[51000,48654],[52000,49608],[53000,50562],
+  [54000,51516],[55000,52470],[56000,53424],[57000,54378],
+  [58000,55332],[59000,56286],[60000,57240],
+  [61000,58194],[62000,59148],[63000,60102],[64000,61056],
+  [65000,62010],[66000,62964],[67000,63918],[68000,64872]
+];
+
+// --- SpeedPAK FedEx IP Envelope (Zone F=USE/CA, 実重量, 最大0.5kg) ---
+const speedpakIpEnvelopeRates = [
+  [500,2091]
+];
+
+// --- SpeedPAK FedEx IP Pak (Zone F=USE/CA, 実重量, 最大2.5kg) ---
+const speedpakIpPakRates = [
+  [500,2427],[1000,2894],[1500,3286],[2000,3686],[2500,4091]
+];
+
+// --- SpeedPAK FedEx IP Package (Zone F=USE/CA, ÷5,000, 最大68kg, DDP) ---
+const speedpakIpPackageRates = [
+  [500,2369],[1000,2655],[1500,2850],[2000,2859],[2500,3186],
+  [3000,3755],[3500,3757],[4000,4252],[4500,4746],[5000,5241],
+  [5500,6429],[6000,6587],[6500,6746],[7000,6905],[7500,7065],
+  [8000,7224],[8500,7383],[9000,7541],[9500,9590],[10000,9788],
+  [10500,9967],[11000,10146],[11500,10325],[12000,10505],
+  [12500,12411],[13000,12620],[13500,12828],[14000,13035],
+  [14500,13243],[15000,13451],[15500,13659],[16000,15914],
+  [16500,16153],[17000,16391],[17500,16631],[18000,16870],
+  [18500,17107],[19000,17346],[19500,17585],[20000,17823],
+  [21000,22085],[22000,23136],[23000,24187],[24000,25240],
+  [25000,26291],[26000,27343],[27000,28394],[28000,29446],
+  [29000,30498],[30000,31550],
+  [31000,32601],[32000,33652],[33000,34689],[34000,35740],
+  [35000,36791],[36000,37842],[37000,38893],[38000,39945],
+  [39000,40996],[40000,42047],[41000,43098],[42000,44149],
+  [43000,45200],[44000,46252],[45000,46252],
+  [46000,46794],[47000,47811],[48000,48828],[49000,49846],
+  [50000,50863],[51000,51880],[52000,52898],[53000,53915],
+  [54000,54932],[55000,55949],[56000,56967],[57000,57984],
+  [58000,59001],[59000,60018],[60000,61036],
+  [61000,62053],[62000,63070],[63000,64087],[64000,65105],
+  [65000,66122],[66000,67139],[67000,68156],[68000,69174]
+];
+
+// --- SpeedPAK DHL Express Envelope (Zone 10=US, 実重量, 最大0.3kg) ---
+const speedpakDhlEnvelopeRates = [
+  [300,2454]
+];
+
+// --- SpeedPAK DHL Express Worldwide (Zone 10=US, ÷5,000, 最大154kg) ---
+const speedpakDhlRates = [
+  [500,2454],[1000,2780],[1500,2898],[2000,3045],[2500,3404],
+  [3000,3761],[3500,4203],[4000,4568],[4500,4934],[5000,5300],
+  [5500,5665],[6000,6029],[6500,6444],[7000,6948],[7500,7450],
+  [8000,7954],[8500,8456],[9000,8958],[9500,9463],[10000,9966],
+  [10500,10469],[11000,10972],[11500,11475],[12000,11978],
+  [12500,12481],[13000,12986],[13500,13487],[14000,13991],
+  [14500,14494],[15000,14998],[15500,15500],[16000,16004],
+  [16500,16508],[17000,17011],[17500,17515],[18000,18018],
+  [18500,18521],[19000,19024],[19500,19528],[20000,20031],
+  [21000,21039],[22000,22045],[23000,23052],[24000,24059],
+  [25000,25065],[26000,26073],[27000,27078],[28000,28085],
+  [29000,29082],[30000,30089],
+  [31000,31093],[32000,32096],[33000,33099],[34000,34102],
+  [35000,35104],[36000,36108],[37000,37111],[38000,38114],
+  [39000,39117],[40000,40120],[41000,41123],[42000,42127],
+  [43000,43129],[44000,44133],[45000,45135],[46000,46139],
+  [47000,47142],[48000,48145],[49000,49148],[50000,50151],
+  [51000,51154],[52000,52158],[53000,53160],[54000,54163],
+  [55000,55166],[56000,56169],[57000,57173],[58000,58175],
+  [59000,59179],[60000,60181],
+  [61000,61185],[62000,62188],[63000,63191],[64000,64194],
+  [65000,65197],[66000,66200],[67000,67204],[68000,68206],
+  [69000,69210],[70000,70213]
+];
+
+// --- 日本郵便 eパケットライト (実重量, 最大2kg) ---
+const epacketLightRates = [
+  [100,1200],[200,1410],[300,1620],[400,1830],[500,2040],
+  [600,2250],[700,2460],[800,2670],[900,2880],[1000,3090],
+  [1100,3300],[1200,3510],[1300,3720],[1400,3930],[1500,4140],
+  [1600,4350],[1700,4560],[1800,4770],[1900,4980],[2000,5190]
+];
+
+// --- 日本郵便 EMS (実重量, 最大30kg) ---
+const emsRates = [
+  [500,3900],[600,4180],[700,4460],[800,4740],[900,5020],
+  [1000,5300],[1250,5990],[1500,6600],[1750,7290],[2000,7900],
+  [2500,9100],[3000,10300],[3500,11500],[4000,12700],[4500,13900],
+  [5000,15100],[5500,16300],[6000,17500],[7000,19900],[8000,22300],
+  [9000,24700],[10000,27100],[15000,39100],[20000,51100],[25000,63100],[30000,75100]
+];
+
+// ========== Utility Functions ==========
+
+function lookupRate(table, weightGrams) {
+  for (let i = 0; i < table.length; i++) {
+    if (weightGrams <= table[i][0]) return table[i][1];
+  }
+  return -1;
+}
+
+function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function fmt(n) { return Math.round(n).toLocaleString('ja-JP'); }
+function fmtD(n) { return n.toFixed(2); }
+
+const currentSort = 'profit';
+let currentPricingMode = 'us';
+
+function setPricingMode(mode) {
+  currentPricingMode = mode;
+  document.getElementById('modeUs').classList.toggle('active', mode === 'us');
+  document.getElementById('modeOther').classList.toggle('active', mode === 'other');
+  document.getElementById('usSection').style.display = mode === 'us' ? '' : 'none';
+  document.getElementById('otherSection').style.display = mode === 'other' ? '' : 'none';
+  updatePricingDisplay();
+  calculate();
+}
+
+function getEffectiveSellingPrice() {
+  const selling = getVal('sellingPrice');
+  if (currentPricingMode === 'us') {
+    const compShipping = getVal('compShipping');
+    const compTotal = selling + compShipping;
+    if (compTotal <= 0) return selling;
+    if ((compTotal - 0.01) > 2499.99) {
+      return Math.round((compTotal - 0.01) * 100) / 100;
+    } else {
+      return Math.round((compTotal * 0.816 - 0.01) * 100) / 100;
+    }
+  }
+  return selling;
+}
+
+function updatePricingDisplay() {
+  const selling = getVal('sellingPrice');
+  if (currentPricingMode === 'us') {
+    const compShipping = getVal('compShipping');
+    const compTotal = selling + compShipping;
+    let listPrice, listShipping;
+    if (compTotal <= 0) {
+      listPrice = selling; listShipping = 0;
+    } else if ((compTotal - 0.01) > 2499.99) {
+      listPrice = Math.round((compTotal - 0.01) * 100) / 100;
+      listShipping = 0;
+    } else {
+      listPrice = Math.round((compTotal * 0.816 - 0.01) * 100) / 100;
+      listShipping = Math.round((compTotal - 0.01) * 0.184 * 100) / 100;
+    }
+    document.getElementById('listPrice').textContent = '$' + fmtD(listPrice);
+    document.getElementById('listShipping').textContent = '$' + fmtD(listShipping);
+  } else {
+    const tariff = getVal('usTariffRate') / 100;
+    const usShipping = Math.round(selling * tariff * 100) / 100;
+    document.getElementById('otherPricingInfo').innerHTML =
+      '🇺🇸米国向け送料: <strong>$' + fmtD(usShipping) + '</strong>';
+  }
+}
+
+function toggleSettings() {
+  const c = document.getElementById('settingsContent');
+  const b = document.getElementById('settingsToggle');
+  if (c.classList.contains('show')) {
+    c.classList.remove('show');
+    b.textContent = '詳細設定 ▼';
+    b.classList.remove('active');
+  } else {
+    c.classList.add('show');
+    b.textContent = '詳細設定 ▲';
+    b.classList.add('active');
+  }
+}
+
+function toggleFeeDetail() {
+  const c = document.getElementById('feeDetailContent');
+  const b = document.getElementById('feeToggle');
+  if (c.classList.contains('show')) {
+    c.classList.remove('show');
+    b.textContent = '内訳 ▼';
+    b.classList.remove('active');
+  } else {
+    c.classList.add('show');
+    b.textContent = '内訳 ▲';
+    b.classList.add('active');
+  }
+}
+
+async function fetchRate() {
+  try {
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    const d = await r.json();
+    if (d.rates && d.rates.JPY) {
+      document.getElementById('exchangeRate').value = d.rates.JPY.toFixed(4);
+      calculate();
+    }
+  } catch(e) {
+    alert('レート取得に失敗しました。');
+  }
+}
+
+// ========== Fuel Surcharge Auto-Fetch (EIA API経由) ==========
+// FedEx Express International Export 燃料割増金テーブル (Effective Dec 1, 2025)
+// USGC Kerosene-Type Jet Fuel $/gallon → サーチャージ%
+// 国際輸出用: 国内テーブルより約2.5%高い
+// $2.120 → 30.50% (FedEx公式 2026年2月16-22日週で確認済み)
+// $0.05刻みで0.5%ずつ変動
+const FUEL_TABLE = [
+  [1.36, 23.0],[1.41, 23.5],[1.46, 24.0],[1.51, 24.5],[1.56, 25.0],
+  [1.61, 25.5],[1.66, 26.0],[1.71, 26.5],[1.76, 27.0],[1.81, 27.5],
+  [1.86, 28.0],[1.91, 28.5],[1.96, 29.0],[2.01, 29.5],[2.06, 30.0],
+  [2.11, 30.5],[2.16, 31.0],[2.21, 31.5],[2.26, 32.0],[2.31, 32.5],
+  [2.36, 33.0],[2.41, 33.5],[2.46, 34.0],[2.51, 34.5],[2.56, 35.0],
+  [2.61, 35.5],[2.66, 36.0],[2.71, 36.5],[2.76, 37.0],[2.81, 37.5],
+  [2.86, 38.0],[2.91, 38.5],[2.96, 39.0],[3.01, 39.5],[3.06, 40.0],
+];
+const FUEL_CACHE_KEY = 'fedex_fuel_surcharge';
+const FUEL_CACHE_TIME_KEY = 'fedex_fuel_surcharge_time';
+const FUEL_CACHE_PRICE_KEY = 'fedex_fuel_price';
+const FUEL_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7日キャッシュ（EIAは週次更新）
+
+function _fuelPriceToSurcharge(pricePerGallon) {
+  for (let i = FUEL_TABLE.length - 1; i >= 0; i--) {
+    if (pricePerGallon >= FUEL_TABLE[i][0]) return FUEL_TABLE[i][1];
+  }
+  return FUEL_TABLE[0][1]; // 最低値
+}
+
+async function _fetchJetFuelPrice() {
+  // EIA API: USGC Kerosene-Type Jet Fuel Spot Price (週次)
+  const url = 'https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=DEMO_KEY&frequency=weekly&data[0]=value&facets[series][]=EER_EPJK_PF4_RGC_DPG&sort[0][column]=period&sort[0][direction]=desc&length=1';
+  const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  const d = await r.json();
+  if (d.response && d.response.data && d.response.data.length > 0) {
+    return { price: parseFloat(d.response.data[0].value), date: d.response.data[0].period };
+  }
+  return null;
+}
+
+async function fetchFuelSurcharge(silent) {
+  const statusEl = document.getElementById('fuelStatus');
+  if (statusEl) statusEl.textContent = '取得中...';
+  try {
+    const result = await _fetchJetFuelPrice();
+    if (result) {
+      const surcharge = _fuelPriceToSurcharge(result.price);
+      document.getElementById('fuelSurcharge').value = surcharge;
+      localStorage.setItem(FUEL_CACHE_KEY, surcharge);
+      localStorage.setItem(FUEL_CACHE_PRICE_KEY, result.price);
+      localStorage.setItem(FUEL_CACHE_TIME_KEY, Date.now());
+      if (statusEl) statusEl.textContent = '✓ ' + surcharge + '% (燃料$' + result.price.toFixed(3) + '/gal ' + result.date + ')';
+      calculate();
+      if (!silent) alert('FedEx燃油サーチャージ: ' + surcharge + '%\n(ジェット燃料: $' + result.price.toFixed(3) + '/gal, ' + result.date + '週)');
+    } else {
+      throw new Error('データなし');
+    }
+  } catch(e) {
+    const cached = localStorage.getItem(FUEL_CACHE_KEY);
+    if (cached) {
+      const age = Date.now() - (parseInt(localStorage.getItem(FUEL_CACHE_TIME_KEY)) || 0);
+      const days = Math.floor(age / (24*60*60*1000));
+      if (statusEl) statusEl.textContent = '⚠ ' + cached + '% (' + days + '日前)';
+    } else {
+      if (statusEl) statusEl.textContent = '⚠ 取得失敗';
+    }
+    if (!silent) alert('自動取得できませんでした。\n手動で入力してください。\n\n現在の値: ' + document.getElementById('fuelSurcharge').value + '%');
+  }
+}
+
+function initFuelSurcharge() {
+  const cached = localStorage.getItem(FUEL_CACHE_KEY);
+  const cachedTime = parseInt(localStorage.getItem(FUEL_CACHE_TIME_KEY)) || 0;
+  const age = Date.now() - cachedTime;
+  if (cached && age < FUEL_CACHE_TTL) {
+    document.getElementById('fuelSurcharge').value = cached;
+    const price = localStorage.getItem(FUEL_CACHE_PRICE_KEY) || '?';
+    const statusEl = document.getElementById('fuelStatus');
+    if (statusEl) statusEl.textContent = '✓ ' + cached + '% (キャッシュ・燃料$' + price + '/gal)';
+  } else {
+    fetchFuelSurcharge(true);
+  }
+}
+
+// ========== Main Calculation ==========
+
+function calculate() {
+  updatePricingDisplay();
+  const purchase = getVal('purchasePrice');
+  const selling = getEffectiveSellingPrice();
+  const weightKg = getVal('weight');
+  const L = getVal('length');
+  const W = getVal('width');
+  const H = getVal('height');
+
+  const ebayRate1 = getVal('ebayFeeRate') / 100;
+  const threshold = getVal('feeThreshold');
+  const ebayRate2 = getVal('ebayFeeRate2') / 100;
+  const perOrder = getVal('perOrderFee');
+  const promotedRate = getVal('promotedRate') / 100;
+  const intlRate = getVal('intlFeeRate') / 100;
+  const payoneerRate = getVal('payoneerRate') / 100;
+  const rate = getVal('exchangeRate');
+  const taxRate = getVal('taxRate') / 100;
+  const taxMultiplier = 1 + taxRate;
+  const fuelSurchargeRate = getVal('fuelSurcharge') / 100; // 燃油サーチャージ率
+
+  const vol = L * W * H;
+  const volWeight = vol / 5000;
+  const volWeightEco = vol / 8000;
+
+  document.getElementById('volWeight').textContent = volWeight.toFixed(3) + ' kg';
+  document.getElementById('volWeightEco').textContent = volWeightEco.toFixed(3) + ' kg';
+
+  // eBay FVF: two-rate system
+  let fvfBase = 0;
+  if (selling <= threshold) {
+    fvfBase = selling * ebayRate1;
+  } else {
+    fvfBase = threshold * ebayRate1 + (selling - threshold) * ebayRate2;
+  }
+  const ebayFvf = (fvfBase + perOrder) * taxMultiplier;
+  const promotedFee = selling * promotedRate * taxMultiplier;
+  const intlFee = selling * intlRate * taxMultiplier;
+  const totalEbayDeductions = ebayFvf + promotedFee + intlFee;
+  const netPayout = selling - totalEbayDeductions;
+  const payoneerFee = netPayout * payoneerRate;
+  const netReceived = netPayout * (1 - payoneerRate) * rate;
+  const revenueYen = selling * rate;
+  const totalFeesYen = revenueYen - netReceived;
+
+  const purchaseTax = purchase * taxRate / taxMultiplier;
+  const ebayFeeTaxPortion = totalEbayDeductions / taxMultiplier * taxRate * rate;
+  const totalRefund = purchaseTax + ebayFeeTaxPortion;
+
+  document.getElementById('revenueYen').textContent = '¥' + fmt(revenueYen) + '（$' + fmtD(selling) + '）';
+  document.getElementById('totalFeesYen').textContent = '¥' + fmt(totalFeesYen);
+  document.getElementById('feeEbay').textContent = '$' + fmtD(ebayFvf);
+  document.getElementById('feePromoted').textContent = '$' + fmtD(promotedFee);
+  document.getElementById('feeIntl').textContent = '$' + fmtD(intlFee);
+  document.getElementById('feePayoneer').textContent = '$' + fmtD(payoneerFee) + '（¥' + fmt(payoneerFee * rate) + '）';
+  document.getElementById('feeTotalUsd').textContent = '$' + fmtD(totalEbayDeductions + payoneerFee) + '（¥' + fmt(totalFeesYen) + '）';
+
+  // ========== Shipping Methods ==========
+  const weightG = weightKg * 1000;
+  const dims = [L, W, H].sort((a,b) => b-a);
+  const longest = dims[0];
+  const girth = longest + 2 * (dims[1] + dims[2]);
+  const billableStandard = Math.max(weightKg, volWeight);
+  const billableStandardG = billableStandard * 1000;
+  const billableEcoKg = Math.max(weightKg, volWeightEco);
+  const billableEcoG = billableEcoKg * 1000;
+
+  const groups = [
+    { id: 'fedex',    label: 'SpeedPAK FedEx International Connect Plus', icon: '🟣', cls: 'group-elogi',    tag: '推奨',      primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
+    { id: 'fedex-ip', label: 'SpeedPAK FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
+    { id: 'dhl',      label: 'SpeedPAK DHL',        icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
+    { id: 'speedpak', label: 'SpeedPAK Economy',    icon: '🟠', cls: 'group-speedpak', tag: '4ヶ国限定', primary: false, methods: [], note: '配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください' },
+    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: 'group-unavail',  tag: '米国不可',  primary: false, methods: [] },
+  ];
+
+  function addMethod(groupId, m) {
+    m._groupId = groupId;
+    const g = groups.find(g => g.id === groupId);
+    if (g) g.methods.push(m);
+  }
+
+  // ===== SpeedPAK Economy (米国本土48州) =====
+  {
+    const csW = billableEcoG <= 25000, csV = selling <= 1300, csD = longest <= 66 && girth <= 274;
+    const cs = csW && csV && csD;
+    let c = cs ? lookupRate(speedpakEconomyRates, billableEcoG) : -1;
+    if (cs && c > 0 && (longest > 55.88 || vol > 55000)) c += 2475;
+    if (cs && c > 0) c += 245;
+    const r2 = [];
+    if(!csW)r2.push('25kg超過');if(!csV)r2.push('$1300超過');if(!csD)r2.push('サイズ超過');
+    addMethod('speedpak',{name:'Economy',sub:'8-12日/$1,300以下/体積÷8,000/DDP/アメリカ・イギリス・ドイツ・オーストラリアのみ',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+  }
+
+  // ===== SpeedPAK FedEx FICP (International Connect Plus) Zone F =====
+  {
+    const cs = billableStandardG <= 68000;
+    let c = cs ? lookupRate(speedpakFicpRates, billableStandardG) : -1;
+    if (cs && c > 0) c = Math.round(c * (1 + fuelSurchargeRate));
+    addMethod('fedex',{name:'International Connect Plus',sub:'2-5日/DDP/最大68kg/体積÷5,000/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'68kg超過':''});
+  }
+
+  // ===== SpeedPAK FedEx IP Envelope (内寸23.5x33.5cm, 厚み3cm, 最大0.5kg) =====
+  {
+    const sorted = [L, W, H].sort((a,b) => b-a); // 長い順
+    const csW = weightG <= 500;
+    const csS = sorted[0] <= 33.5 && sorted[1] <= 23.5 && sorted[2] <= 3;
+    const cs = csW && csS;
+    let c = cs ? lookupRate(speedpakIpEnvelopeRates, weightG) : -1;
+    if (cs && c > 0) c = Math.round(c * (1 + fuelSurchargeRate));
+    const r2 = [];
+    if (!csW) r2.push('500g超過');
+    if (!csS) r2.push('サイズ超過(23.5x33.5x3cm)');
+    addMethod('fedex-ip',{name:'FedEx IP Envelope',sub:'1-3日/DDP/最大500g/内寸23.5×33.5×3cm/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+  }
+
+  // ===== SpeedPAK FedEx IP Pak =====
+  {
+    const cs = weightG <= 2500;
+    let c = cs ? lookupRate(speedpakIpPakRates, weightG) : -1;
+    if (cs && c > 0) c = Math.round(c * (1 + fuelSurchargeRate));
+    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/DDP/最大2.5kg/実重量/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'2.5kg超過':''});
+  }
+
+  // ===== SpeedPAK FedEx IP Package =====
+  {
+    const cs = billableStandardG <= 68000;
+    let c = cs ? lookupRate(speedpakIpPackageRates, billableStandardG) : -1;
+    if (cs && c > 0) c = Math.round(c * (1 + fuelSurchargeRate));
+    addMethod('fedex-ip',{name:'FedEx IP Package',sub:'1-3日/DDP/最大68kg/体積÷5,000/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'68kg超過':''});
+  }
+
+  // ===== SpeedPAK DHL Express Envelope =====
+  {
+    const cs = weightG <= 300;
+    let c = cs ? lookupRate(speedpakDhlEnvelopeRates, weightG) : -1;
+    if (cs && c > 0) c = Math.round(c * (1 + fuelSurchargeRate));
+    addMethod('dhl',{name:'DHL Express Envelope',sub:'2-4日/DDP/最大300g/実重量/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'300g超過':''});
+  }
+
+  // ===== SpeedPAK DHL Express Worldwide =====
+  {
+    const cs = billableStandardG <= 70000;
+    let c = cs ? lookupRate(speedpakDhlRates, billableStandardG) : -1;
+    if (cs && c > 0) c = Math.round(c * (1 + fuelSurchargeRate));
+    addMethod('dhl',{name:'DHL Express',sub:'2-4日/DDP/最大70kg/体積÷5,000/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'70kg超過':''});
+  }
+
+  // ===== 日本郵便（アメリカ宛は利用不可・参考表示） =====
+  {
+    const cs = weightG <= 2000;
+    const c = cs ? lookupRate(epacketLightRates, weightG) : -1;
+    addMethod('jppost',{name:'eパケットライト',sub:'追跡あり/最大2kg/実重量',cost:cs&&c>0?c:-1,canSend:false,reason:'アメリカ宛不可'});
+  }
+  {
+    const cs = weightG <= 30000;
+    const c = cs ? lookupRate(emsRates, weightG) : -1;
+    addMethod('jppost',{name:'EMS',sub:'最速/最大30kg/実重量',cost:cs&&c>0?c:-1,canSend:false,reason:'アメリカ宛不可'});
+  }
+
+  // Profit calculation
+  let allMethods = [];
+  groups.forEach(g => {
+    g.methods.forEach(m => {
+      if (m.cost > 0) {
+        m.profit = Math.round(netReceived - purchase - m.cost);
+        m.profitWithRefund = Math.round(m.profit + totalRefund);
+        m.profitRate = purchase > 0 ? (m.profit / purchase * 100) : 0;
+        m.isOk = m.canSend && m.profit >= 500 && m.profitRate >= 5;
+      } else {
+        m.profit = null; m.profitWithRefund = null; m.profitRate = 0; m.isOk = false;
+      }
+      allMethods.push(m);
+    });
+  });
+
+  // Best判定: FedEx/DHLを優先。Economyはおまけ。
+  // FedEx/DHL内で利益OKの最高利益メソッドをbest。なければ全体で最高利益をbest。
+  const fedexDhlMethods = allMethods.filter(m => m._groupId === 'fedex' || m._groupId === 'fedex-ip' || m._groupId === 'dhl');
+  let bestFD = null, bestFDProfit = -Infinity;
+  fedexDhlMethods.forEach(m => {
+    if (m.isOk && m.profit !== null && m.profit > bestFDProfit) { bestFDProfit = m.profit; bestFD = m; }
+  });
+
+  let bestProfit = -Infinity, bestRefund = -Infinity;
+  allMethods.forEach(m => {
+    if (!m.canSend) return; // 発送不可メソッドはサマリー対象外
+    if (m.profit !== null && m.profit > bestProfit) bestProfit = m.profit;
+    if (m.profitWithRefund !== null && m.profitWithRefund > bestRefund) bestRefund = m.profitWithRefund;
+  });
+
+  function setSummaryVal(elId, value, cellId) {
+    const el = document.getElementById(elId);
+    const cell = document.getElementById(cellId);
+    if (value === null || value === undefined) {
+      el.textContent = '-';
+      if (cell) { cell.style.background = ''; }
+      return;
+    }
+    if (value < 0) {
+      el.textContent = '⚠ ¥' + fmt(value);
+      el.style.color = 'var(--red)';
+      if (cell) cell.style.background = 'var(--red-bg)';
+    } else {
+      el.textContent = '¥' + fmt(value);
+      el.style.color = '';
+      if (cell) cell.style.background = '';
+    }
+  }
+
+  if (bestFD) {
+    allMethods.forEach(m => { m.isBest = (m === bestFD); });
+    setSummaryVal('bestProfitYen', bestFD.profit, 'summaryProfit');
+    setSummaryVal('bestProfitRefundYen', bestFD.profitWithRefund, 'summaryRefund');
+    const rateEl = document.getElementById('bestProfitRate');
+    rateEl.textContent = bestFD.profitRate.toFixed(1) + '%';
+    rateEl.style.color = bestFD.profitRate < 0 ? 'var(--red)' : '';
+  } else {
+    let bestMethod = null;
+    allMethods.forEach(m => { m.isBest = m.profit !== null && m.profit === bestProfit && m.isOk; if (m.isBest && !bestMethod) bestMethod = m; });
+    setSummaryVal('bestProfitYen', bestProfit > -Infinity ? bestProfit : null, 'summaryProfit');
+    setSummaryVal('bestProfitRefundYen', bestRefund > -Infinity ? bestRefund : null, 'summaryRefund');
+    const rateEl = document.getElementById('bestProfitRate');
+    rateEl.textContent = bestMethod ? bestMethod.profitRate.toFixed(1) + '%' : '-';
+    rateEl.style.color = bestMethod && bestMethod.profitRate < 0 ? 'var(--red)' : '';
+  }
+
+  // Sort by profit (descending)
+  groups.forEach(g => {
+    g.methods.sort((a,b) => {
+      const av = a.profit, bv = b.profit;
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return bv - av;
+    });
+  });
+
+  // Render
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = '';
+
+  groups.forEach(g => {
+    const section = document.createElement('div');
+    let sectionCls = 'group-section';
+    if (g.id === 'fedex' || g.id === 'fedex-ip') sectionCls += ' grp-fedex';
+    else if (g.id === 'dhl') sectionCls += ' grp-dhl';
+    else if (g.id === 'speedpak') sectionCls += ' grp-speedpak';
+    if (g.collapsed) sectionCls += ' collapsed';
+    section.className = sectionCls;
+
+    let headerExtra = '';
+    if (g.collapsed) {
+      headerExtra = `<button class="group-toggle" onclick="this.closest('.group-section').classList.toggle('collapsed');this.textContent=this.closest('.group-section').classList.contains('collapsed')?'詳細 ▼':'閉じる ▲'">詳細 ▼</button>`;
+    }
+    const noteHtml = g.note ? `<span class="g-note">— ${g.note}</span>` : '';
+    section.innerHTML = `<div class="group-header ${g.cls}"><span class="g-icon">${g.icon}</span><span class="g-label">${g.label}</span>${noteHtml}<span class="g-tag">${g.tag}</span>${headerExtra}</div>`;
+
+    // 日本郵便の注記
+    if (g.id === 'jppost') {
+      const note = document.createElement('div');
+      note.className = 'unavail-note';
+      note.textContent = '⚠️ 日本郵便はアメリカ宛の発送に対応していません';
+      section.appendChild(note);
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'group-grid';
+
+    g.methods.forEach(m => {
+      const row = document.createElement('div');
+      let cls = 'method-row';
+      if (m.isBest) cls += ' best';
+      else if (!m.canSend || (m.profit !== null && !m.isOk)) cls += ' ng';
+      row.className = cls;
+
+      let badge = '';
+      if (!m.canSend) badge = '<span class="badge badge-na">不可</span>';
+      else if (m.isBest) badge = '<span class="badge badge-best">最高</span>';
+      else if (m.isOk) badge = '<span class="badge badge-ok">OK</span>';
+      else badge = '<span class="badge badge-ng">NG</span>';
+
+      let right;
+      if (m.cost > 0 && m.profit !== null) {
+        const profitCls = m.profit < 0 ? 'val val-neg' : 'val val-profit';
+        const refundCls = m.profitWithRefund < 0 ? 'val val-neg' : 'val val-refund';
+        const profitTxt = m.profit < 0 ? '⚠ ¥' + fmt(m.profit) : '¥' + fmt(m.profit);
+        const refundTxt = m.profitWithRefund < 0 ? '⚠ ¥' + fmt(m.profitWithRefund) : '¥' + fmt(m.profitWithRefund);
+        right = `<div class="mr-right">
+          <span class="lbl">送料</span><span class="val">¥${fmt(m.cost)}</span>
+          <span class="lbl">利益</span><span class="${profitCls}">${profitTxt}</span>
+          <span class="lbl">還付込</span><span class="${refundCls}">${refundTxt}</span>
+        </div>`;
+      } else {
+        right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
+      }
+
+      row.innerHTML = `<div class="mr-left"><div class="mr-name">${m.name}${badge}</div><div class="mr-sub">${m.sub}</div></div>${right}`;
+      grid.appendChild(row);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+// ========== Event Listeners ==========
+document.querySelectorAll('input').forEach(el => {
+  el.addEventListener('input', calculate);
+});
+document.getElementById('categoryNo').addEventListener('input', onCategoryNoInput);
+
+// Initial setup
+onCategoryNoInput();
+updateFeeDescription();
+initFuelSurcharge();
+calculate();
+</script>
+</body>
+</html>
