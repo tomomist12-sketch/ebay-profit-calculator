@@ -130,13 +130,33 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   .main-layout{grid-template-columns:1fr}
   .group-grid{grid-template-columns:1fr}
 }
+@media(max-width:640px){
+  body{padding:8px 10px}
+  h1{font-size:1.1rem}
+  .tool-bar{grid-template-columns:1fr !important}
+  .tool-bar>*{text-align:center}
+  .tool-bar .shop-sites{justify-content:center}
+  .tool-bar div[style*="display:flex"]{justify-content:center}
+  .card{padding:10px 12px}
+  .grid4{grid-template-columns:1fr 1fr;gap:6px}
+  .summary-row{flex-direction:column;gap:6px}
+  .group-header{flex-wrap:wrap;font-size:.82rem;gap:4px 8px;justify-content:center;text-align:center}
+  .group-header .g-label{white-space:normal}
+  .group-header .g-note{width:100%;flex:none;text-align:center}
+  .method-row{grid-template-columns:1fr;gap:6px;text-align:center}
+  .method-row .mr-right{justify-content:center;justify-items:center;text-align:center;font-size:.88rem}
+  .method-row .mr-left{align-items:center}
+  .mode-bar{flex-direction:column;gap:4px}
+  .unavail-note{text-align:center}
+  .group-note{text-align:center}
+}
 </style>
 </head>
 <body>
 
 <h1>eBayリサーチツール</h1>
 
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+<div class="tool-bar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
   <!-- 1. キーワードガチャ -->
   <div style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--primary)">
     <div style="font-size:.72rem;margin-bottom:4px"><span style="font-weight:700;color:var(--primary)">🎲 ランダムキーワード生成</span> <span style="color:var(--text3)">— キーワードを押すとコピーできます</span></div>
