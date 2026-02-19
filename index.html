@@ -196,10 +196,9 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <!-- 商品情報 -->
   <div class="card">
     <h2><span class="icon">📦</span> 商品情報</h2>
-    <div class="field" style="margin-bottom:8px">
-      <label>発送先 <span class="unit">(国)</span></label>
-      <select id="destCountry" class="highlight" style="border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer" onchange="onCountryChange()">
-      </select>
+    <div class="mode-bar">
+      <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')">🇺🇸 アメリカ向け</button>
+      <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')">🌍 アメリカ以外</button>
     </div>
     <div class="grid2" style="margin-bottom:6px">
       <div class="field">
@@ -344,6 +343,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 <div class="right-col">
   <div class="card" style="padding:12px 16px">
     <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
+    <div style="margin-bottom:8px">
+      <select id="destCountry" style="border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600" onchange="onCountryChange()">
+      </select>
+    </div>
     <div id="resultsContainer"></div>
   </div>
   <div class="note" style="text-align:center;margin-top:3px" id="footerNote">
@@ -813,6 +816,7 @@ function fmtD(n) { return n.toFixed(2); }
 
 const currentSort = 'profit';
 let currentCountry = 'us';
+let currentPricingMode = 'us';
 
 function initCountrySelector() {
   const sel = document.getElementById('destCountry');
@@ -827,16 +831,22 @@ function initCountrySelector() {
 
 function onCountryChange() {
   currentCountry = document.getElementById('destCountry').value;
-  const isUs = currentCountry === 'us';
-  document.getElementById('usSection').style.display = isUs ? '' : 'none';
-  document.getElementById('otherSection').style.display = isUs ? 'none' : '';
+  calculate();
+}
+
+function setPricingMode(mode) {
+  currentPricingMode = mode;
+  document.getElementById('modeUs').classList.toggle('active', mode === 'us');
+  document.getElementById('modeOther').classList.toggle('active', mode === 'other');
+  document.getElementById('usSection').style.display = mode === 'us' ? '' : 'none';
+  document.getElementById('otherSection').style.display = mode === 'other' ? '' : 'none';
   updatePricingDisplay();
   calculate();
 }
 
 function getEffectiveSellingPrice() {
   const selling = getVal('sellingPrice');
-  if (currentCountry === 'us') {
+  if (currentPricingMode === 'us') {
     const compShipping = getVal('compShipping');
     const compTotal = selling + compShipping;
     if (compTotal <= 0) return selling;
@@ -851,7 +861,7 @@ function getEffectiveSellingPrice() {
 
 function updatePricingDisplay() {
   const selling = getVal('sellingPrice');
-  if (currentCountry === 'us') {
+  if (currentPricingMode === 'us') {
     const compShipping = getVal('compShipping');
     const compTotal = selling + compShipping;
     let listPrice, listShipping;
