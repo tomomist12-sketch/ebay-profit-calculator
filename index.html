@@ -70,6 +70,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .group-dhl .g-tag{background:#a16207;color:#fff}
 .group-jppost{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
 .group-jppost .g-tag{background:#15803d;color:#fff}
+.group-elogi-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd}
+.group-elogi-blue .g-tag{background:#2563eb;color:#fff}
+.group-ups{background:#fef3c7;color:#7c2d12;border:1px solid #fbbf24}
+.group-ups .g-tag{background:#92400e;color:#fff}
 
 .group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 
@@ -95,6 +99,8 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 
 .group-section.grp-fedex .method-row:not(.ng){border-color:#c4b5fd;background:#f5f0ff}
 .group-section.grp-dhl .method-row:not(.ng){border-color:#fde68a;background:#fefce8}
+.group-section.grp-elogi .method-row:not(.ng){border-color:#93c5fd;background:#eff6ff}
+.group-section.grp-ups .method-row:not(.ng){border-color:#fbbf24;background:#fef3c7}
 .group-section .method-row.best{border-color:var(--green);background:var(--green-bg);box-shadow:var(--shadow2)}
 
 .group-section.collapsed .group-grid{display:none}
@@ -778,22 +784,22 @@ const economyAU = [
 
 // ========== Country Configuration ==========
 const COUNTRIES = [
-  { id:'us', name:'🇺🇸 アメリカ', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:false, economy:true, ecoTable:speedpakEconomyRates, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
+  { id:'us', name:'🇺🇸 アメリカ', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:false, elogiZone:'E', upsZone:5, economy:true, ecoTable:speedpakEconomyRates, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
-  { id:'uk', name:'🇬🇧 イギリス', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, economy:true, ecoTable:economyUK, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
+  { id:'uk', name:'🇬🇧 イギリス', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoTable:economyUK, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=120 && (d[0]+2*(d[1]+d[2]))<=225; },
     ecoSurcharge:()=>0 },
-  { id:'de', name:'🇩🇪 ドイツ', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+  { id:'de', name:'🇩🇪 ドイツ', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
-  { id:'au', name:'🇦🇺 オーストラリア', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
+  { id:'au', name:'🇦🇺 オーストラリア', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'fr', name:'🇫🇷 フランス', fedexZone:'M', dhlZone:2, jpZone:3, jpOk:true, economy:false },
-  { id:'ca', name:'🇨🇦 カナダ', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, economy:false },
-  { id:'it', name:'🇮🇹 イタリア', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, economy:false },
-  { id:'es', name:'🇪🇸 スペイン', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, economy:false },
+  { id:'fr', name:'🇫🇷 フランス', fedexZone:'M', dhlZone:2, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:false },
+  { id:'ca', name:'🇨🇦 カナダ', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
+  { id:'it', name:'🇮🇹 イタリア', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:false },
+  { id:'es', name:'🇪🇸 スペイン', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:false },
 ];
 
 function getFicpTable(zone) { return zone==='M'?ficpZoneM:zone==='U'?ficpZoneU:speedpakFicpRates; }
@@ -844,6 +850,174 @@ const emsZone4 = [
   [24000,60700],[25000,63100],[26000,65500],[27000,67900],[28000,70300],
   [29000,72700],[30000,75100]
 ];
+
+// ========== eLogi Rate Tables (US=Column E, サーチャージ込み) ==========
+
+// --- eLogi FICP US (最大99kg, サーチャージ込み) ---
+const elogiFicpUS = [
+  [500,3000],[1000,3400],[1500,3500],[2000,3900],[2500,4200],
+  [3000,4900],[3500,4900],[4000,5500],[4500,6100],[5000,6700],
+  [5500,8100],[6000,8400],[6500,8600],[7000,8900],[7500,9100],
+  [8000,9400],[8500,9600],[9000,9900],[9500,12100],[10000,12400],
+  [10500,12800],[11000,13100],[11500,13400],[12000,13700],
+  [12500,15700],[13000,16100],[13500,16400],[14000,16800],
+  [14500,17200],[15000,17500],[15500,17900],[16000,20100],
+  [16500,20500],[17000,21000],[17500,21400],[18000,21800],
+  [18500,22200],[19000,22600],[19500,23000],[20000,23400],
+  [20500,23800],[21000,26400],[21500,27100],[22000,27700],
+  [22500,28400],[23000,29100],[23500,29700],[24000,30400],
+  [24500,31100],[25000,31700],[25500,32400],[26000,33100],
+  [26500,33700],[27000,34400],[27500,35100],[28000,35700],
+  [28500,36400],[29000,37100],[29500,37700],[30000,38400],
+  [30500,39100],[31000,39700],[31500,40400],[32000,41100],[32500,41700]
+];
+// Per-kg tiers: 33-44:¥1,303/kg, 45-70:¥1,176/kg, 71-99:¥1,158/kg
+const elogiFicpUSPerKg = [[44,1303],[70,1176],[99,1158]];
+
+// --- eLogi IP Package US (最大99kg, サーチャージ込み) ---
+const elogiIpPackageUS = [
+  [500,3300],[1000,3100],[1500,3500],[2000,3900],[2500,4400],
+  [3000,4500],[3500,5200],[4000,5800],[4500,6500],[5000,7200],
+  [5500,8800],[6000,9000],[6500,9200],[7000,9400],[7500,9600],
+  [8000,9800],[8500,10100],[9000,10300],[9500,10500],[10000,10700],
+  [10500,13700],[11000,13900],[11500,14100],[12000,14400],
+  [12500,14600],[13000,14900],[13500,15100],[14000,15300],
+  [14500,15600],[15000,15800],[15500,16100],[16000,16300],
+  [16500,16600],[17000,16800],[17500,17000],[18000,17300],
+  [18500,17500],[19000,17800],[19500,18000],[20000,18200],
+  [20500,18500]
+];
+// Per-kg tiers: 21-44:¥1,342/kg, 45-70:¥1,271/kg, 71-99:¥1,257/kg
+const elogiIpPackageUSPerKg = [[44,1342],[70,1271],[99,1257]];
+
+// --- eLogi IP Envelope US (最大0.5kg, サーチャージ込み) ---
+const elogiIpEnvelopeUS = 2900;
+
+// --- eLogi IP Pak US (最大2.5kg, サーチャージ込み) ---
+const elogiIpPakUS = [
+  [500,3300],[1000,4000],[1500,4500],[2000,5000],[2500,5600]
+];
+
+// --- eLogi FICP Zone F (CA/北米, サーチャージ込み) ---
+const elogiFicpF = [
+  [500,3100],[1000,3500],[1500,3600],[2000,3900],[2500,4200],[3000,4900],[3500,5000],[4000,5600],[4500,6200],[5000,6800],
+  [5500,8200],[6000,8500],[6500,8800],[7000,9000],[7500,9300],[8000,9500],[8500,9800],[9000,10100],[9500,12300],[10000,12600],
+  [10500,13000],[11000,13300],[11500,13700],[12000,14000],[12500,15800],[13000,16200],[13500,16600],[14000,17000],[14500,17400],[15000,17800],
+  [15500,18200],[16000,20300],[16500,20700],[17000,21100],[17500,21500],[18000,22000],[18500,22400],[19000,22800],[19500,23200],[20000,23700],
+  [20500,24100],[21000,28600],[21500,29300],[22000,30000],[22500,30700],[23000,31400],[23500,32100],[24000,32900],[24500,33600],[25000,34300],
+  [25500,35000],[26000,35700],[26500,36400],[27000,37100],[27500,37900],[28000,38600],[28500,39300],[29000,40000],[29500,40700],[30000,41400],
+  [30500,42100],[31000,42800],[31500,43600],[32000,44300],[32500,45000]
+];
+const elogiFicpFPerKg = [[44,1405],[70,1294],[99,1271]];
+
+// --- eLogi FICP Zone H (ヨーロッパ UK/DE/FR/IT/ES, サーチャージ込み) ---
+const elogiFicpH = [
+  [500,3300],[1000,3700],[1500,4000],[2000,4500],[2500,5000],[3000,5600],[3500,5700],[4000,6200],[4500,6700],[5000,7200],
+  [5500,8700],[6000,9000],[6500,9400],[7000,9700],[7500,10100],[8000,10400],[8500,10800],[9000,11200],[9500,13600],[10000,14000],
+  [10500,14300],[11000,14600],[11500,14800],[12000,15100],[12500,17800],[13000,18100],[13500,18400],[14000,18700],[14500,19100],[15000,19400],
+  [15500,19700],[16000,22800],[16500,23200],[17000,23600],[17500,24000],[18000,24300],[18500,24700],[19000,25100],[19500,25500],[20000,25900],
+  [20500,26200],[21000,29300],[21500,30000],[22000,30800],[22500,31500],[23000,32300],[23500,33000],[24000,33700],[24500,34500],[25000,35200],
+  [25500,36000],[26000,36700],[26500,37500],[27000,38200],[27500,38900],[28000,39700],[28500,40400],[29000,41200],[29500,41900],[30000,42700],
+  [30500,43400],[31000,44100],[31500,44900],[32000,45600],[32500,46400]
+];
+const elogiFicpHPerKg = [[44,1443],[70,1278],[99,1270]];
+
+// --- eLogi FICP Zone U (AU, サーチャージ込み) ---
+const elogiFicpU = [
+  [500,4000],[1000,4400],[1500,4400],[2000,4900],[2500,5400],[3000,5800],[3500,6200],[4000,6600],[4500,7100],[5000,7500],
+  [5500,7800],[6000,8200],[6500,8700],[7000,9100],[7500,9600],[8000,10000],[8500,10400],[9000,10900],[9500,12200],[10000,12700],
+  [10500,13100],[11000,13500],[11500,13800],[12000,14200],[12500,30900],[13000,31700],[13500,32500],[14000,33300],[14500,34100],[15000,34900],
+  [15500,35700],[16000,36500],[16500,37300],[17000,38100],[17500,38900],[18000,39700],[18500,40500],[19000,41300],[19500,42100],[20000,43000],
+  [20500,43800],[21000,41800],[21500,42800],[22000,43900],[22500,45000],[23000,46000],[23500,47100],[24000,48200],[24500,49200],[25000,50300],
+  [25500,51300],[26000,52400],[26500,53500],[27000,54500],[27500,55600],[28000,56700],[28500,57700],[29000,58800],[29500,59900],[30000,60900],
+  [30500,62000],[31000,63100],[31500,64100],[32000,65200],[32500,66300]
+];
+const elogiFicpUPerKg = [[44,1907],[70,1677],[99,1664]];
+
+// --- eLogi IP Package Zone F (CA/北米, サーチャージ込み) ---
+const elogiIpPackageF = [
+  [500,3300],[1000,3100],[1500,3500],[2000,4000],[2500,4400],[3000,4500],[3500,5200],[4000,5900],[4500,6600],[5000,7300],
+  [5500,8900],[6000,9100],[6500,9300],[7000,9600],[7500,9800],[8000,10000],[8500,10200],[9000,10400],[9500,10700],[10000,10900],
+  [10500,13800],[11000,14100],[11500,14300],[12000,14600],[12500,14800],[13000,15100],[13500,15300],[14000,15600],[14500,15800],[15000,16100],
+  [15500,16300],[16000,16600],[16500,16800],[17000,17100],[17500,17300],[18000,17500],[18500,17800],[19000,18000],[19500,18300],[20000,18500],[20500,18800]
+];
+const elogiIpPackageFPerKg = [[44,1454],[70,1400],[99,1382]];
+
+// --- eLogi IP Package Zone H (ヨーロッパ, サーチャージ込み) ---
+const elogiIpPackageH = [
+  [500,3500],[1000,3300],[1500,4000],[2000,4600],[2500,5300],[3000,5400],[3500,5900],[4000,6500],[4500,7100],[5000,7700],
+  [5500,9400],[6000,9700],[6500,10000],[7000,10300],[7500,10700],[8000,11000],[8500,11300],[9000,11600],[9500,11900],[10000,12200],
+  [10500,15200],[11000,15400],[11500,15600],[12000,15800],[12500,16100],[13000,16300],[13500,16500],[14000,16700],[14500,16900],[15000,17100],
+  [15500,17400],[16000,17600],[16500,17800],[17000,18000],[17500,18200],[18000,18400],[18500,18700],[19000,18900],[19500,19100],[20000,19200],[20500,19200]
+];
+const elogiIpPackageHPerKg = [[44,1488],[70,1393],[99,1378]];
+
+// --- eLogi IP Package Zone U (AU, サーチャージ込み) ---
+const elogiIpPackageU = [
+  [500,6200],[1000,7100],[1500,8400],[2000,9600],[2500,10900],[3000,11500],[3500,12700],[4000,13900],[4500,15000],[5000,16200],
+  [5500,18700],[6000,19600],[6500,20400],[7000,21200],[7500,22100],[8000,22900],[8500,23800],[9000,24600],[9500,25500],[10000,26300],
+  [10500,32300],[11000,32900],[11500,33500],[12000,34100],[12500,34800],[13000,35400],[13500,36000],[14000,36600],[14500,37200],[15000,37800],
+  [15500,38500],[16000,39100],[16500,39700],[17000,40300],[17500,40900],[18000,41500],[18500,42200],[19000,42800],[19500,43400],[20000,44000],[20500,44600]
+];
+const elogiIpPackageUPerKg = [[44,2126],[70,1756],[99,1737]];
+
+// --- eLogi IP Envelope per zone (サーチャージ込み) ---
+const elogiIpEnvelopeF = 2900;
+const elogiIpEnvelopeH = 3000;
+const elogiIpEnvelopeU = 4200;
+
+// --- eLogi IP Pak Zone F/H/U (サーチャージ込み) ---
+const elogiIpPakF = [[500,3400],[1000,4000],[1500,4600],[2000,5100],[2500,5700]];
+const elogiIpPakH = [[500,2900],[1000,3600],[1500,4500],[2000,5500],[2500,6400]];
+const elogiIpPakU = [[500,5300],[1000,6400],[1500,7500],[2000,8500],[2500,9700]];
+
+// --- eLogi UPS Express Saver US (Zone 5, サーチャージ込み) ---
+const elogiUpsUS = [
+  [500,3600],[1000,4000],[1500,4100],[2000,4700],[2500,5200],[3000,5800],[3500,6500],[4000,7100],[4500,7600],[5000,8100],
+  [5500,9800],[6000,10100],[6500,10500],[7000,10800],[7500,11200],[8000,11400],[8500,11600],[9000,11900],[9500,12200],[10000,12500],
+  [10500,12700],[11000,13000],[11500,13200],[12000,13400],[12500,13600],[13000,13800],[13500,14100],[14000,14300],[14500,14500],[15000,14900],
+  [15500,15100],[16000,15300],[16500,15600],[17000,15800],[17500,16000],[18000,16300],[18500,16500],[19000,16700],[19500,16900],[20000,17300]
+];
+const elogiUpsUSPerKg = [[54,1267],[70,1258],[99,1188]];
+
+// --- eLogi UPS Express Saver AU (アジア太平洋特別料金, サーチャージ込み) ---
+const elogiUpsAU = [
+  [500,2400],[1000,2500],[1500,2600],[2000,2900],[2500,3600],[3000,4300],[3500,5000],[4000,5700],[4500,6300],[5000,7000],
+  [5500,7700],[6000,8400],[6500,9100],[7000,9800],[7500,10400],[8000,11100],[8500,11800],[9000,12500],[9500,13200],[10000,13900],
+  [10500,14500],[11000,15200],[11500,15900],[12000,16600],[12500,17300],[13000,18000],[13500,18600],[14000,19300],[14500,20000],[15000,20700],
+  [15500,21400],[16000,22100],[16500,22700],[17000,23400],[17500,24100],[18000,24800],[18500,25500],[19000,26200],[19500,26900],[20000,27600]
+];
+const elogiUpsAUPerKg = [[44,1384],[54,1397],[99,1383]];
+
+// --- eLogi UPS Express Saver Zone 6 (UK/DE/FR/IT/ES, サーチャージ込み) ---
+const elogiUpsZone6 = [
+  [500,2700],[1000,3900],[1500,4500],[2000,5300],[2500,6100],[3000,6800],[3500,7700],[4000,8400],[4500,9200],[5000,9900],
+  [5500,13100],[6000,14000],[6500,14600],[7000,15400],[7500,16100],[8000,16400],[8500,16700],[9000,17000],[9500,17400],[10000,17700],
+  [10500,18000],[11000,18400],[11500,18700],[12000,19100],[12500,19500],[13000,19800],[13500,20100],[14000,20500],[14500,20800],[15000,21200],
+  [15500,21400],[16000,21400],[16500,21500],[17000,21500],[17500,21500],[18000,21600],[18500,21600],[19000,21700],[19500,21800],[20000,21800]
+];
+const elogiUpsZone6PerKg = [[54,1391],[70,1364],[99,1253]];
+
+// eLogi zone lookup helpers
+function getElogiFicpData(z) { return z==='E'?[elogiFicpUS,elogiFicpUSPerKg]:z==='F'?[elogiFicpF,elogiFicpFPerKg]:z==='H'?[elogiFicpH,elogiFicpHPerKg]:z==='U'?[elogiFicpU,elogiFicpUPerKg]:null; }
+function getElogiIpPkgData(z) { return z==='E'?[elogiIpPackageUS,elogiIpPackageUSPerKg]:z==='F'?[elogiIpPackageF,elogiIpPackageFPerKg]:z==='H'?[elogiIpPackageH,elogiIpPackageHPerKg]:z==='U'?[elogiIpPackageU,elogiIpPackageUPerKg]:null; }
+function getElogiIpEnvRate(z) { return z==='E'?elogiIpEnvelopeUS:z==='F'?elogiIpEnvelopeF:z==='H'?elogiIpEnvelopeH:z==='U'?elogiIpEnvelopeU:0; }
+function getElogiIpPakTable(z) { return z==='E'?elogiIpPakUS:z==='F'?elogiIpPakF:z==='H'?elogiIpPakH:z==='U'?elogiIpPakU:null; }
+function getElogiUpsData(z) { return z===5?[elogiUpsUS,elogiUpsUSPerKg]:z===6?[elogiUpsZone6,elogiUpsZone6PerKg]:z==='au'?[elogiUpsAU,elogiUpsAUPerKg]:null; }
+
+// eLogi lookup: テーブル→per-kgティアのフォールバック付き
+function elogiLookup(table, perKgTiers, weightG) {
+  // テーブル内にあればそのまま返す
+  const r = lookupRate(table, weightG);
+  if (r > 0) return r;
+  // per-kgティアで計算
+  if (!perKgTiers) return -1;
+  const kg = Math.ceil(weightG / 1000);
+  for (let i = 0; i < perKgTiers.length; i++) {
+    if (kg <= perKgTiers[i][0]) return kg * perKgTiers[i][1];
+  }
+  return -1;
+}
 
 // ========== Utility Functions ==========
 
@@ -1133,6 +1307,11 @@ function calculate() {
     { id: 'fedex-ip', label: 'SpeedPAK FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
     { id: 'dhl',      label: 'SpeedPAK DHL',        icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
     { id: 'speedpak', label: 'SpeedPAK Economy',    icon: '🟠', cls: 'group-speedpak', tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
+    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'SpeedPAKと比較用' },
+    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'SpeedPAKと比較用' },
+    ...(getElogiUpsData(cc.upsZone) ? [
+      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', icon: '🟤', cls: 'group-ups', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
+    ] : []),
     { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'差出不可', primary: false, methods: [], note: cc.jpOk!==false?'SpeedPAK非対応・自分で発送手続きが必要':'この国は日本郵便の差出が制限されています（△）' },
   ];
 
@@ -1242,6 +1421,55 @@ function calculate() {
     }
   }
 
+  // ===== eLogi FedEx (全国, サーチャージ込み) =====
+  {
+    const eZ = cc.elogiZone;
+    if (eZ) {
+      const ficpD = getElogiFicpData(eZ);
+      if (ficpD) {
+        let c = elogiLookup(ficpD[0], ficpD[1], billableStandardG);
+        const cs = c > 0;
+        addMethod('elogi-ficp',{name:'eLogi FICP',sub:'2-5日/DDP/体積÷5,000/サーチャージ込',cost:cs?c:-1,canSend:cs,reason:!cs?'重量超過':''});
+      }
+      {
+        const sorted = [L, W, H].sort((a,b) => b-a);
+        const csW = weightG <= 500;
+        const csS = sorted[0] <= 33.5 && sorted[1] <= 23.5 && sorted[2] <= 3;
+        const cs = csW && csS;
+        const envRate = getElogiIpEnvRate(eZ);
+        const c = cs && envRate > 0 ? envRate : -1;
+        const r2 = [];
+        if (!csW) r2.push('500g超過');
+        if (!csS) r2.push('サイズ超過');
+        addMethod('elogi-ip',{name:'eLogi IP Envelope',sub:'1-3日/DDP/最大500g/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+      }
+      {
+        const pakTable = getElogiIpPakTable(eZ);
+        const cs = weightG <= 2500 && pakTable;
+        let c = cs ? lookupRate(pakTable, weightG) : -1;
+        addMethod('elogi-ip',{name:'eLogi IP Pak',sub:'1-3日/DDP/最大2.5kg/実重量/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'2.5kg超過':''});
+      }
+      {
+        const pkgD = getElogiIpPkgData(eZ);
+        if (pkgD) {
+          let c = elogiLookup(pkgD[0], pkgD[1], billableStandardG);
+          const cs = c > 0;
+          addMethod('elogi-ip',{name:'eLogi IP Package',sub:'1-3日/DDP/体積÷5,000/サーチャージ込',cost:cs?c:-1,canSend:cs,reason:!cs?'重量超過':''});
+        }
+      }
+    }
+  }
+
+  // ===== eLogi UPS Express Saver (US/AU, サーチャージ込み) =====
+  {
+    const upsD = getElogiUpsData(cc.upsZone);
+    if (upsD) {
+      let c = elogiLookup(upsD[0], upsD[1], billableStandardG);
+      const cs = c > 0;
+      addMethod('elogi-ups',{name:'UPS Express Saver',sub:'2-5日/DDP/体積÷5,000/サーチャージ込',cost:cs?c:-1,canSend:cs,reason:!cs?'重量超過':''});
+    }
+  }
+
   // Profit calculation
   let allMethods = [];
   groups.forEach(g => {
@@ -1260,7 +1488,7 @@ function calculate() {
 
   // Best判定: FedEx/DHLを優先。Economyはおまけ。
   // FedEx/DHL内で利益OKの最高利益メソッドをbest。なければ全体で最高利益をbest。
-  const fedexDhlMethods = allMethods.filter(m => m._groupId === 'fedex' || m._groupId === 'fedex-ip' || m._groupId === 'dhl');
+  const fedexDhlMethods = allMethods.filter(m => m._groupId === 'fedex' || m._groupId === 'fedex-ip' || m._groupId === 'dhl' || m._groupId === 'elogi-ficp' || m._groupId === 'elogi-ip' || m._groupId === 'elogi-ups');
   let bestFD = null, bestFDProfit = -Infinity;
   fedexDhlMethods.forEach(m => {
     if (m.isOk && m.profit !== null && m.profit > bestFDProfit) { bestFDProfit = m.profit; bestFD = m; }
@@ -1329,6 +1557,8 @@ function calculate() {
     let sectionCls = 'group-section';
     if (g.id === 'fedex' || g.id === 'fedex-ip') sectionCls += ' grp-fedex';
     else if (g.id === 'dhl') sectionCls += ' grp-dhl';
+    else if (g.id === 'elogi-ficp' || g.id === 'elogi-ip') sectionCls += ' grp-elogi';
+    else if (g.id === 'elogi-ups') sectionCls += ' grp-ups';
     else if (g.id === 'speedpak') { sectionCls += ' grp-speedpak'; if (!cc.economy) sectionCls += ' collapsed'; }
     else if (g.id === 'jppost') sectionCls += ' grp-jppost';
     if (g.collapsed) sectionCls += ' collapsed';
