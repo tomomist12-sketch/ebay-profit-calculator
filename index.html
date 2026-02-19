@@ -774,10 +774,10 @@ const COUNTRIES = [
   { id:'au', name:'🇦🇺 オーストラリア', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'fr', name:'🇫🇷 フランス', fedexZone:'M', dhlZone:2, jpZone:3, jpOk:true, economy:false },
+  { id:'fr', name:'🇫🇷 フランス', fedexZone:'F', dhlZone:2, jpZone:3, jpOk:true, economy:false },
   { id:'ca', name:'🇨🇦 カナダ', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, economy:false },
   { id:'it', name:'🇮🇹 イタリア', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, economy:false },
-  { id:'es', name:'🇪🇸 スペイン', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, economy:false },
+  { id:'es', name:'🇪🇸 スペイン', fedexZone:'F', dhlZone:4, jpZone:3, jpOk:true, economy:false },
 ];
 
 function getFicpTable(zone) { return zone==='M'?ficpZoneM:zone==='U'?ficpZoneU:speedpakFicpRates; }
