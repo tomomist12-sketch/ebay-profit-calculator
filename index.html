@@ -104,6 +104,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .group-unavail .g-tag{background:var(--red);color:#fff}
 .unavail-note{font-size:.78rem;color:var(--red);padding:4px 12px;margin-bottom:6px}
 .group-section.grp-speedpak .method-row:not(.ng){border-color:var(--sp-border);background:var(--sp-bg)}
+.group-section.grp-jppost .method-row:not(.ng){border-color:#bbf7d0;background:#f0fdf4}
 
 .mode-bar{display:flex;gap:6px;margin-bottom:10px}
 .mode-btn{flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text3);text-align:center;transition:all .15s}
@@ -1116,7 +1117,7 @@ function calculate() {
     { id: 'fedex-ip', label: 'SpeedPAK FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
     { id: 'dhl',      label: 'SpeedPAK DHL',        icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
     { id: 'speedpak', label: 'SpeedPAK Economy',    icon: '🟠', cls: 'group-speedpak', tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
-    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: 'group-unavail',  tag: '参考',  primary: false, methods: [] },
+    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: 'group-jppost',   tag: '補助',  primary: false, methods: [], note: 'SpeedPAK非対応・自分で発送手続きが必要' },
   ];
 
   function addMethod(groupId, m) {
@@ -1198,7 +1199,7 @@ function calculate() {
     addMethod('dhl',{name:'DHL Express',sub:'2-4日/DDP/最大'+(maxW/1000)+'kg/体積÷5,000/燃油込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?(maxW/1000)+'kg超過':''});
   }
 
-  // ===== 日本郵便（参考表示・国別料金） =====
+  // ===== 日本郵便（国別料金） =====
   {
     const jpZone = cc.jpZone || 4;
     const zoneName = jpZone === 3 ? '第3地帯' : '第4地帯';
@@ -1207,12 +1208,12 @@ function calculate() {
     {
       const cs = weightG <= 2000;
       const c = cs ? lookupRate(eplTable, weightG) : -1;
-      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量',cost:cs&&c>0?c:-1,canSend:false,reason:'SpeedPAK推奨'});
+      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'2kg超過':''});
     }
     {
       const cs = weightG <= 30000;
       const c = cs ? lookupRate(emsTable, weightG) : -1;
-      addMethod('jppost',{name:'EMS',sub:zoneName+'/最速/最大30kg/実重量',cost:cs&&c>0?c:-1,canSend:false,reason:'SpeedPAK推奨'});
+      addMethod('jppost',{name:'EMS',sub:zoneName+'/最速/最大30kg/実重量',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'30kg超過':''});
     }
   }
 
@@ -1304,6 +1305,7 @@ function calculate() {
     if (g.id === 'fedex' || g.id === 'fedex-ip') sectionCls += ' grp-fedex';
     else if (g.id === 'dhl') sectionCls += ' grp-dhl';
     else if (g.id === 'speedpak') { sectionCls += ' grp-speedpak'; if (!cc.economy) sectionCls += ' collapsed'; }
+    else if (g.id === 'jppost') sectionCls += ' grp-jppost';
     if (g.collapsed) sectionCls += ' collapsed';
     section.className = sectionCls;
 
@@ -1319,8 +1321,9 @@ function calculate() {
     if (g.id === 'jppost') {
       const jpZone = cc.jpZone || 4;
       const note = document.createElement('div');
-      note.className = 'unavail-note';
-      note.textContent = '⚠️ SpeedPAK非対応・参考料金（' + (jpZone===3?'第3地帯':'第4地帯') + ': ' + cc.name + '）';
+      note.className = 'group-note';
+      note.style.cssText = 'font-size:.78rem;color:var(--text2);padding:4px 12px;margin-bottom:6px';
+      note.textContent = '📮 ' + (jpZone===3?'第3地帯':'第4地帯') + '（' + cc.name + '）— 自分で郵便局から発送';
       section.appendChild(note);
     }
 
