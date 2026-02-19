@@ -762,22 +762,22 @@ const economyAU = [
 
 // ========== Country Configuration ==========
 const COUNTRIES = [
-  { id:'us', name:'🇺🇸 アメリカ', fedexZone:'F', dhlZone:10, jpZone:4, economy:true, ecoTable:speedpakEconomyRates, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
+  { id:'us', name:'🇺🇸 アメリカ', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:false, economy:true, ecoTable:speedpakEconomyRates, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
-  { id:'uk', name:'🇬🇧 イギリス', fedexZone:'M', dhlZone:4, jpZone:3, economy:true, ecoTable:economyUK, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
+  { id:'uk', name:'🇬🇧 イギリス', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, economy:true, ecoTable:economyUK, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=120 && (d[0]+2*(d[1]+d[2]))<=225; },
     ecoSurcharge:()=>0 },
-  { id:'de', name:'🇩🇪 ドイツ', fedexZone:'M', dhlZone:3, jpZone:3, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+  { id:'de', name:'🇩🇪 ドイツ', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
-  { id:'au', name:'🇦🇺 オーストラリア', fedexZone:'U', dhlZone:11, jpZone:3, economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
+  { id:'au', name:'🇦🇺 オーストラリア', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'fr', name:'🇫🇷 フランス', fedexZone:'M', dhlZone:2, jpZone:3, economy:false },
-  { id:'ca', name:'🇨🇦 カナダ', fedexZone:'F', dhlZone:5, jpZone:3, economy:false },
-  { id:'it', name:'🇮🇹 イタリア', fedexZone:'M', dhlZone:3, jpZone:3, economy:false },
-  { id:'es', name:'🇪🇸 スペイン', fedexZone:'M', dhlZone:4, jpZone:3, economy:false },
+  { id:'fr', name:'🇫🇷 フランス', fedexZone:'M', dhlZone:2, jpZone:3, jpOk:true, economy:false },
+  { id:'ca', name:'🇨🇦 カナダ', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, economy:false },
+  { id:'it', name:'🇮🇹 イタリア', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, economy:false },
+  { id:'es', name:'🇪🇸 スペイン', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, economy:false },
 ];
 
 function getFicpTable(zone) { return zone==='M'?ficpZoneM:zone==='U'?ficpZoneU:speedpakFicpRates; }
@@ -1117,7 +1117,7 @@ function calculate() {
     { id: 'fedex-ip', label: 'SpeedPAK FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
     { id: 'dhl',      label: 'SpeedPAK DHL',        icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
     { id: 'speedpak', label: 'SpeedPAK Economy',    icon: '🟠', cls: 'group-speedpak', tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
-    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: 'group-jppost',   tag: '補助',  primary: false, methods: [], note: 'SpeedPAK非対応・自分で発送手続きが必要' },
+    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'差出不可', primary: false, methods: [], note: cc.jpOk!==false?'SpeedPAK非対応・自分で発送手続きが必要':'この国は日本郵便の差出が制限されています（△）' },
   ];
 
   function addMethod(groupId, m) {
@@ -1202,18 +1202,21 @@ function calculate() {
   // ===== 日本郵便（国別料金） =====
   {
     const jpZone = cc.jpZone || 4;
+    const jpOk = cc.jpOk !== false;
     const zoneName = jpZone === 3 ? '第3地帯' : '第4地帯';
     const eplTable = getEpacketLightTable(jpZone);
     const emsTable = getEmsTable(jpZone);
     {
-      const cs = weightG <= 2000;
-      const c = cs ? lookupRate(eplTable, weightG) : -1;
-      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'2kg超過':''});
+      const cs = jpOk && weightG <= 2000;
+      const c = cs ? lookupRate(eplTable, weightG) : (jpOk ? -1 : lookupRate(eplTable, Math.min(weightG,2000)));
+      const reason = !jpOk ? '差出不可（△）' : !cs ? '2kg超過' : '';
+      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:c>0?c:-1,canSend:cs&&c>0,reason:reason});
     }
     {
-      const cs = weightG <= 30000;
-      const c = cs ? lookupRate(emsTable, weightG) : -1;
-      addMethod('jppost',{name:'EMS',sub:zoneName+'/最速/最大30kg/実重量',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'30kg超過':''});
+      const cs = jpOk && weightG <= 30000;
+      const c = cs ? lookupRate(emsTable, weightG) : (jpOk ? -1 : lookupRate(emsTable, Math.min(weightG,30000)));
+      const reason = !jpOk ? '差出不可（△）' : !cs ? '30kg超過' : '';
+      addMethod('jppost',{name:'EMS',sub:zoneName+'/最速/最大30kg/実重量',cost:c>0?c:-1,canSend:cs&&c>0,reason:reason});
     }
   }
 
