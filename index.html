@@ -210,18 +210,18 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div class="grid2" style="margin-bottom:6px">
       <div class="field">
         <label>仕入額 <span class="unit">(¥・税込)</span></label>
-        <input type="number" id="purchasePrice" value="0" class="highlight" min="0" step="100">
+        <input type="text" inputmode="decimal" id="purchasePrice" value="0" class="highlight">
       </div>
       <div class="field">
         <label>売値 <span class="unit">($)※競合最安値</span></label>
-        <input type="number" id="sellingPrice" value="0" class="highlight" min="0" step="0.01">
+        <input type="text" inputmode="decimal" id="sellingPrice" value="0" class="highlight">
       </div>
     </div>
     <!-- 🇺🇸 アメリカ向け: 競合送料 -->
     <div id="usSection" style="margin-bottom:6px">
       <div class="field" style="width:130px;margin-bottom:6px">
         <label>送料 <span class="unit">($)※競合送料</span></label>
-        <input type="number" id="compShipping" value="0" class="highlight" min="0" step="0.01">
+        <input type="text" inputmode="decimal" id="compShipping" value="0" class="highlight">
       </div>
       <div id="usPricingInfo" style="display:flex;gap:6px">
         <div style="flex:1;padding:8px 10px;border-radius:6px;background:var(--primary-light);border:1.5px solid var(--primary);text-align:center">
@@ -239,7 +239,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <div style="display:flex;gap:8px;align-items:flex-end">
         <div class="field" style="width:160px">
           <label>米国向け関税率 <span class="unit">(%)</span></label>
-          <input type="number" id="usTariffRate" value="20" class="highlight" min="0" step="1">
+          <input type="text" inputmode="decimal" id="usTariffRate" value="20" class="highlight">
         </div>
         <div class="pricing-info" id="otherPricingInfo" style="flex:1">🇺🇸米国向け送料: <strong>-</strong></div>
       </div>
@@ -247,19 +247,19 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div class="grid4">
       <div class="field">
         <label>実重量 <span class="unit">(kg)</span></label>
-        <input type="number" id="weight" value="0.5" class="highlight" min="0" step="0.01">
+        <input type="text" inputmode="decimal" id="weight" value="0.5" class="highlight">
       </div>
       <div class="field">
         <label>縦 <span class="unit">(cm)</span></label>
-        <input type="number" id="length" value="10" class="highlight" min="0" step="0.1">
+        <input type="text" inputmode="decimal" id="length" value="10" class="highlight">
       </div>
       <div class="field">
         <label>横 <span class="unit">(cm)</span></label>
-        <input type="number" id="width" value="10" class="highlight" min="0" step="0.1">
+        <input type="text" inputmode="decimal" id="width" value="10" class="highlight">
       </div>
       <div class="field">
         <label>高さ <span class="unit">(cm)</span></label>
-        <input type="number" id="height" value="5" class="highlight" min="0" step="0.1">
+        <input type="text" inputmode="decimal" id="height" value="5" class="highlight">
       </div>
     </div>
     <div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--text3)">
@@ -271,7 +271,14 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <!-- 手数料設定 -->
   <div class="card">
     <h2><span class="icon">⚙️</span> 手数料・レート</h2>
-    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:5px">
+    <!-- ストアプラン切替 -->
+    <div class="mode-bar" style="margin-bottom:2px">
+      <button class="mode-btn" id="planNoStore" onclick="setStorePlan('noStore')">ストアなし / Starter</button>
+      <button class="mode-btn active" id="planStore" onclick="setStorePlan('store')">Basic以上</button>
+    </div>
+    <div style="font-size:.65rem;color:var(--text3);text-align:center;margin-bottom:6px">eBayストア契約の有無で手数料率が異なります</div>
+    <!-- カテゴリNo + 名前 -->
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:4px">
       <div class="field" style="width:110px">
         <label>カテゴリNo.</label>
         <input type="number" id="categoryNo" value="20561" placeholder="例: 20561" class="highlight">
@@ -285,29 +292,28 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:5px">
       <div class="field" style="width:140px">
         <label>為替レート <span class="unit">(¥/$)</span></label>
-        <input type="number" id="exchangeRate" value="153.5115" class="highlight" step="0.0001">
+        <input type="text" inputmode="decimal" id="exchangeRate" value="153.5115" class="highlight">
       </div>
-      <button onclick="fetchRate()" style="font-size:.72rem;padding:5px 10px;border:1px solid var(--border);border-radius:5px;background:#fafafa;cursor:pointer;color:var(--text3);white-space:nowrap;margin-bottom:0">自動取得</button>
+      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3"><span id="rateStatus">自動取得中...</span></div>
     </div>
     <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:5px">
       <div class="field" style="width:140px">
         <label>燃油サーチャージ <span class="unit">(%)</span></label>
-        <input type="number" id="fuelSurcharge" value="28.75" class="highlight" step="0.25">
+        <input type="text" inputmode="decimal" id="fuelSurcharge" value="28.75" class="highlight">
       </div>
-      <button onclick="fetchFuelSurcharge(false)" style="font-size:.72rem;padding:5px 10px;border:1px solid var(--border);border-radius:5px;background:#fafafa;cursor:pointer;color:var(--text3);white-space:nowrap;margin-bottom:0">FedEx取得</button>
-      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">FedEx/DHL共通・基本送料に加算<br><span id="fuelStatus" style="color:var(--text3)">-</span></div>
+      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">FedEx/DHL共通<br><span id="fuelStatus" style="color:var(--text3)">自動取得中...</span></div>
     </div>
     <button class="toggle-btn" id="settingsToggle" onclick="toggleSettings()">詳細設定 ▼</button>
     <div class="settings-content" id="settingsContent">
       <div class="grid2" style="gap:6px;margin-top:6px">
-        <div class="field"><label>eBay手数料 (%)</label><input type="number" id="ebayFeeRate" value="12.7" step="0.01"></div>
-        <div class="field"><label>閾値 ($)</label><input type="number" id="feeThreshold" value="2500" step="100"></div>
-        <div class="field"><label>eBay手数料2 (%)</label><input type="number" id="ebayFeeRate2" value="2.35" step="0.01"></div>
-        <div class="field"><label>1注文あたり ($)</label><input type="number" id="perOrderFee" value="0.40" step="0.01"></div>
-        <div class="field"><label>Promoted (%)</label><input type="number" id="promotedRate" value="2" step="0.1" class="highlight"></div>
-        <div class="field"><label>海外手数料 (%)</label><input type="number" id="intlFeeRate" value="0.95" step="0.01" class="highlight"></div>
-        <div class="field"><label>Payoneer (%)</label><input type="number" id="payoneerRate" value="2" step="0.1" class="highlight"></div>
-        <div class="field"><label>消費税率 (%)</label><input type="number" id="taxRate" value="10" step="1"></div>
+        <div class="field"><label>eBay手数料 (%)</label><input type="text" inputmode="decimal" id="ebayFeeRate" value="12.7"></div>
+        <div class="field"><label>閾値 ($)</label><input type="text" inputmode="decimal" id="feeThreshold" value="2500"></div>
+        <div class="field"><label>eBay手数料2 (%)</label><input type="text" inputmode="decimal" id="ebayFeeRate2" value="2.35"></div>
+        <div class="field"><label>1注文あたり ($)</label><input type="text" inputmode="decimal" id="perOrderFee" value="0.40"></div>
+        <div class="field"><label>Promoted (%)</label><input type="text" inputmode="decimal" id="promotedRate" value="2" class="highlight"></div>
+        <div class="field"><label>海外手数料 (%)</label><input type="text" inputmode="decimal" id="intlFeeRate" value="0.95" class="highlight"></div>
+        <div class="field"><label>Payoneer (%)</label><input type="text" inputmode="decimal" id="payoneerRate" value="2" class="highlight"></div>
+        <div class="field"><label>消費税率 (%)</label><input type="text" inputmode="decimal" id="taxRate" value="10"></div>
       </div>
     </div>
   </div>
@@ -357,13 +363,15 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div id="resultsContainer"></div>
   </div>
   <div class="note" style="text-align:center;margin-top:3px" id="footerNote">
-    ※送料はSpeedPAK公式PDF準拠。FedEx/DHLは燃油サーチャージ加算済。利益OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
+    ※送料はCPaSS(SpeedPAK)公式PDF準拠。FedEx/DHLは燃油サーチャージ加算済。利益OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
   </div>
 </div><!-- /right-col -->
 
 </div><!-- /main-layout -->
 
-<script src="ebay_categories.js"></script>
+<script src="ebay_category_tree.js"></script>
+<!-- フォールバック: 新ファイルがない場合は旧ファイルを使用 -->
+<script>if(typeof EBAY_CATEGORIES==='undefined')document.write('<scr'+'ipt src="ebay_categories.js"><\/scr'+'ipt>')</script>
 <script>
 // ========== Shopping Site Bulk Search ==========
 const SHOP_SITES = [
@@ -487,33 +495,192 @@ function copyOneKw(span) {
 
 rollKw(); // 初期表示
 
-// ========== Category Lookup ==========
+// ========== Fee Group System ==========
 
-function onCategoryNoInput() {
-  const no = parseInt(document.getElementById('categoryNo').value);
-  const nameEl = document.getElementById('categoryName');
-  if (typeof ebayCategoryMap !== 'undefined' && ebayCategoryMap[no]) {
-    const cat = ebayCategoryMap[no]; // [name, rate1%, threshold, rate2%]
-    nameEl.textContent = cat[0] || '(名称なし)';
-    // Auto-set fee rates from category data
-    document.getElementById('ebayFeeRate').value = cat[1];
-    document.getElementById('feeThreshold').value = cat[2];
-    document.getElementById('ebayFeeRate2').value = cat[3];
+let currentStorePlan = 'store'; // 'noStore' or 'store'
+let currentFeeGroup = 'default';
+
+const FEE_RATES = {
+  noStore: {
+    default:       { label:'大半のカテゴリ (13.6%)',         rate1:13.6,  th:7500,  rate2:2.35 },
+    books:         { label:'Books, Movies & TV, Music (15.3%)', rate1:15.3,  th:7500,  rate2:2.35 },
+    coins:         { label:'Coins & Paper Money (13.25%)',  rate1:13.25, th:7500,  rate2:2.35 },
+    bullion:       { label:'Bullion (13.6%/7%)',            rate1:13.6,  th:7500,  rate2:7 },
+    jewelry:       { label:'Jewelry & Watches (15%/9%)',    rate1:15,    th:5000,  rate2:9 },
+    watches:       { label:'Watches, Parts & Acc. (15%/6.5%/3%)', tiers:[[15,1000],[6.5,7500],[3,Infinity]] },
+    bags:          { label:"Women's Bags & Handbags (15%/9%)", rate1:15, th:2000,  rate2:9 },
+    guitars:       { label:'Guitars & Basses (6.7%)',       rate1:6.7,   th:7500,  rate2:2.35 },
+    trading_cards: { label:'Trading Cards (13.25%)',        rate1:13.25, th:7500,  rate2:2.35 },
+    nft:           { label:'NFT (5%)',                      rate1:5,     th:0,     rate2:0 },
+    heavy_equip:   { label:'Heavy Equipment (3%/0.5%)',     rate1:3,     th:15000, rate2:0.5 },
+    sports_shoes:  { label:'Athletic Shoes (8%/13.6%)',     special:'shoes', rate_high:8, rate_low:13.6, threshold:150 },
+  },
+  store: {
+    default:       { label:'大半のカテゴリ (12.7%)',         rate1:12.7,  th:2500,  rate2:2.35 },
+    books:         { label:'Books, Movies & TV, Music (15.3%)', rate1:15.3,  th:2500,  rate2:2.35 },
+    coins:         { label:'Coins & Paper Money (9%)',      rate1:9,     th:4000,  rate2:2.35 },
+    bullion:       { label:'Bullion (7.5%/5%/4.5%)',        tiers:[[7.5,1500],[5,10000],[4.5,Infinity]] },
+    jewelry:       { label:'Jewelry & Watches (13%/7%)',    rate1:13,    th:5000,  rate2:7 },
+    watches:       { label:'Watches, Parts & Acc. (12.5%/4%/3%)', tiers:[[12.5,1000],[4,5000],[3,Infinity]] },
+    bags:          { label:"Women's Bags & Handbags (13%/7%)", rate1:13, th:2000,  rate2:7 },
+    guitars:       { label:'Guitars & Basses (6.7%)',       rate1:6.7,   th:2500,  rate2:2.35 },
+    trading_cards: { label:'Trading Cards (12.35%)',        rate1:12.35, th:2500,  rate2:2.35 },
+    nft:           { label:'NFT (5%)',                      rate1:5,     th:0,     rate2:0 },
+    heavy_equip:   { label:'Heavy Equipment (2.5%/0.5%)',   rate1:2.5,   th:15000, rate2:0.5 },
+    sports_shoes:  { label:'Athletic Shoes (7%/12.7%)',     special:'shoes', rate_high:7, rate_low:12.7, threshold:150 },
+    camera:        { label:'Camera & Photography (9.35%)',  rate1:9.35,  th:2500,  rate2:2.35 },
+    electronics:   { label:'Electronics (9.35%)',           rate1:9.35,  th:2500,  rate2:2.35 },
+    instruments:   { label:'Musical Instruments (10.35%)',  rate1:10.35, th:2500,  rate2:2.35 },
+    stamps:        { label:'Stamps (9.7%)',                 rate1:9.7,   th:2500,  rate2:2.35 },
+    motors:        { label:'eBay Motors Parts (11.5%)',     rate1:11.5,  th:1000,  rate2:2.35 },
+    vinyl:         { label:'Vinyl Records (12.7%)',         rate1:12.7,  th:2500,  rate2:2.35 },
+  },
+};
+
+// Category ID → Fee Group mapping (auto-detected from old rates in ebay_categories.js)
+const CATEGORY_GROUP_MAP = {};
+(function buildCategoryGroupMap() {
+  // books
+  [280,29223,29792,45113,45114,48831,120869,162028,118254,1105,11442,69496,171223,171273,261186,309,381,617,41676,52554,63821,132975,618,52473,176983,176984].forEach(id => CATEGORY_GROUP_MAP[id] = 'books');
+  // guitars
+  [621,4713,22966,33021,33034,38072,47067,119544,159948,7266,22671,22672,33050,41408,41431,46677,46680,46682,47075,85857,148640,22669,41411,41412,41413,41414,41415,41416,41417,41418,41419,41420,41421,41422,101973,101974,101975,159952,22670,41406,41407,41423,41424,41434,46678,47076,85856,101976,101977,148648,170605,183389,181219,181220,181221].forEach(id => CATEGORY_GROUP_MAP[id] = 'guitars');
+  // heavy_equip
+  [183952,184249,258645,26249,46697,73155,25253,41492,58161,58178,61568,63924,73094,73120,73121,91953,92152,95493,95494,95495,97121,97122,97123,97125,97185,177642,177643,259041,259042].forEach(id => CATEGORY_GROUP_MAP[id] = 'heavy_equip');
+  // nft
+  [262052,262056,262051,262053,262054,262055].forEach(id => CATEGORY_GROUP_MAP[id] = 'nft');
+  // sports_shoes
+  [95672,15709].forEach(id => CATEGORY_GROUP_MAP[id] = 'sports_shoes');
+  // bags
+  [169291].forEach(id => CATEGORY_GROUP_MAP[id] = 'bags');
+  // watches
+  [51020,93720,98625,117039,165144,10324,57714,57715,57720,57721,57723,3937,31387,260326,98624,260329,260330,260331,260332].forEach(id => CATEGORY_GROUP_MAP[id] = 'watches');
+  // coins
+  [524,525,526,528,786,3358,11942,31373,39455,41084,171524,171525,176958,11946,11947,11948,11949,11950,176959,11952,11953,41087,139806,176960,11957,11958,11959,39458,41090,173586,176961,11963,11964,11965,11966,39461,41093,166676,171526,173587,176962,11969,11970,11971,11973,41099,41102,176963,11976,11977,11978,11980,11981,11982,11983,39464,159713,176964,176965,529,179531,179532,179533,179534,527,39468,39469,39470,39471,39472,39473,149937,41109,139962,149924,3356,149926,149927,149929,149930,149931,173588,173589,149932,173591,173592,173593,173594,173683,257,543,544,545,546,547,45142,534,3391,173597,173598,173687,118376,118377,118378,118379,156977,170040,173599,173600,173601,173688,40715,40717,45137,68590,162150,162152,162153,162155,173603,173605,173689,173607,173608,173609,173690,537,173629,173630,173631,173643,173644,173645,173646,173692,45147,149950,162168,162169,162170,162171,162172,162173,162174,162175,173625,173626,173627,173628,177492,539,3390,538,3396,3397,3398,3399,3401,3402,3404,3405,3406,3408,4398,58529,93508,98765,122480,141146,141151,4186,4941,32477,32478,173693,175663,28680,31137,122492,173612,173686,39479,39481,45149,45150,45151,45152,45153,45154,45155,45156,45157,45158,45159,68588,69510,77528,90641,90643,90644,96810,108914,122491,162180,7955,7968,18473,173620,173647,173648,173694,542,45161,45162,45163,45164,149951,149952,162176,162177,162178,162179,3392,535,3369,3372,3374,3375,3376,170827,45143,48026,4184,162157,162158,162159,162160,162161,162162,162163,162164,162165,162166,173613,173614,173615,173616,533,48024,127145,139029,162142,162143,162145,162146,162147,162148,162149,167155,167156,167157,167158,167160,167161,167162,167164,167958,167960,536,3378,3379,3380,3382,3383,3384,3385,3386,3387,3388,3389,149938,149939,149940,173610,173611,385,3098,3440,3432,3437,4369,48027,48028,48029,162187,162188,162189,162190,162191,162192,162193,166680,166681,166682,166683,166684,3422,162218,162219,162220,162221,162222,162223,162224,162225,162226,162227,162228,167964,167965,167966,167967,167968,167969,167970,167972,167973,3424,3441,45345,162195,3425,3429,3430,27442,3431,3438,162196,162197,162198,162199,162201,162202,162203,3173,3433,3434,3435,3439,3442,47398,58508,58509,58510,58511,58512,58513,58514,58515,67208,67209,67210,67211,69508,69509,90637,90638,90639,90640,96807,96808,108913,122473,141087,162204,162205,162232,3436,162206,162207,162208,162209,162210,162211,162212,162213,162214,162215,162216,162194,376,3044,3413,3414,3415,3416,3418,3419,3420,3421,40029,40030,40031,40032,40033,40034,3417,149943,149944,149945,149946,173623,162139,162140,162141,255,3446,3447,3448,3449,3450,21094,162230,162231,168683,168684,168685,3445,3451,162229,168687,168688,258,59057,59067,59097,72382,259,3182,3453,3454,3455,3456,3457,3458,4370,7109,27444,139967,142503,162135,162137,162138,167951,167952,173621,175662,178967,532,3364,3365,4734,4735,4738,4737,4739,4740,4741,18470,173685,531,39475,39476,39477,39478,530,548,162234,162235,162236,169305,179170,179171,179172].forEach(id => CATEGORY_GROUP_MAP[id] = 'coins');
+  // trading_cards
+  [219,171198,183050,183051,183052,183053,183054,183059,259148,259149,259150,261037,261038,261950,183490,261035,261036,261336,261947,2535,183454,183455,183456,183457,183458,183459,183461,183462,183463,183464,183465,261039,261040,261042,261043,261951,261041,261044,261045,261337,261948,170135,183437,183438,183439,183440,183441,183442,261949,261328,261329,261330,261331,261332,261333,261334,261335,261893].forEach(id => CATEGORY_GROUP_MAP[id] = 'trading_cards');
+  // bullion
+  [34943,3361,39489,177653,3360,139965,162133,162134,177652,178906,166679,34942,177656,177657,180910].forEach(id => CATEGORY_GROUP_MAP[id] = 'bullion');
+  // instruments (store only - noStore uses default)
+  [308,624,10183,16227,16229,16230,16231,47096,112678,16226,47078,90849,91502,178976,180017,181271,181272,181273,181275,181276,181277,181278,181279,261877,182154,182155,182159,182160,182161,261878,261879,182156,182157,182158,261881,261882,261883,261884,12921,12930,29945,30889,69960,81967,81970,132998,170088,170089,177022,177023,177024,177025,182103,182104,620,16214,16215,16216,41396,64374,75557,101554,159943,159944,159945,179014,179015,182139,182140,182142,182143,182144,182145,182146,182141,261874,261875,261876,52555,50590,64602,64604,64605,64606,163828,1288,39179,41404,64388,101555,106454,1289,16219,38088,21766,47042,117049,148725,148727,148728,182147,182148,261866,261867,261868,261869,16220,43376,43377,85860,181269,181270,181274,181490,182149,622,41441,10175,38069,38093,38095,38096,38097,93771,181229,181230,181231,181232,181233,181234,181235,181236,181239,181241,181243,181245,261863,39178,41457,47090,148620,148621,181248,41440,41458,181250,181251,181253,41450,41451,41452,41456,47089,261864,10173,41449,41453,47084,47579,182151,182152,623,10178,16222,16225,38107,10177,10179,16221,16223,16224,101567,112677,181283,181284,181285,181286,181287,181288,181289,181290,181291,261870,261871,182163,182166,182167,182169,182170,182171,182173,182164,182165,182168,182172,118975,118976,118977,159946,181156,181157,181158,181159,181160,181161,119027,119026,181256,181257,181258,119024,119025,181261,181262,181263,181264,181265,182217,118979,118983,118984,118985,118994,181164,181165,181166,181167,181168,181169,181171,181173,181174,181175,181176,181177,181179,181181,181182,181183,181184,181185,181188,181189,181190,181192,182214,181194,181195,159954,178895,181197,181198,181199,181201,181211,181213,182215,119029,119030,181204,181205,181206,181207,181208,119095,181212,181214,181215,181216,181218,182216,182150].forEach(id => CATEGORY_GROUP_MAP[id] = 'instruments');
+  // electronics (store only)
+  [14961,296,4669,4673,4675,40065,96966,163853,15051,20381,40054,40979,149987,4672,48692,175731,175732,175733,15050,40059,48694,48701,48703,48704,48705,48706,48707,48708,48709,48710,48711,175735,175736,175737,175738,1498,14935,32810,50549,50550,50551,50552,50564,64578,67773,71527,75386,85806,94844,48605,48606,79834,79835,149976,175712,60203,71530,75389,75390,94830,73335,156955,168105,14936,18795,18805,39746,39754,79839,175717,3314,9425,15048,20034,33929,41373,58353,84079,139968,184642,15053,15054,15056,48626,73839,96954,109256,111694,112529,163769,184618,260318,163829,168058,11071,11725,22610,39804,96969,175711,4787,4786,14971,22635,48645,48647,81741,175708,14990,72406,3271,14970,14981,175837,178894,183068,183069,183071,184645,58042,3317,15088,48649,50595,50596,50597,67807,71574,73368,73374,73382,116868,39996,64627,67815,71573,73372,163851,168088,175742,183074,183078,182098,183079,48638,75395,115940,159909,48635,48637,75397,88754,175725,185049,185050,185051,185052,185116,185117,185118,185053,184435,185043,185068,185119,260301,260302,185061,185065,259701,14985,19656,19699,48460,69962,69963,69965,69967,91384,157158,157161,163862,175833,182110,182111,3278,4785,15199,23789,23791,29946,29948,38070,38071,41459,47091,47092,113484,119018,119019,123445,159955,163896,168129,177027,177028,178896,261865,711,4702,11722,101642,4692,4701,11716,11717,11718,11719,11720,11721,98923,98924,101644,109092,167943,170067,4684,11724,18871,3319,21168,21169,21517,33513,51541,100501,184620,184622,184623,184648,185014,185015,185016,29954,32943,74923,74925,74926,151236,167938,74927,83880,162044,162485,3860,19591,69341,172516,21198,30085,30088,79003,30082,79008,79009,79010,88665,88667,88668,30086,30087,87635,87637,124850,155817,151226,31388,45089,48515,64354,69573,89161,121464,155823,4201,4689,4690,4790,15230,15251,15252,15256,15257,30089,83874,83876,83877,29965,29970,29973,29980,43479,170066,629,15226,29983,29985,29986,29990,29991,29993,162048,3323,15216,30040,30059,78999,79000,79001,80390,150044,179697,38583,156595,156597,171833,182174,182175,260000,9355,20349,20357,20373,35190,42425,43307,48571,48677,58540,58543,68030,80077,88468,122962,123417,123422,132297,146504,166030,179406,38331,43304,45065,136699,29778,43308,146493,175744,178893,182065,182066,182067,182068,182069,182073,167,169,31509,39976,51071,11161,73329,80135,80136,175664,175665,175666,131542,158816,158817,175671,3516,11183,44995,44996,44999,45002,58297,61816,61840,67262,99269,101270,175709,175710,4193,14906,162075,175690,182,185,3768,3783,11226,41859,80015,80356,158906,158911,175689,25321,51052,99231,158845,168068,175688,260137,11202,16191,16204,73452,86728,99319,156545,175682,175705,11205,11197,16211,51288,51328,101356,170599,170601,175685,175686,182087,3761,16145,27386,3673,46322,80151,131486,131487,131494,131495,131502,131503,170078,42017,44980,20318,168059,42014,51064,44940,90715,90718,90719,31568,31569,168061,175676,168060,170080,170082,175668,11175,51167,51168,44992,51199,64061,80216,11210,56088,56090,56091,56092,71509,168074,61839,80225,86720,175699,11211,64052,175701,175702,175703,184657,184658,184659,11180,51268,58319,58320,58321,67286,67287,67292,175704,11209,58317,58322,64069,176976,180235,183063,183064,260315,260316,260317,259696].forEach(id => CATEGORY_GROUP_MAP[id] = 'electronics');
+  // stamps (store only)
+  [262,265,675,676,678,679,682,683,686,688,3461,3463,680,681,685,690,691,3462,139771,689,47148,684,139773,139774,139775,179325,3464,139777,139778,687,139780,139781,139782,139783,139784,47149,50252,264,3477,3479,3480,3481,3482,3485,3486,7168,47150,47151,47229,168200,3500,3505,3507,3508,3509,3510,23739,65130,65137,65143,65144,65152,65154,65158,65165,65166,101763,179326,699,3489,3490,4744,4749,7886,7891,7903,12563,17734,17937,21035,35284,35285,35286,35288,35289,40370,40395,40411,40413,40417,40419,40422,42829,47159,47160,47162,47163,47164,47165,47167,47169,47170,47171,47172,65182,65183,68004,80121,91581,127399,127400,127402,127405,179392,179393,179394,179395,179396,179397,179398,703,4753,7896,30261,30262,65203,139789,139790,139791,162063,162064,162065,162066,162067,162068,162069,168201,168202,65213,68096,70097,70098,91583,139793,139794,139796,65207,162062,168205,168207,168208,179401,65210,65211,65212,65214,162070,36716,65200,65201,65202,65204,65205,65206,3459,4751,7937,139792,166764,179402,263,65175,65176,65177,65178,65179,70088,70094,70096,73184,73185,73186,73187,73188,73189,73190,73191,73192,73193,73194,73195,73197,73198,73199,73200,73201,73202,73203,73204,73205,73206,73208,73209,73210,73211,73212,73213,73214,73215,73216,73217,73218,73219,73220,73221,73222,73223,73224,73225,73226,73227,73228,73229,73230,73231,73234,73236,73237,73238,73239,73242,80110,80111,80112,80113,80114,80115,80116,80118,80119,80120,90895,91575,91576,93831,98957,162482,170137,128308,145834,179378,179379,179380,179381,179382,179383,179384,179385,179386,179387,179388,179389,179390,179391,47176,68114,91577,91578,91579,91580,123786,123787,123789,127408,127409,127410,127411,146901,162054,169978,170608,179327,179328,179329,179330,179331,179332,179333,179334,179335,179336,179337,179338,179339,179340,179341,179342,179343,3494,47173,127351,128302,145824,145825,145826,145827,145828,145829,145831,145832,145833,145835,145836,145837,145838,145839,145840,145841,179399,179400,264,698,700,3515,7908,7921,65184,123783,701,705,82978,162057,162058,162059,179653,123791,123793,123794,123795,123796,123797,123798,123799,123800,123801,123802,123803,123804,127419,131628,145822,145842,179405,127413,127414,127417,127418,127420,127421,127423,127424,127425,127426,127428,127431,127432,127433,127443,162074,166766,166767,166768,166769,166770,166772,166774,166775,166776,166777,166779,166780,166782,179355,179356,179357,179358,179359,179360,179361,179362,179363,179364,179365,179366,179367,179368,179369,179370,179371,179372,179373,179374,179375,179376,3470,3471,3472,3473,3474,3475,3476,23851,80109,111861,3469,111852,111853,111854,111855,111856,111857,111870,153380,153381,153382,70089,73240,150924,179344,179345,179346,179347,179348,179349,179350,179351,179352,179353,179354].forEach(id => CATEGORY_GROUP_MAP[id] = 'stamps');
+  // motors (store only)
+  [6032,26453,34211,34212,34216,34217,34218,34220,34221,34223,34224,34227,34228,34229,34231,34232,34233,34234,119135,119138,119139,34236,34237,34238,34240,38663,33543,33544,33545,33546,33547,33548,46094,33550,33551,33553,33554,33555,33556,33557,33558,36474,38634,42604,43946,33560,33563,33564,33565,33566,33567,33569,33570,42605,33574,33575,33577,33578,63687,33580,33581,33582,33583,33584,33585,33586,33588,33589,33590,33591,33592,33593,42609,33595,33596,33597,33598,33600,33601,33602,33603,33604,46095,46096,33607,33609,33610,33613,33614,33615,33616,33617,33619,33621,33622,33623,33625,33627,38656,38657,46098,50454,33629,33630,33631,33632,33633,33634,33636,42610,33638,33639,33640,33642,33644,33645,33646,33647,33648,33649,33650,33651,33652,33653,33654,33655,33656,33657,36475,38658,38659,42611,50455,50456,50457,63688,33659,33660,33661,33662,33663,33665,33666,33667,33668,33669,46099,33673,33674,33675,33677,33678,33679,33680,38660,43952,46100,33684,33686,63689,33689,33690,33691,33692,33693,40016,46101,33695,33696,33697,33698,33699,33700,33701,33702,33703,33704,33705,33706,40017,40018,42612,46102,50458,50459,63690,63691,33708,33709,33710,33712,33715,33716,33717,38661,42613,33713,33714,36476,172518,6779,33720,33721,33723,33724,33725,33728,33730,33731,33732,33736,46103,46104,63692,33727,171115,33733,171117,33740,33741,33742,33744,33746,33747,33749,42614,43953,43961,66479,170141,170577,33643,50446,50447,50448,50449,50450,50451,50452,35557,35558,35560,35561,35562,35563,35564,35565,35566,35567,35568,38664,35569,35570,35571,35573,35574,35575,35576,35577,35578,50460,50461,84146,35618,171108,34197,34198,34200,34203,34205,34208,42606,80736,80737,80739,80741,140681,140682,140694,140696,34204,140702,140703,140704,140705,140706,140707,140708,140709,140710,140712,140715,34206,140719,140720,140721,140722,140726,140728,140729,140731,34207,140736,140741,140742,140745,140747,140748,170579,26439,26440,26442,26436,90975,90977,90978,90979,26447,26450,26451,119142,124102,26446,26448,26449,26455,26456,26444,31276,31278,38630,38631,31281,31283,50437,31284,31285,31286,50442,124104,50443,177669,177688,124105,171106,46092,46093,50466,84149,35000,35001,34999,43987,43988,63693,43989,35625,43991,43992,43993,43994,43995,43996,43998,43986,63695,63697,63698,63699,63700,63702,63703,38638,38644,38645,38646,169320,169323,169331,169337,38636,169344,169346,169348,169354,169355,169356,169357,169361,38653,169363,169364,169365,169375,169382,38642,169389,38647,169418,169419,169475,169476,38655,169391,171098,171099,38649,38650,169395,169408,169446,169473,43964,43966,43967,43969,43970,43971,43973,43972,43974,43976,43977,43978,43979,43980,43981,43982,43983,43984,50069,50070,50072,50073,50068,40019,40022,50468,100449,100450,100451,100453,100457,100462,100463,100466,100467,100468,107058,107066,133192,133193,173651,133197,133198,133199,133202,133203,133206,133207,175569,107064,133210,107063,173667,175550,107070,173669,173672,173673,173678,173679,176932,175585,175614,111104,111112,111114,111116,111117,31280,124111,124112,124113,124114,124115,56422,171119,6783,39405].forEach(id => CATEGORY_GROUP_MAP[id] = 'motors');
+  // jewelry (identified by name patterns in the 12.7% default pool)
+  [288,289,291,494,499,502,505,924,1435,3229,3820,3829,3849,10243,10292,10298,10323,10967,10974,10976,10986,10990,10992,11013,11021,11313,11314,11315,12519,12520,13718,13723,13727,13731,14057,14085,14884,20189,20266,28438,28439,28440,28442,28443,28446,28447,28448,28449,28451,28452,28455,28456,28457,28458,28459,28462,28463,28464,28465,28466,28474,28475,28476,28477,28478,28481,28482,28483,28484,28485,28486,30119,31726,32050,34064,34065,34104,35790,35802,35810,35816,35830,35868,36009,36536,37927,40132,41198,43205,44004,45078,45079,45085,45399,47122,47184,48583,48827,48939,48948,48954,49018,50304,50346,50637,50647,50692,51011,51014,52561,52568,52570,52576,52596,52598,52599,52600,52603,56143,56145,56147,58553,60115,60120,60619,64499,64500,64503,64505,64507,64508,64509,64510,64511,64515,64932,67681,67698,67699,67700,67701,67703,67705,67706,67708,67709,67710,67711,67719,67720,67726,71008,73519,73547,83893,84000,84606,84607,84608,86933,86936,91438,91440,92852,92868,92878,93707,95096,95242,97681,97682,98476,98477,98480,98481,98483,98484,98485,98487,98489,98490,98491,98493,98496,98497,98498,98500,98504,98505,98506,98507,98509,98510,98511,98512,98526,98542,98863,99976,101408,101497,102506,102514,102550,103458,103979,105444,106113,108388,110399,110620,110634,110635,110645,110655,110666,112603,112958,113341,113465,113467,113468,113470,116102,134765,136990,137835,137843,137856,140010,150019,150047,150049,150050,150051,150052,150059,150069,150085,150955,150956,152807,152808,155101,156468,156507,158445,158775,158780,160736,160910,162089,162096,162946,162966,162982,162984,163007,163054,163271,163549,163552,163873,164108,164208,164306,164309,164310,164311,164313,164315,164316,164319,164321,164325,164327,164328,164330,164331,164332,164333,164336,164341,164343,164350,164351,164356,164372,164461,164943,164944,164945,164946,164948,164950,164951,164952,164954,164976,164977,164979,164980,164981,164983,165008,165010,165011,165012,165014,165040,165041,165042,165044,165069,165072,165073,165074,165076,165102,165104,165105,165107,165141,165143,165247,165254,165580,165670,165695,165703,165854,165874,165879,165880,165881,165883,165885,165886,165887,165889,165891,165892,165893,165895,165921,165923,165924,165925,165927,165991,166733,166734,167991,168160,168161,168162,168163,168166,168176,168177,168180,168181,177020,177649,177651,177768,177769,177770,179964,183261,183691,183693,183694,183695,183696,183698,183699,185028,259324,260034,261056,261609,261650].forEach(id => CATEGORY_GROUP_MAP[id] = 'jewelry');
+  // minor groups that only differ for store: 11.35% (auto-related), 7.35% (electronics sub), 9.0% (unknown)
+  [84160,6719,6707,49996,6728,63677,26434,173665].forEach(id => CATEGORY_GROUP_MAP[id] = 'motors');
+  [139971,56083,106273,131553,175669,175670,80053,171485,179,111418,1245,177,111422,164,1244,131511,170083].forEach(id => CATEGORY_GROUP_MAP[id] = 'electronics');
+  [177980,25645,36085].forEach(id => CATEGORY_GROUP_MAP[id] = 'electronics');
+  // motors tires (9.7%/$1000)
+  [66471,50071,179680,263048,124313,175571,171111,180242,184924,6747,38635].forEach(id => CATEGORY_GROUP_MAP[id] = 'motors');
+  // vinyl records
+  [176985].forEach(id => CATEGORY_GROUP_MAP[id] = 'vinyl');
+})();
+
+function getGroupForCategory(catId) {
+  // 新形式: EBAY_CATEGORIES (API生成)
+  if (typeof EBAY_CATEGORIES !== 'undefined' && EBAY_CATEGORIES[catId]) {
+    return EBAY_CATEGORIES[catId].group || 'default';
+  }
+  // 旧形式: CATEGORY_GROUP_MAP (ハードコード)
+  return CATEGORY_GROUP_MAP[catId] || 'default';
+}
+
+function getEffectiveGroup(group) {
+  const plan = FEE_RATES[currentStorePlan];
+  // For noStore plan, some store-only groups fall back to default
+  if (!plan[group]) return 'default';
+  return group;
+}
+
+// カテゴリ名を取得（新旧両方に対応）
+function getCategoryName(catId) {
+  if (typeof EBAY_CATEGORIES !== 'undefined' && EBAY_CATEGORIES[catId]) {
+    return EBAY_CATEGORIES[catId].name || null;
+  }
+  if (typeof ebayCategoryMap !== 'undefined' && ebayCategoryMap[catId]) {
+    return ebayCategoryMap[catId][0] || null;
+  }
+  return null;
+}
+
+function setStorePlan(plan) {
+  currentStorePlan = plan;
+  document.getElementById('planNoStore').classList.toggle('active', plan === 'noStore');
+  document.getElementById('planStore').classList.toggle('active', plan === 'store');
+  populateFeeGroupDropdown();
+  applyFeeGroup(getEffectiveGroup(currentFeeGroup));
+  saveState();
+}
+
+function populateFeeGroupDropdown() {
+  // 手数料グループは内部管理のみ（UI非表示）
+}
+
+function applyFeeGroup(group) {
+  currentFeeGroup = group;
+  const plan = FEE_RATES[currentStorePlan];
+  const g = plan[group] || plan['default'];
+
+  if (g.special === 'shoes') {
+    // Sports shoes: use rate_low as default (most items < $150)
+    document.getElementById('ebayFeeRate').value = g.rate_low;
+    document.getElementById('feeThreshold').value = g.threshold;
+    document.getElementById('ebayFeeRate2').value = g.rate_high;
+  } else if (g.tiers) {
+    // Multi-tier: set first tier in fields
+    document.getElementById('ebayFeeRate').value = g.tiers[0][0];
+    document.getElementById('feeThreshold').value = g.tiers[0][1];
+    document.getElementById('ebayFeeRate2').value = g.tiers.length > 1 ? g.tiers[1][0] : 0;
   } else {
-    nameEl.textContent = no ? '不明なカテゴリ' : '-';
+    document.getElementById('ebayFeeRate').value = g.rate1;
+    document.getElementById('feeThreshold').value = g.th;
+    document.getElementById('ebayFeeRate2').value = g.rate2;
   }
   updateFeeDescription();
   calculate();
 }
 
-function updateFeeDescription() {
-  const r1 = getVal('ebayFeeRate');
-  const th = getVal('feeThreshold');
-  const r2 = getVal('ebayFeeRate2');
-  const po = getVal('perOrderFee');
-  document.getElementById('feeDescription').textContent =
-    'FVF: $' + th.toLocaleString() + 'まで ' + r1 + '% → 残り ' + r2 + '% + $' + po + '/注文';
+// ========== Category Lookup ==========
+
+function onCategoryNoInput() {
+  const no = parseInt(document.getElementById('categoryNo').value);
+  const nameEl = document.getElementById('categoryName');
+  const catName = getCategoryName(no);
+  if (catName) {
+    nameEl.textContent = catName;
+    const group = getGroupForCategory(no);
+    const effectiveGroup = getEffectiveGroup(group);
+    applyFeeGroup(effectiveGroup);
+  } else {
+    nameEl.textContent = no ? '不明なカテゴリ' : '-';
+  }
+  saveState();
 }
+
+function updateFeeDescription() {
+  const plan = FEE_RATES[currentStorePlan];
+  const g = plan[currentFeeGroup] || plan['default'];
+  const descEl = document.getElementById('feeDescription');
+
+  if (g.special === 'shoes') {
+    descEl.textContent = 'FVF: $' + g.threshold + '以上 → ' + g.rate_high + '%, $' + g.threshold + '未満 → ' + g.rate_low + '% + $0.30~0.40/注文';
+  } else if (g.tiers) {
+    const parts = g.tiers.map((t, i) => {
+      const prev = i === 0 ? 0 : g.tiers[i-1][1];
+      if (t[1] === Infinity) return '$' + prev.toLocaleString() + '超 → ' + t[0] + '%';
+      return '$' + prev.toLocaleString() + '~$' + t[1].toLocaleString() + ' → ' + t[0] + '%';
+    });
+    descEl.textContent = 'FVF: ' + parts.join(' / ') + ' + $0.30~0.40/注文';
+  } else {
+    descEl.textContent = 'FVF: $' + g.th.toLocaleString() + 'まで ' + g.rate1 + '% → 残り ' + g.rate2 + '% + $0.30~0.40/注文';
+  }
+}
+
+// Category search and fee group dropdown removed (auto-detect from category No.)
 
 // ========== Shipping Rate Tables (US向け・2025年版PDF準拠) ==========
 
@@ -1028,7 +1195,7 @@ function lookupRate(table, weightGrams) {
   return -1;
 }
 
-function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function getVal(id) { return parseFloat(document.getElementById(id).value.replace(/,/g,'')) || 0; }
 function fmt(n) { return Math.round(n).toLocaleString('ja-JP'); }
 function fmtD(n) { return n.toFixed(2); }
 
@@ -1050,6 +1217,7 @@ function initCountrySelector() {
 function onCountryChange() {
   currentCountry = document.getElementById('destCountry').value;
   calculate();
+  saveState();
 }
 
 function setPricingMode(mode) {
@@ -1060,6 +1228,7 @@ function setPricingMode(mode) {
   document.getElementById('otherSection').style.display = mode === 'other' ? '' : 'none';
   updatePricingDisplay();
   calculate();
+  saveState();
 }
 
 function getEffectiveSellingPrice() {
@@ -1130,17 +1299,49 @@ function toggleFeeDetail() {
   }
 }
 
-async function fetchRate() {
+const RATE_CACHE_KEY = 'exchange_rate_jpy';
+const RATE_CACHE_TIME_KEY = 'exchange_rate_time';
+const RATE_CACHE_TTL = 6 * 60 * 60 * 1000; // 6時間キャッシュ
+
+async function fetchRate(silent) {
+  const statusEl = document.getElementById('rateStatus');
+  if (statusEl) statusEl.textContent = '取得中...';
   try {
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(10000) });
     const d = await r.json();
     if (d.rates && d.rates.JPY) {
-      document.getElementById('exchangeRate').value = d.rates.JPY.toFixed(4);
+      const rate = d.rates.JPY.toFixed(4);
+      document.getElementById('exchangeRate').value = rate;
+      localStorage.setItem(RATE_CACHE_KEY, rate);
+      localStorage.setItem(RATE_CACHE_TIME_KEY, Date.now());
+      if (statusEl) statusEl.textContent = '✓ ¥' + rate + '/$ (自動取得)';
       calculate();
+    } else {
+      throw new Error('データなし');
     }
   } catch(e) {
-    alert('レート取得に失敗しました。');
+    const cached = localStorage.getItem(RATE_CACHE_KEY);
+    if (cached) {
+      const age = Date.now() - (parseInt(localStorage.getItem(RATE_CACHE_TIME_KEY)) || 0);
+      const hours = Math.floor(age / (60*60*1000));
+      if (statusEl) statusEl.textContent = '⚠ ¥' + cached + ' (' + hours + '時間前)';
+    } else {
+      if (statusEl) statusEl.textContent = '⚠ 取得失敗';
+    }
   }
+}
+
+function initExchangeRate() {
+  const cached = localStorage.getItem(RATE_CACHE_KEY);
+  const cachedTime = parseInt(localStorage.getItem(RATE_CACHE_TIME_KEY)) || 0;
+  const age = Date.now() - cachedTime;
+  if (cached && age < RATE_CACHE_TTL) {
+    document.getElementById('exchangeRate').value = cached;
+    const statusEl = document.getElementById('rateStatus');
+    if (statusEl) statusEl.textContent = '✓ ¥' + cached + '/$ (キャッシュ)';
+  }
+  // キャッシュ有無に関わらず常にバックグラウンドで最新値を取得
+  fetchRate(true);
 }
 
 // ========== Fuel Surcharge Auto-Fetch (EIA API経由) ==========
@@ -1219,10 +1420,10 @@ function initFuelSurcharge() {
     document.getElementById('fuelSurcharge').value = cached;
     const price = localStorage.getItem(FUEL_CACHE_PRICE_KEY) || '?';
     const statusEl = document.getElementById('fuelStatus');
-    if (statusEl) statusEl.textContent = '✓ ' + cached + '% (キャッシュ・燃料$' + price + '/gal)';
-  } else {
-    fetchFuelSurcharge(true);
+    if (statusEl) statusEl.textContent = '✓ ' + cached + '% (燃料$' + price + '/gal)';
   }
+  // キャッシュ有無に関わらず常にバックグラウンドで最新値を取得
+  fetchFuelSurcharge(true);
 }
 
 // ========== Main Calculation ==========
@@ -1255,14 +1456,42 @@ function calculate() {
   document.getElementById('volWeight').textContent = volWeight.toFixed(3) + ' kg';
   document.getElementById('volWeightEco').textContent = volWeightEco.toFixed(3) + ' kg';
 
-  // eBay FVF: two-rate system
+  // eBay FVF: support multi-tier and special categories
+  const plan = FEE_RATES[currentStorePlan];
+  const grp = plan[currentFeeGroup] || plan['default'];
   let fvfBase = 0;
-  if (selling <= threshold) {
-    fvfBase = selling * ebayRate1;
+  let effectivePerOrder = perOrder;
+  // Per-order fee: $0.30 for ≤$10, $0.40 for >$10
+  if (selling <= 10) effectivePerOrder = 0.30;
+
+  if (grp.special === 'shoes') {
+    // Sports shoes: ≥threshold → rate_high (no per-order), <threshold → rate_low + per-order
+    if (selling >= grp.threshold) {
+      fvfBase = selling * (grp.rate_high / 100);
+      effectivePerOrder = 0;
+    } else {
+      fvfBase = selling * (grp.rate_low / 100);
+    }
+  } else if (grp.tiers) {
+    // Multi-tier calculation (watches, bullion store)
+    let remaining = selling;
+    let prevLimit = 0;
+    for (const [rate, limit] of grp.tiers) {
+      const bandLimit = limit === Infinity ? remaining : Math.min(remaining, limit - prevLimit);
+      if (bandLimit <= 0) break;
+      fvfBase += bandLimit * (rate / 100);
+      remaining -= bandLimit;
+      prevLimit = limit;
+      if (remaining <= 0) break;
+    }
   } else {
-    fvfBase = threshold * ebayRate1 + (selling - threshold) * ebayRate2;
+    if (selling <= threshold) {
+      fvfBase = selling * ebayRate1;
+    } else {
+      fvfBase = threshold * ebayRate1 + (selling - threshold) * ebayRate2;
+    }
   }
-  const ebayFvf = (fvfBase + perOrder) * taxMultiplier;
+  const ebayFvf = (fvfBase + effectivePerOrder) * taxMultiplier;
   const promotedFee = selling * promotedRate * taxMultiplier;
   const intlFee = selling * intlRate * taxMultiplier;
   const totalEbayDeductions = ebayFvf + promotedFee + intlFee;
@@ -1303,16 +1532,16 @@ function calculate() {
   const isUS = currentCountry === 'us';
 
   const groups = [
-    { id: 'fedex',    label: 'SpeedPAK FedEx International Connect Plus', icon: '🟣', cls: 'group-elogi',    tag: '推奨',      primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
-    { id: 'fedex-ip', label: 'SpeedPAK FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
-    { id: 'dhl',      label: 'SpeedPAK DHL',        icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
-    { id: 'speedpak', label: 'SpeedPAK Economy',    icon: '🟠', cls: 'group-speedpak', tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
-    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'SpeedPAKと比較用' },
-    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'SpeedPAKと比較用' },
+    { id: 'fedex',    label: 'CPaSS FedEx International Connect Plus', icon: '🟣', cls: 'group-elogi',    tag: '推奨',      primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
+    { id: 'fedex-ip', label: 'CPaSS FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
+    { id: 'dhl',      label: 'CPaSS DHL',            icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
+    { id: 'speedpak', label: 'CPaSS Economy',        icon: '🟠', cls: 'group-speedpak', tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
+    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
+    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     ...(getElogiUpsData(cc.upsZone) ? [
       { id: 'elogi-ups', label: 'eLogi UPS Express Saver', icon: '🟤', cls: 'group-ups', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
-    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'差出不可', primary: false, methods: [], note: cc.jpOk!==false?'SpeedPAK非対応・自分で発送手続きが必要':'この国は日本郵便の差出が制限されています（△）' },
+    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'差出不可', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':'この国は日本郵便の差出が制限されています（△）' },
   ];
 
   function addMethod(groupId, m) {
@@ -1622,16 +1851,49 @@ function calculate() {
   });
 }
 
+// ========== LocalStorage Persistence ==========
+const SAVE_KEY = 'ebayCalcState';
+const SAVE_FIELDS = ['purchasePrice','sellingPrice','compShipping','weight','length','width','height',
+  'usTariffRate','categoryNo','exchangeRate','fuelSurcharge',
+  'ebayFeeRate','feeThreshold','ebayFeeRate2','perOrderFee',
+  'promotedRate','intlFeeRate','payoneerRate','taxRate'];
+
+function saveState() {
+  const s = {};
+  SAVE_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) s[id] = el.value; });
+  s._country = document.getElementById('destCountry').value;
+  s._pricingMode = currentPricingMode;
+  s._storePlan = currentStorePlan;
+  localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+}
+
+function restoreState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s) return false;
+    SAVE_FIELDS.forEach(id => { const el = document.getElementById(id); if (el && s[id] !== undefined) el.value = s[id]; });
+    if (s._country) document.getElementById('destCountry').value = s._country;
+    if (s._pricingMode) setPricingMode(s._pricingMode);
+    if (s._storePlan) setStorePlan(s._storePlan);
+    return true;
+  } catch(e) { return false; }
+}
+
 // ========== Event Listeners ==========
 document.querySelectorAll('input').forEach(el => {
-  el.addEventListener('input', calculate);
+  el.addEventListener('input', () => { calculate(); saveState(); });
 });
 document.getElementById('categoryNo').addEventListener('input', onCategoryNoInput);
 
 // Initial setup
 initCountrySelector();
-onCategoryNoInput();
+const restored = restoreState();
+if (restored) {
+  currentCountry = document.getElementById('destCountry').value;
+}
+onCategoryNoInput(); // 常にカテゴリNo.から手数料を自動判定
 updateFeeDescription();
+initExchangeRate();
 initFuelSurcharge();
 calculate();
 </script>
