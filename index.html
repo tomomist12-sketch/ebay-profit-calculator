@@ -294,14 +294,20 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <label>為替レート <span class="unit">(¥/$)</span></label>
         <input type="text" inputmode="decimal" id="exchangeRate" value="153.5115" class="highlight">
       </div>
-      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3"><span id="rateStatus">自動取得中...</span></div>
+      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">
+        <span id="rateStatus">自動取得中...</span>
+        <button onclick="fetchRate(false)" style="font-size:.62rem;padding:1px 6px;border:1px solid var(--border);border-radius:4px;background:#fafafa;cursor:pointer;color:var(--text3);margin-left:4px">手動取得</button>
+      </div>
     </div>
     <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:5px">
       <div class="field" style="width:140px">
         <label>燃油サーチャージ <span class="unit">(%)</span></label>
         <input type="text" inputmode="decimal" id="fuelSurcharge" value="28.75" class="highlight">
       </div>
-      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">FedEx/DHL共通<br><span id="fuelStatus" style="color:var(--text3)">自動取得中...</span></div>
+      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">
+        FedEx/DHL共通・週次更新<br><span id="fuelStatus" style="color:var(--text3)">自動取得中...</span>
+        <button onclick="fetchFuelSurcharge(false)" style="font-size:.62rem;padding:1px 6px;border:1px solid var(--border);border-radius:4px;background:#fafafa;cursor:pointer;color:var(--text3);margin-left:4px">手動取得</button>
+      </div>
     </div>
     <button class="toggle-btn" id="settingsToggle" onclick="toggleSettings()">詳細設定 ▼</button>
     <div class="settings-content" id="settingsContent">
@@ -340,7 +346,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <div class="fee-row"><span class="fee-label">売上</span><span class="fee-val" id="revenueYen">-</span></div>
       <div class="fee-row"><span class="fee-label">手数料計</span><span class="fee-val" style="color:var(--red)" id="totalFeesYen">-</span></div>
       <hr class="divider">
-      <div class="fee-row"><span class="fee-label">eBay FVF</span><span class="fee-val" id="feeEbay">-</span></div>
+      <div class="fee-row"><span class="fee-label">eBay FVF <span id="feeEbayDetail" style="font-weight:400;color:var(--text3);font-size:.75rem"></span></span><span class="fee-val" id="feeEbay">-</span></div>
       <div class="fee-row"><span class="fee-label">Promoted</span><span class="fee-val" id="feePromoted">-</span></div>
       <div class="fee-row"><span class="fee-label">海外手数料</span><span class="fee-val" id="feeIntl">-</span></div>
       <hr class="divider">
@@ -665,19 +671,47 @@ function updateFeeDescription() {
   const plan = FEE_RATES[currentStorePlan];
   const g = plan[currentFeeGroup] || plan['default'];
   const descEl = document.getElementById('feeDescription');
+  const selling = getEffectiveSellingPrice();
+
+  if (!selling || selling <= 0) {
+    descEl.textContent = 'FVF: 売値を入力してください';
+    return;
+  }
+
+  let fvf = 0;
+  const appliedRates = [];
 
   if (g.special === 'shoes') {
-    descEl.textContent = 'FVF: $' + g.threshold + '以上 → ' + g.rate_high + '%, $' + g.threshold + '未満 → ' + g.rate_low + '% + $0.30~0.40/注文';
+    if (selling >= g.threshold) {
+      fvf = selling * (g.rate_high / 100);
+      appliedRates.push(g.rate_high + '%');
+    } else {
+      fvf = selling * (g.rate_low / 100);
+      appliedRates.push(g.rate_low + '%');
+    }
   } else if (g.tiers) {
-    const parts = g.tiers.map((t, i) => {
-      const prev = i === 0 ? 0 : g.tiers[i-1][1];
-      if (t[1] === Infinity) return '$' + prev.toLocaleString() + '超 → ' + t[0] + '%';
-      return '$' + prev.toLocaleString() + '~$' + t[1].toLocaleString() + ' → ' + t[0] + '%';
-    });
-    descEl.textContent = 'FVF: ' + parts.join(' / ') + ' + $0.30~0.40/注文';
+    let remaining = selling;
+    let prevLimit = 0;
+    for (const [rate, limit] of g.tiers) {
+      const band = limit === Infinity ? remaining : Math.min(remaining, limit - prevLimit);
+      if (band <= 0) break;
+      fvf += band * (rate / 100);
+      appliedRates.push(rate + '%');
+      remaining -= band;
+      prevLimit = limit;
+      if (remaining <= 0) break;
+    }
   } else {
-    descEl.textContent = 'FVF: $' + g.th.toLocaleString() + 'まで ' + g.rate1 + '% → 残り ' + g.rate2 + '% + $0.30~0.40/注文';
+    if (selling <= g.th) {
+      fvf = selling * (g.rate1 / 100);
+      appliedRates.push(g.rate1 + '%');
+    } else {
+      fvf = g.th * (g.rate1 / 100) + (selling - g.th) * (g.rate2 / 100);
+      appliedRates.push(g.rate1 + '%', g.rate2 + '%');
+    }
   }
+
+  descEl.textContent = 'FVF: ' + appliedRates.join('+') + '($' + fvf.toFixed(2) + ')';
 }
 
 // Category search and fee group dropdown removed (auto-detect from category No.)
@@ -1430,6 +1464,7 @@ function initFuelSurcharge() {
 
 function calculate() {
   updatePricingDisplay();
+  updateFeeDescription();
   const purchase = getVal('purchasePrice');
   const selling = getEffectiveSellingPrice();
   const weightKg = getVal('weight');
@@ -1508,6 +1543,7 @@ function calculate() {
   document.getElementById('revenueYen').textContent = '¥' + fmt(revenueYen) + '（$' + fmtD(selling) + '）';
   document.getElementById('totalFeesYen').textContent = '¥' + fmt(totalFeesYen);
   document.getElementById('feeEbay').textContent = '$' + fmtD(ebayFvf);
+  document.getElementById('feeEbayDetail').textContent = '($' + fmtD(fvfBase) + ' + $' + fmtD(effectivePerOrder) + '/注文) 税込';
   document.getElementById('feePromoted').textContent = '$' + fmtD(promotedFee);
   document.getElementById('feeIntl').textContent = '$' + fmtD(intlFee);
   document.getElementById('feePayoneer').textContent = '$' + fmtD(payoneerFee) + '（¥' + fmt(payoneerFee * rate) + '）';
