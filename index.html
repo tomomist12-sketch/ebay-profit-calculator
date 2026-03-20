@@ -97,6 +97,17 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .badge-best{background:var(--green);color:#fff}
 .badge-na{background:#f1f5f9;color:var(--text3)}
 
+/* Fee detail popup */
+.fee-detail-btn{font-size:.6rem;padding:1px 5px;border:1px solid var(--border);border-radius:4px;background:#f8fafc;cursor:pointer;color:var(--text3);vertical-align:middle;margin-left:2px;line-height:1.2}
+.fee-detail-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+.method-row{position:relative}
+.fee-popup{position:absolute;top:100%;right:0;z-index:100;background:#fff;border:1.5px solid var(--primary);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);padding:10px 14px;min-width:240px;margin-top:4px}
+.fp-header{font-size:.82rem;font-weight:700;color:var(--primary);border-bottom:2px solid var(--primary);padding-bottom:5px;margin-bottom:6px}
+.fp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.8rem;gap:12px}
+.fp-name{color:var(--text2);flex:1;min-width:0}
+.fp-val{font-weight:600;font-family:"SF Mono",Consolas,monospace;white-space:nowrap}
+.fp-total{border-top:1.5px solid var(--border);margin-top:4px;padding-top:5px;font-weight:700;font-size:.82rem}
+
 .group-section.grp-fedex .method-row:not(.ng){border-color:#c4b5fd;background:#f5f0ff}
 .group-section.grp-dhl .method-row:not(.ng){border-color:#fde68a;background:#fefce8}
 .group-section.grp-elogi .method-row:not(.ng){border-color:#93c5fd;background:#eff6ff}
@@ -988,19 +999,15 @@ const COUNTRIES = [
   { id:'us', name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:false, elogiZone:'E', upsZone:5, economy:true, ecoTable:speedpakEconomyRates, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
-  { id:'uk', name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoTable:economyUK, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
-    ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=120 && (d[0]+2*(d[1]+d[2]))<=225; },
-    ecoSurcharge:()=>0 },
-  { id:'de', name:'🇩🇪 ドイツ', code:'DE', defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+  { id:'ca', name:'🇨🇦 カナダ', code:'CA', defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
+  { id:'eu', name:'🇪🇺 ヨーロッパ (UK/DE/FR等)', code:'DE', defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
   { id:'au', name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'fr', name:'🇫🇷 フランス', code:'FR', defaultZip:'75001', fedexZone:'M', dhlZone:2, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:false },
-  { id:'ca', name:'🇨🇦 カナダ', code:'CA', defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
-  { id:'it', name:'🇮🇹 イタリア', code:'IT', defaultZip:'00100', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:false },
-  { id:'es', name:'🇪🇸 スペイン', code:'ES', defaultZip:'28001', fedexZone:'M', dhlZone:4, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:false },
+  { id:'east_asia', name:'🌏 東アジア (韓国/台湾/香港)', code:'KR', defaultZip:'06100', fedexZone:null, dhlZone:null, jpZone:null, jpOk:false, elogiZone:null, upsZone:null, economy:false },
+  { id:'se_asia', name:'🌏 東南アジア (SG/TH/MY等)', code:'TH', defaultZip:'10100', fedexZone:null, dhlZone:null, jpZone:null, jpOk:false, elogiZone:null, upsZone:null, economy:false },
 ];
 
 function getFicpTable(zone) { return zone==='M'?ficpZoneM:zone==='U'?ficpZoneU:speedpakFicpRates; }
@@ -1462,7 +1469,7 @@ function initFuelSurcharge() {
 }
 
 // ========== SpeedPAK API Integration ==========
-const SPEEDPAK_API_BASE = 'http://localhost:3004';
+const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
 let _speedpakRates = null;      // APIレスポンスの rates オブジェクト
 let _speedpakLoading = false;   // API取得中フラグ
 let _speedpakDebounceTimer = null;
@@ -1524,13 +1531,38 @@ function debouncedFetchSpeedpak() {
   _speedpakDebounceTimer = setTimeout(fetchSpeedpakRates, 500);
 }
 
-// SpeedPAK送料取得ヘルパー：APIがあればAPI値、なければnull（フォールバックなし）
+// SpeedPAK送料取得ヘルパー：totalAmount（関税込み合計）を返す
 function spCost(apiKey) {
-  if (_speedpakRates && _speedpakRates[apiKey] && _speedpakRates[apiKey].shippingAmount !== undefined) {
-    return _speedpakRates[apiKey].shippingAmount;
+  if (_speedpakRates && _speedpakRates[apiKey] && _speedpakRates[apiKey].totalAmount !== undefined) {
+    return _speedpakRates[apiKey].totalAmount;
   }
-  return null; // APIから取得できない場合は送料不明
+  return null;
 }
+
+// SpeedPAK送料内訳取得ヘルパー：feeDetails配列を返す
+function spFeeDetails(apiKey) {
+  if (_speedpakRates && _speedpakRates[apiKey] && _speedpakRates[apiKey].feeDetails) {
+    return _speedpakRates[apiKey].feeDetails;
+  }
+  return null;
+}
+
+// 送料内訳ポップアップ開閉
+function toggleFeePopup(btn) {
+  const row = btn.closest('.method-row');
+  const popup = row.querySelector('.fee-popup');
+  if (!popup) return;
+  const isOpen = popup.style.display !== 'none';
+  // 他のポップアップを閉じる
+  document.querySelectorAll('.fee-popup').forEach(p => p.style.display = 'none');
+  if (!isOpen) popup.style.display = 'block';
+}
+// 外側クリックでポップアップを閉じる
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.fee-popup') && !e.target.closest('.fee-detail-btn')) {
+    document.querySelectorAll('.fee-popup').forEach(p => p.style.display = 'none');
+  }
+});
 
 // ========== Main Calculation ==========
 
@@ -1649,7 +1681,7 @@ function calculate() {
     ...(getElogiUpsData(cc.upsZone) ? [
       { id: 'elogi-ups', label: 'eLogi UPS Express Saver', icon: '🟤', cls: 'group-ups', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
-    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'差出不可', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':'この国は日本郵便の差出が制限されています（△）' },
+    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'非対応', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':(cc.jpZone?'この国は日本郵便の差出が制限されています（△）':'料金テーブル未設定') },
   ];
 
   function addMethod(groupId, m) {
@@ -1668,7 +1700,7 @@ function calculate() {
     const cs = billableStandardG <= 68000;
     const c = cs ? spCost('ficp') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('fedex',{name:'International Connect Plus',sub:'2-5日/DDP/最大68kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
+    addMethod('fedex',{name:'International Connect Plus',sub:'2-5日/DDP/最大68kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ficp'):null,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK FedEx IP Envelope ---
@@ -1682,7 +1714,7 @@ function calculate() {
     const r2 = [];
     if (!csW) r2.push('500g超過');
     if (!csS) r2.push('サイズ超過(23.5x33.5x3cm)');
-    addMethod('fedex-ip',{name:'FedEx IP Envelope',sub:'1-3日/DDP/最大500g/内寸23.5×33.5×3cm/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
+    addMethod('fedex-ip',{name:'FedEx IP Envelope',sub:'1-3日/DDP/最大500g/内寸23.5×33.5×3cm/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_envelope'):null,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK FedEx IP Pak ---
@@ -1690,7 +1722,7 @@ function calculate() {
     const cs = weightG <= 2500;
     const c = cs ? spCost('ip_pak') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/DDP/最大2.5kg/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:!cs?'2.5kg超過':(c===null?'送料取得中':''),loading:_loading});
+    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/DDP/最大2.5kg/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_pak'):null,reason:!cs?'2.5kg超過':(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK FedEx IP Package ---
@@ -1698,7 +1730,7 @@ function calculate() {
     const cs = billableStandardG <= 68000;
     const c = cs ? spCost('ip') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('fedex-ip',{name:'FedEx IP Package',sub:'1-3日/DDP/最大68kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
+    addMethod('fedex-ip',{name:'FedEx IP Package',sub:'1-3日/DDP/最大68kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip'):null,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK DHL Express Envelope ---
@@ -1706,7 +1738,7 @@ function calculate() {
     const cs = weightG <= 300;
     const c = cs ? spCost('dhl_envelope') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('dhl',{name:'DHL Express Envelope',sub:'2-4日/DDP/最大300g/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:!cs?'300g超過':(c===null?'送料取得中':''),loading:_loading});
+    addMethod('dhl',{name:'DHL Express Envelope',sub:'2-4日/DDP/最大300g/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('dhl_envelope'):null,reason:!cs?'300g超過':(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK DHL Express Worldwide ---
@@ -1715,7 +1747,7 @@ function calculate() {
     const cs = billableStandardG <= maxW;
     const c = cs ? spCost('dhl') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('dhl',{name:'DHL Express',sub:'2-4日/DDP/最大'+(maxW/1000)+'kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:!cs?(maxW/1000)+'kg超過':(c===null?'送料取得中':''),loading:_loading});
+    addMethod('dhl',{name:'DHL Express',sub:'2-4日/DDP/最大'+(maxW/1000)+'kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('dhl'):null,reason:!cs?(maxW/1000)+'kg超過':(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK Economy ---
@@ -1730,7 +1762,7 @@ function calculate() {
     const r2 = [];
     if (!csW) r2.push(maxKg + 'kg超過');
     if (!csD) r2.push('サイズ超過');
-    addMethod('speedpak',{name:'Economy',sub:cc.ecoDays+'/'+cc.ecoMaxVal+'以下/体積÷8,000/DDP' + _subSuffix,cost:canSend?c:-1,canSend:canSend,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
+    addMethod('speedpak',{name:'Economy',sub:cc.ecoDays+'/'+cc.ecoMaxVal+'以下/体積÷8,000/DDP' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('economy'):null,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
   } else {
     addMethod('speedpak',{name:'Economy',sub:'この国はEconomy非対応',cost:-1,canSend:false,reason:cc.name+' 非対応'});
   }
@@ -1939,11 +1971,17 @@ function calculate() {
         const refundCls = m.profitWithRefund < 0 ? 'val val-neg' : 'val val-refund';
         const profitTxt = m.profit < 0 ? '⚠ ¥' + fmt(m.profit) : '¥' + fmt(m.profit);
         const refundTxt = m.profitWithRefund < 0 ? '⚠ ¥' + fmt(m.profitWithRefund) : '¥' + fmt(m.profitWithRefund);
+        const detailBtn = m.feeDetails ? `<button class="fee-detail-btn" onclick="event.stopPropagation();toggleFeePopup(this)" title="送料内訳">明細</button>` : '';
+        let popupHtml = '';
+        if (m.feeDetails) {
+          const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
+          popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
+        }
         right = `<div class="mr-right">
-          <span class="lbl">送料</span><span class="val">¥${fmt(m.cost)}</span>
+          <span class="lbl">送料 ${detailBtn}</span><span class="val">¥${fmt(m.cost)}</span>
           <span class="lbl">利益</span><span class="${profitCls}">${profitTxt}</span>
           <span class="lbl">還付込</span><span class="${refundCls}">${refundTxt}</span>
-        </div>`;
+        </div>${popupHtml}`;
       } else {
         right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
       }
