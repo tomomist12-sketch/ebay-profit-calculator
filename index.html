@@ -374,7 +374,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <div class="card" style="padding:12px 16px">
     <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
     <div style="margin-bottom:8px">
-      <select id="destCountry" style="border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600" onchange="onCountryChange()">
+      <select id="destCountry" style="border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600">
       </select>
     </div>
     <div id="resultsContainer"></div>
@@ -1257,9 +1257,10 @@ function initCountrySelector() {
 
 function onCountryChange() {
   currentCountry = document.getElementById('destCountry').value;
+  _speedpakRates = null; // 前の国のレートをクリア
   calculate();
   saveState();
-  debouncedFetchSpeedpak();
+  fetchSpeedpakRates(); // 国変更は即座にAPI取得（デバウンスなし）
 }
 
 function setPricingMode(mode) {
@@ -1307,9 +1308,9 @@ function updatePricingDisplay() {
     document.getElementById('listShipping').textContent = '$' + fmtD(listShipping);
   } else {
     const tariff = getVal('usTariffRate') / 100;
-    const usShipping = Math.round(selling * tariff * 100) / 100;
+    const tariffAmount = Math.round(selling * tariff * 100) / 100;
     document.getElementById('otherPricingInfo').innerHTML =
-      '🇺🇸米国向け送料: <strong>$' + fmtD(usShipping) + '</strong>';
+      '🇺🇸米国向け関税額: <strong>$' + fmtD(tariffAmount) + '</strong>（バイヤー負担）';
   }
 }
 
@@ -1564,6 +1565,40 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// ========== FVF Calculation Helper ==========
+function calcFVFBase(amount, grp, ebayRate1, threshold, ebayRate2, perOrder) {
+  let fvfBase = 0;
+  let effectivePerOrder = perOrder;
+  if (amount <= 10) effectivePerOrder = 0.30;
+
+  if (grp.special === 'shoes') {
+    if (amount >= grp.threshold) {
+      fvfBase = amount * (grp.rate_high / 100);
+      effectivePerOrder = 0;
+    } else {
+      fvfBase = amount * (grp.rate_low / 100);
+    }
+  } else if (grp.tiers) {
+    let remaining = amount;
+    let prevLimit = 0;
+    for (const [rate, limit] of grp.tiers) {
+      const bandLimit = limit === Infinity ? remaining : Math.min(remaining, limit - prevLimit);
+      if (bandLimit <= 0) break;
+      fvfBase += bandLimit * (rate / 100);
+      remaining -= bandLimit;
+      prevLimit = limit;
+      if (remaining <= 0) break;
+    }
+  } else {
+    if (amount <= threshold) {
+      fvfBase = amount * ebayRate1;
+    } else {
+      fvfBase = threshold * ebayRate1 + (amount - threshold) * ebayRate2;
+    }
+  }
+  return { fvfBase, effectivePerOrder };
+}
+
 // ========== Main Calculation ==========
 
 function calculate() {
@@ -1598,38 +1633,9 @@ function calculate() {
   // eBay FVF: support multi-tier and special categories
   const plan = FEE_RATES[currentStorePlan];
   const grp = plan[currentFeeGroup] || plan['default'];
-  let fvfBase = 0;
-  let effectivePerOrder = perOrder;
-  // Per-order fee: $0.30 for ≤$10, $0.40 for >$10
-  if (selling <= 10) effectivePerOrder = 0.30;
-
-  if (grp.special === 'shoes') {
-    // Sports shoes: ≥threshold → rate_high (no per-order), <threshold → rate_low + per-order
-    if (selling >= grp.threshold) {
-      fvfBase = selling * (grp.rate_high / 100);
-      effectivePerOrder = 0;
-    } else {
-      fvfBase = selling * (grp.rate_low / 100);
-    }
-  } else if (grp.tiers) {
-    // Multi-tier calculation (watches, bullion store)
-    let remaining = selling;
-    let prevLimit = 0;
-    for (const [rate, limit] of grp.tiers) {
-      const bandLimit = limit === Infinity ? remaining : Math.min(remaining, limit - prevLimit);
-      if (bandLimit <= 0) break;
-      fvfBase += bandLimit * (rate / 100);
-      remaining -= bandLimit;
-      prevLimit = limit;
-      if (remaining <= 0) break;
-    }
-  } else {
-    if (selling <= threshold) {
-      fvfBase = selling * ebayRate1;
-    } else {
-      fvfBase = threshold * ebayRate1 + (selling - threshold) * ebayRate2;
-    }
-  }
+  const fvfResult = calcFVFBase(selling, grp, ebayRate1, threshold, ebayRate2, perOrder);
+  const fvfBase = fvfResult.fvfBase;
+  const effectivePerOrder = fvfResult.effectivePerOrder;
   const ebayFvf = (fvfBase + effectivePerOrder) * taxMultiplier;
   const promotedFee = selling * promotedRate * taxMultiplier;
   const intlFee = selling * intlRate * taxMultiplier;
@@ -1639,6 +1645,25 @@ function calculate() {
   const netReceived = netPayout * (1 - payoneerRate) * rate;
   const revenueYen = selling * rate;
   const totalFeesYen = revenueYen - netReceived;
+
+  // 関税収入（バイヤー負担分、eBay手数料は掛からずPayoneer手数料のみ）
+  let tariffAmountUsd = 0;
+  if (currentPricingMode === 'us') {
+    // アメリカ向け: 出品送料 = 関税分（81.6/18.4分割の18.4%側）
+    const rawSelling = getVal('sellingPrice');
+    const compShipping = getVal('compShipping');
+    const compTotal = rawSelling + compShipping;
+    if (compTotal > 0 && (compTotal - 0.01) <= 2499.99) {
+      tariffAmountUsd = Math.round((compTotal - 0.01) * 0.184 * 100) / 100;
+    }
+  } else if (currentPricingMode === 'other' && currentCountry === 'us') {
+    // アメリカ以外モード + 米国向け配送: 関税率から算出
+    const usTariffRate = getVal('usTariffRate') / 100;
+    tariffAmountUsd = selling * usTariffRate;
+  }
+  const tariffRevenueYen = tariffAmountUsd > 0
+    ? Math.round(tariffAmountUsd * (1 - payoneerRate) * rate)
+    : 0;
 
   const purchaseTax = purchase * taxRate / taxMultiplier;
   const ebayFeeTaxPortion = totalEbayDeductions / taxMultiplier * taxRate * rate;
@@ -1842,7 +1867,7 @@ function calculate() {
   groups.forEach(g => {
     g.methods.forEach(m => {
       if (m.cost > 0) {
-        m.profit = Math.round(netReceived - purchase - m.cost);
+        m.profit = Math.round(netReceived + tariffRevenueYen - purchase - m.cost);
         m.profitWithRefund = Math.round(m.profit + totalRefund);
         m.profitRate = purchase > 0 ? (m.profit / purchase * 100) : 0;
         m.isOk = m.canSend && m.profit >= 500 && m.profitRate >= 5;
@@ -2028,12 +2053,17 @@ document.querySelectorAll('input').forEach(el => {
   el.addEventListener('input', () => { calculate(); saveState(); debouncedFetchSpeedpak(); });
 });
 document.getElementById('categoryNo').addEventListener('input', onCategoryNoInput);
+document.getElementById('destCountry').addEventListener('change', onCountryChange);
 
 // Initial setup
 initCountrySelector();
 const restored = restoreState();
-if (restored) {
-  currentCountry = document.getElementById('destCountry').value;
+{
+  // 復元された国IDが現在のリストに存在するか確認（旧ID 'uk','de'等→フォールバック）
+  const sel = document.getElementById('destCountry');
+  const validIds = COUNTRIES.map(c => c.id);
+  if (!validIds.includes(sel.value)) sel.value = 'us';
+  currentCountry = sel.value;
 }
 onCategoryNoInput(); // 常にカテゴリNo.から手数料を自動判定
 updateFeeDescription();
