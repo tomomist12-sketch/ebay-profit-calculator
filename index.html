@@ -7,28 +7,49 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f5f7;--card:#fff;--border:#e0e0e0;
-  --primary:#2563eb;--primary-light:#dbeafe;
+  --bg:#f5f5f7;--card:#fff;--border:#e5e5e5;
+  --primary:#3b82f6;--primary-light:#eff6ff;
   --green:#16a34a;--green-bg:#dcfce7;
   --red:#dc2626;--red-bg:#fee2e2;
   --text:#1e293b;--text2:#475569;--text3:#94a3b8;
   --sp:#f97316;--sp-bg:#fff7ed;--sp-border:#fdba74;
-  --shadow:0 1px 3px rgba(0,0,0,.08);
-  --shadow2:0 4px 6px rgba(0,0,0,.07);
+  --shadow:0 1px 3px rgba(0,0,0,.06);
+  --shadow2:0 4px 12px rgba(0,0,0,.08);
+  --radius:12px;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:10px 16px;margin:0 auto;max-width:1400px}
+body{font-family:system-ui,-apple-system,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:16px 20px;margin:0 auto;max-width:1400px}
 h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
-.subtitle{text-align:center;font-size:.82rem;color:var(--text3);margin-bottom:10px}
-.card{background:var(--card);border-radius:10px;padding:12px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
-.card h2{font-size:.95rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--primary);color:var(--primary);display:flex;align-items:center;gap:6px}
+.subtitle{text-align:center;font-size:.82rem;color:var(--text3);margin-bottom:12px}
+
+/* ===== Section Card ===== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:16px}
+.card h2{font-size:14px;font-weight:500;color:#666;margin:0 0 12px;padding:0;border:none;display:flex;align-items:center;gap:6px}
 .card h2 .icon{font-size:1rem}
 
-/* ===== 2-column PC layout ===== */
-.main-layout{display:grid;grid-template-columns:380px 1fr;gap:10px;align-items:start}
+/* ===== 2-Column Layout ===== */
+.main-layout{display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start}
+.left-column{display:flex;flex-direction:column;gap:16px;position:sticky;top:16px}
+.left-column .card{margin-bottom:0}
+.right-column{min-width:0}
+
+/* ===== Profit Summary ===== */
+.profit-summary{display:flex;align-items:center;gap:16px;background:#2563eb;border:none;border-radius:12px;padding:10px 20px;margin-bottom:20px}
+.profit-summary-item{display:flex;align-items:baseline;gap:8px;flex:1}
+.profit-summary-item .p-label{font-size:13px;color:#bfdbfe;white-space:nowrap}
+.profit-summary-item .p-val{font-size:18px;font-weight:700;font-family:"SF Mono",Consolas,monospace;color:#fff;white-space:nowrap}
+.profit-summary-item .p-sub{display:none}
+.profit-summary.negative{background:#dc2626}
+.profit-summary.negative .p-label{color:#fecaca}
+.profit-summary.negative .p-val{color:#fff}
+.profit-summary.negative .profit-summary-divider{background:#f87171}
+.profit-summary-divider{width:1px;height:20px;background:#60a5fa;flex-shrink:0}
+
+/* ===== Fee Detail Section ===== */
+.fee-detail-section{margin-bottom:16px}
 
 .field{display:flex;flex-direction:column;gap:2px}
 .field label{font-size:.8rem;color:var(--text2);font-weight:600;white-space:nowrap}
-.field input{border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;transition:border-color .15s;background:#fafafa}
+.field input{height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;transition:border-color .15s;background:#fafafa}
 .field input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
 .field input.highlight{background:#fffbeb;border-color:#f59e0b}
 .field .unit{font-size:.7rem;color:var(--text3)}
@@ -36,19 +57,13 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 
-/* ===== Summary bar — horizontal ===== */
-.summary-row{display:flex;gap:8px;margin-bottom:8px}
-.summary-cell{flex:1;padding:8px 10px;border-radius:6px;text-align:center;min-width:0}
-.summary-cell .s-label{font-size:.72rem;color:var(--text2);white-space:nowrap}
-.summary-cell .s-val{font-size:1.05rem;font-weight:700;font-family:"SF Mono",Consolas,monospace;white-space:nowrap}
-
 .fee-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.85rem}
 .fee-row .fee-label{color:var(--text2)}
 .fee-row .fee-val{font-weight:600;font-family:"SF Mono",Consolas,monospace}
 .fee-total{border-top:1.5px solid var(--border);margin-top:4px;padding-top:5px;font-weight:700;font-size:.9rem}
 .divider{border:none;border-top:1px dashed var(--border);margin:5px 0}
 
-.toggle-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.78rem;cursor:pointer;color:var(--text3);transition:all .15s}
+.toggle-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:.78rem;cursor:pointer;color:var(--text3);transition:all .15s}
 .toggle-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
 .toggle-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .settings-content{display:none;margin-top:8px}
@@ -56,51 +71,43 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .note{font-size:.72rem;color:var(--text3);margin-top:5px;padding:5px 8px;background:#f8fafc;border-radius:6px;line-height:1.4}
 
 /* ===== Group Section ===== */
-.group-section{margin-bottom:12px}
-.group-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 12px;border-radius:6px;font-weight:700;font-size:.95rem}
-.group-header .g-icon{font-size:1rem}
-.group-header .g-label{white-space:nowrap}
-.group-header .g-note{font-size:.78rem;font-weight:400;opacity:.7;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.group-header .g-tag{font-size:.72rem;padding:2px 8px;border-radius:99px;font-weight:600}
-.group-speedpak{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#c2410c;border:1.5px solid var(--sp-border)}
-.group-speedpak .g-tag{background:#c2410c;color:#fff}
-.group-elogi{background:#f5f0ff;color:#6d28d9;border:1px solid #c4b5fd}
-.group-elogi .g-tag{background:#7c3aed;color:#fff}
-.group-dhl{background:#fefce8;color:#a16207;border:1px solid #fde68a}
-.group-dhl .g-tag{background:#a16207;color:#fff}
-.group-jppost{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-.group-jppost .g-tag{background:#15803d;color:#fff}
-.group-elogi-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd}
-.group-elogi-blue .g-tag{background:#2563eb;color:#fff}
-.group-ups{background:#fef3c7;color:#7c2d12;border:1px solid #fbbf24}
-.group-ups .g-tag{background:#92400e;color:#fff}
+.group-section{margin-bottom:16px}
+.group-header{display:flex;align-items:center;gap:8px;margin:16px 0 4px;font-size:12px;color:#888;background:none;border:none;padding:0}
+.group-header .g-label{white-space:nowrap;color:#888;font-size:12px;font-weight:500}
+.group-header .g-note{font-size:.72rem;font-weight:400;color:#aaa;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.group-grid{display:grid;grid-template-columns:1fr;gap:8px}
 
-/* ===== Method Row ===== */
-.method-row{display:grid;grid-template-columns:1fr auto;gap:0;border-radius:8px;padding:9px 12px;border:1.5px solid var(--border);background:var(--card);transition:all .15s;align-items:center}
-.method-row.best{border-color:var(--green);background:var(--green-bg);box-shadow:var(--shadow2)}
-.method-row.ng{opacity:.45;background:#f8fafc}
-.method-row .mr-left{display:flex;flex-direction:column;gap:2px;min-width:0}
-.method-row .mr-name{font-size:1rem;font-weight:700}
-.method-row .mr-sub{font-size:.78rem;color:var(--text3);line-height:1.4}
-.method-row .mr-right{display:grid;grid-template-columns:auto auto;gap:2px 10px;font-size:.95rem;text-align:right;white-space:nowrap}
-.method-row .mr-right .lbl{color:var(--text2);text-align:left}
-.method-row .mr-right .val{font-weight:700;font-family:"SF Mono",Consolas,monospace}
-.method-row .mr-right .val-profit{color:var(--green)}
-.method-row .mr-right .val-refund{color:var(--primary)}
-.method-row .mr-right .val-neg{color:var(--red);background:var(--red-bg);border-radius:4px;padding:0 4px}
-.method-row .mr-na{font-size:.88rem;color:var(--text3)}
-.badge{font-size:.72rem;padding:2px 7px;border-radius:99px;font-weight:700;display:inline-block;vertical-align:middle;margin-left:4px}
-.badge-ok{background:var(--green-bg);color:var(--green)}
-.badge-ng{background:var(--red-bg);color:var(--red)}
-.badge-best{background:var(--green);color:#fff}
-.badge-na{background:#f1f5f9;color:var(--text3)}
+/* ===== Method Card ===== */
+.method-row{display:grid;grid-template-columns:1fr auto;gap:0;border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);background:#fff;align-items:center;position:relative}
+.method-row.usable{background:#fafcff;border:2px solid #3b82f6;border-radius:var(--radius)}
+.method-row.dimmed{opacity:.4}
+.method-row .mr-left{display:flex;flex-direction:column;gap:3px;min-width:0}
+.method-row .mr-name{font-size:.95rem;font-weight:600}
+.method-row .mr-sub{font-size:.75rem;color:var(--text3);line-height:1.4}
+.method-row .mr-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.method-row .mr-right{display:grid;grid-template-columns:auto auto;gap:2px 12px;font-size:.9rem;text-align:right;white-space:nowrap;align-content:center}
+.method-row .mr-right .lbl{color:var(--text3);text-align:left;font-size:12px}
+.method-row .mr-right .val{font-weight:600;font-family:"SF Mono",Consolas,monospace}
+.method-row .mr-right .val-cost{font-size:1.15rem;font-weight:700}
+.method-row .mr-right .val-profit{color:#0F6E56}
+.method-row .mr-right .val-refund{color:#0F6E56}
+.method-row .mr-right .val-neg{color:#991b1b}
+.method-row .mr-na{font-size:.85rem;color:var(--text3)}
+
+/* ===== Tags ===== */
+.method-tag{font-size:11px;padding:2px 10px;border-radius:8px;display:inline-block}
+.tag-ok{background:#dcfce7;color:#166534}
+.tag-ddp{background:#eff6ff;color:#1e40af}
+.tag-recommend{background:#eff6ff;color:#1d4ed8}
+.tag-fast{background:#f5f5f4;color:#57534e}
+.tag-limit{background:#fef3c7;color:#92400e}
+.tag-compare{background:#f5f5f4;color:#57534e}
+.tag-ng{background:#fee2e2;color:#991b1b}
 
 /* Fee detail popup */
 .fee-detail-btn{font-size:.6rem;padding:1px 5px;border:1px solid var(--border);border-radius:4px;background:#f8fafc;cursor:pointer;color:var(--text3);vertical-align:middle;margin-left:2px;line-height:1.2}
 .fee-detail-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
-.method-row{position:relative}
 .fee-popup{position:absolute;top:100%;right:0;z-index:100;background:#fff;border:1.5px solid var(--primary);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);padding:10px 14px;min-width:240px;margin-top:4px}
 .fp-header{font-size:.82rem;font-weight:700;color:var(--primary);border-bottom:2px solid var(--primary);padding-bottom:5px;margin-bottom:6px}
 .fp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.8rem;gap:12px}
@@ -108,23 +115,13 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .fp-val{font-weight:600;font-family:"SF Mono",Consolas,monospace;white-space:nowrap}
 .fp-total{border-top:1.5px solid var(--border);margin-top:4px;padding-top:5px;font-weight:700;font-size:.82rem}
 
-.group-section.grp-fedex .method-row:not(.ng){border-color:#c4b5fd;background:#f5f0ff}
-.group-section.grp-dhl .method-row:not(.ng){border-color:#fde68a;background:#fefce8}
-.group-section.grp-elogi .method-row:not(.ng){border-color:#93c5fd;background:#eff6ff}
-.group-section.grp-ups .method-row:not(.ng){border-color:#fbbf24;background:#fef3c7}
-.group-section .method-row.best{border-color:var(--green);background:var(--green-bg);box-shadow:var(--shadow2)}
-
 .group-section.collapsed .group-grid{display:none}
-.group-toggle{font-size:.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:5px;background:var(--card);cursor:pointer;color:var(--text3);margin-left:auto}
+.group-toggle{font-size:.72rem;padding:3px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;color:var(--text3);margin-left:auto}
 .group-toggle:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
-.group-unavail{background:#fef2f2;color:var(--red);border:1.5px solid #fca5a5}
-.group-unavail .g-tag{background:var(--red);color:#fff}
-.unavail-note{font-size:.78rem;color:var(--red);padding:4px 12px;margin-bottom:6px}
-.group-section.grp-speedpak .method-row:not(.ng){border-color:var(--sp-border);background:var(--sp-bg)}
-.group-section.grp-jppost .method-row:not(.ng){border-color:#bbf7d0;background:#f0fdf4}
+.unavail-note{font-size:.78rem;color:#991b1b;padding:4px 12px;margin-bottom:6px}
 
 .mode-bar{display:flex;gap:6px;margin-bottom:10px}
-.mode-btn{flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text3);text-align:center;transition:all .15s}
+.mode-btn{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text3);text-align:center;transition:all .15s}
 .mode-btn:hover{border-color:var(--primary);color:var(--primary)}
 .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .pricing-info{font-size:.78rem;color:var(--text2);padding:6px 8px;background:#f8fafc;border-radius:6px;margin-top:4px;line-height:1.5}
@@ -133,10 +130,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 /* ===== Shopping Search Bar ===== */
 .shop-search-bar{background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:6px 12px;margin-bottom:10px}
 .shop-search-top{display:flex;align-items:center;gap:8px}
-.shop-search-top input[type="text"]{flex:1;border:1.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:.9rem;min-width:0}
+.shop-search-top input[type="text"]{flex:1;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:.9rem;min-width:0}
 .shop-search-top input[type="text"]:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-light)}
-.shop-search-btn{font-size:.78rem;padding:5px 14px;border:1.5px solid var(--primary);border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-weight:600;white-space:nowrap}
-.shop-search-btn:hover{background:#1d4ed8}
+.shop-search-btn{font-size:.78rem;padding:5px 14px;border:1px solid var(--primary);border-radius:8px;background:var(--primary);color:#fff;cursor:pointer;font-weight:600;white-space:nowrap}
+.shop-search-btn:hover{background:#2563eb}
 .shop-sites{display:flex;flex-wrap:wrap;gap:2px 6px;margin-top:4px}
 .shop-sites label{font-size:.72rem;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:4px;transition:background .1s;white-space:nowrap;user-select:none}
 .shop-sites label:hover{background:var(--primary-light)}
@@ -144,30 +141,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .shop-toggle{font-size:.7rem;color:var(--text3);cursor:pointer;border:none;background:none;padding:0;text-decoration:underline}
 .shop-toggle:hover{color:var(--primary)}
 
-@media(max-width:900px){
-  .main-layout{grid-template-columns:1fr}
-  .group-grid{grid-template-columns:1fr}
-}
-@media(max-width:640px){
-  body{padding:8px 10px}
-  h1{font-size:1.1rem}
-  .tool-bar{grid-template-columns:1fr !important}
-  .tool-bar>*{text-align:center}
-  .tool-bar .shop-sites{justify-content:center}
-  .tool-bar div[style*="display:flex"]{justify-content:center}
-  .card{padding:10px 12px}
-  .grid4{grid-template-columns:1fr 1fr;gap:6px}
-  .summary-row{flex-direction:column;gap:6px}
-  .group-header{flex-wrap:wrap;font-size:.82rem;gap:4px 8px;justify-content:center;text-align:center}
-  .group-header .g-label{white-space:normal}
-  .group-header .g-note{width:100%;flex:none;text-align:center}
-  .method-row{grid-template-columns:1fr;gap:6px;text-align:center}
-  .method-row .mr-right{justify-content:center;justify-items:center;text-align:center;font-size:.88rem}
-  .method-row .mr-left{align-items:center}
-  .mode-bar{flex-direction:column;gap:4px}
-  .unavail-note{text-align:center}
-  .group-note{text-align:center}
-}
 </style>
 </head>
 <body>
@@ -207,9 +180,9 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   </div>
 </div>
 
+<!-- ===== 2カラムレイアウト ===== -->
 <div class="main-layout">
-<!-- ===== LEFT COLUMN ===== -->
-<div class="left-col">
+<div class="left-column">
 
   <!-- 商品情報 -->
   <div class="card">
@@ -228,31 +201,40 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <input type="text" inputmode="decimal" id="sellingPrice" value="0" class="highlight">
       </div>
     </div>
-    <!-- 🇺🇸 アメリカ向け: 競合送料 -->
+    <!-- 🇺🇸 アメリカ向け -->
     <div id="usSection" style="margin-bottom:6px">
-      <div class="field" style="width:130px;margin-bottom:6px">
-        <label>送料 <span class="unit">($)※競合送料</span></label>
-        <input type="text" inputmode="decimal" id="compShipping" value="0" class="highlight">
+      <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px" id="compShippingRow">
+        <div class="field" style="width:140px">
+          <label>競合送料</label>
+          <input type="text" inputmode="decimal" id="compShipping" value="0" class="highlight">
+        </div>
+        <div style="display:flex;gap:2px;margin-bottom:1px">
+          <button class="mode-btn active" id="compCurrUsd" onclick="setCompShippingCurrency('usd')" style="padding:4px 10px;font-size:.78rem;min-width:32px">$</button>
+          <button class="mode-btn" id="compCurrJpy" onclick="setCompShippingCurrency('jpy')" style="padding:4px 10px;font-size:.78rem;min-width:32px">¥</button>
+        </div>
       </div>
-      <div id="usPricingInfo" style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px">
         <div style="flex:1;padding:8px 10px;border-radius:6px;background:var(--primary-light);border:1.5px solid var(--primary);text-align:center">
-          <div style="font-size:.68rem;color:var(--primary);font-weight:600">📋 eBay出品価格</div>
+          <div style="font-size:.68rem;color:var(--primary);font-weight:600">商品価格（÷1.184）</div>
           <div id="listPrice" style="font-size:1.1rem;font-weight:700;color:var(--primary);font-family:'SF Mono',Consolas,monospace">-</div>
         </div>
         <div style="flex:1;padding:8px 10px;border-radius:6px;background:#fef3c7;border:1.5px solid #f59e0b;text-align:center">
-          <div style="font-size:.68rem;color:#b45309;font-weight:600">📋 eBay出品送料</div>
+          <div style="font-size:.68rem;color:#b45309;font-weight:600">🇺🇸送料（関税分）</div>
           <div id="listShipping" style="font-size:1.1rem;font-weight:700;color:#b45309;font-family:'SF Mono',Consolas,monospace">-</div>
         </div>
       </div>
     </div>
-    <!-- 🌍 アメリカ以外: 関税率 -->
-    <div id="otherSection" style="margin-bottom:6px;display:none">
-      <div style="display:flex;gap:8px;align-items:flex-end">
-        <div class="field" style="width:160px">
-          <label>米国向け関税率 <span class="unit">(%)</span></label>
-          <input type="text" inputmode="decimal" id="usTariffRate" value="20" class="highlight">
+    <!-- 🌍 アメリカ以外 -->
+    <div id="otherSection" style="display:none">
+      <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px">
+        <div class="field" style="width:100px">
+          <label>🇺🇸送料 <span class="unit">(%)</span></label>
+          <input type="text" inputmode="decimal" id="usShippingPct" value="20" class="highlight">
         </div>
-        <div class="pricing-info" id="otherPricingInfo" style="flex:1">🇺🇸米国向け送料: <strong>-</strong></div>
+        <div style="padding:8px 10px;border-radius:6px;background:#fef3c7;border:1.5px solid #f59e0b;text-align:center;min-width:100px">
+          <div style="font-size:.68rem;color:#b45309;font-weight:600">🇺🇸送料参考額</div>
+          <div id="usShippingRef" style="font-size:1.1rem;font-weight:700;color:#b45309;font-family:'SF Mono',Consolas,monospace">-</div>
+        </div>
       </div>
     </div>
     <div class="grid4">
@@ -328,32 +310,29 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <div class="field"><label>eBay手数料2 (%)</label><input type="text" inputmode="decimal" id="ebayFeeRate2" value="2.35"></div>
         <div class="field"><label>1注文あたり ($)</label><input type="text" inputmode="decimal" id="perOrderFee" value="0.40"></div>
         <div class="field"><label>Promoted (%)</label><input type="text" inputmode="decimal" id="promotedRate" value="2" class="highlight"></div>
-        <div class="field"><label>海外手数料 (%)</label><input type="text" inputmode="decimal" id="intlFeeRate" value="0.95" class="highlight"></div>
+        <div class="field"><label>海外手数料 (%) <span style="font-weight:400;color:var(--text3);cursor:pointer;font-size:.65rem" onclick="document.getElementById('intlFeeDetail').style.display=document.getElementById('intlFeeDetail').style.display==='none'?'block':'none'">詳細</span></label><input type="text" inputmode="decimal" id="intlFeeRate" value="0.95" class="highlight"></div>
+        <div id="intlFeeDetail" style="display:none;grid-column:1/-1;font-size:.7rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:8px 10px;line-height:1.5">
+          <div style="font-weight:600;margin-bottom:4px">海外決済手数料ボリュームディスカウント</div>
+          <div style="color:var(--text3);margin-bottom:6px">前々月の総売上に応じて割引 ※Below Standard評価の場合は適用外</div>
+          <table style="width:100%;border-collapse:collapse;font-size:.68rem">
+            <tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:3px 4px">総売上(前々月)</th><th style="text-align:right;padding:3px 4px">手数料率</th></tr>
+            <tr><td style="padding:2px 4px;color:var(--text3)">$3,000未満</td><td style="text-align:right;padding:2px 4px">1.65%</td></tr>
+            <tr><td style="padding:2px 4px">$3,000〜$9,999</td><td style="text-align:right;padding:2px 4px">1.20%</td></tr>
+            <tr><td style="padding:2px 4px">$10,000〜$49,999</td><td style="text-align:right;padding:2px 4px">0.95%</td></tr>
+            <tr><td style="padding:2px 4px">$50,000〜$99,999</td><td style="text-align:right;padding:2px 4px">0.70%</td></tr>
+            <tr><td style="padding:2px 4px">$100,000以上</td><td style="text-align:right;padding:2px 4px">0.40%</td></tr>
+          </table>
+        </div>
         <div class="field"><label>Payoneer (%)</label><input type="text" inputmode="decimal" id="payoneerRate" value="2" class="highlight"></div>
         <div class="field"><label>消費税率 (%)</label><input type="text" inputmode="decimal" id="taxRate" value="10"></div>
       </div>
     </div>
   </div>
 
-  <!-- 利益サマリー -->
-  <div class="card">
-    <h2><span class="icon">💰</span> 利益サマリー</h2>
-    <div class="summary-row">
-      <div class="summary-cell" id="summaryProfit" style="background:var(--green-bg)">
-        <div class="s-label">推奨便 利益</div>
-        <div class="s-val" style="color:var(--green)" id="bestProfitYen">-</div>
-      </div>
-      <div class="summary-cell" id="summaryRefund" style="background:#dbeafe">
-        <div class="s-label">還付込み</div>
-        <div class="s-val" style="color:var(--primary)" id="bestProfitRefundYen">-</div>
-      </div>
-      <div class="summary-cell" style="background:#f0fdf4">
-        <div class="s-label">利益率</div>
-        <div class="s-val" style="color:var(--green)" id="bestProfitRate">-</div>
-      </div>
-    </div>
-    <button class="toggle-btn" id="feeToggle" onclick="toggleFeeDetail()">内訳 ▼</button>
-    <div class="settings-content" id="feeDetailContent">
+<div class="fee-detail-section" style="text-align:center">
+  <button class="toggle-btn" id="feeToggle" onclick="toggleFeeDetail()">手数料内訳 ▼</button>
+  <div class="settings-content" id="feeDetailContent">
+    <div class="card" style="text-align:left;margin-top:8px;margin-bottom:0">
       <div class="fee-row"><span class="fee-label">売上</span><span class="fee-val" id="revenueYen">-</span></div>
       <div class="fee-row"><span class="fee-label">手数料計</span><span class="fee-val" style="color:var(--red)" id="totalFeesYen">-</span></div>
       <hr class="divider">
@@ -366,24 +345,40 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <div class="note">※eBay系手数料には消費税10%込。Payoneerは為替変換時控除。</div>
     </div>
   </div>
+</div>
 
-</div><!-- /left-col -->
+</div><!-- /left-column -->
 
-<!-- ===== RIGHT COLUMN ===== -->
-<div class="right-col">
-  <div class="card" style="padding:12px 16px">
-    <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
-    <div style="margin-bottom:8px">
-      <select id="destCountry" style="border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600">
-      </select>
-    </div>
-    <div id="resultsContainer"></div>
+<div class="right-column">
+<!-- ===== 利益サマリー ===== -->
+<div class="profit-summary">
+  <div class="profit-summary-item" id="summaryProfit">
+    <div class="p-label">推奨便 利益</div>
+    <div class="p-val" id="bestProfitYen">-</div>
+    <div class="p-sub" id="bestMethodName"></div>
+    <div style="font-size:10px;color:#93c5fd;margin-top:2px">利益OK判定：≥¥500 かつ ≥5%</div>
   </div>
-  <div class="note" style="text-align:center;margin-top:3px" id="footerNote">
-    ※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。利益OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
+  <div class="profit-summary-divider"></div>
+  <div class="profit-summary-item" id="summaryRefund">
+    <div class="p-label">還付込み</div>
+    <div class="p-val" id="bestProfitRefundYen">-</div>
   </div>
-</div><!-- /right-col -->
-
+</div>
+<!-- 利益率（非表示、計算ロジック維持用） -->
+<div style="display:none"><span id="bestProfitRate">-</span><span id="bestRateSub"></span></div>
+<!-- ===== 配送方法別 利益比較 ===== -->
+<div class="card">
+  <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
+  <div style="margin-bottom:10px">
+    <select id="destCountry" style="height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600">
+    </select>
+  </div>
+  <div id="resultsContainer"></div>
+</div>
+<div class="note" style="text-align:center;margin-top:-12px;margin-bottom:16px" id="footerNote">
+  ※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。利益OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
+</div>
+</div><!-- /right-column -->
 </div><!-- /main-layout -->
 
 <script src="ebay_category_tree.js"></script>
@@ -1243,6 +1238,24 @@ function fmtD(n) { return n.toFixed(2); }
 const currentSort = 'profit';
 let currentCountry = 'us';
 let currentPricingMode = 'us';
+let compShippingCurrency = 'usd'; // 'usd' or 'jpy'
+
+function setCompShippingCurrency(curr) {
+  compShippingCurrency = curr;
+  document.getElementById('compCurrUsd').classList.toggle('active', curr === 'usd');
+  document.getElementById('compCurrJpy').classList.toggle('active', curr === 'jpy');
+  calculate();
+  saveState();
+}
+
+function getCompShippingUsd() {
+  const val = getVal('compShipping');
+  if (compShippingCurrency === 'jpy') {
+    const rate = getVal('exchangeRate');
+    return rate > 0 ? val / rate : 0;
+  }
+  return val;
+}
 
 function initCountrySelector() {
   const sel = document.getElementById('destCountry');
@@ -1277,40 +1290,56 @@ function setPricingMode(mode) {
 function getEffectiveSellingPrice() {
   const selling = getVal('sellingPrice');
   if (currentPricingMode === 'us') {
-    const compShipping = getVal('compShipping');
+    // アメリカ向けモード: 競合最安値 + 競合送料 − $0.01
+    const compShipping = getCompShippingUsd();
     const compTotal = selling + compShipping;
-    if (compTotal <= 0) return selling;
-    if ((compTotal - 0.01) > 2499.99) {
-      return Math.round((compTotal - 0.01) * 100) / 100;
-    } else {
-      return Math.round((compTotal * 0.816 - 0.01) * 100) / 100;
+    if (compTotal <= 0) return 0;
+    const total = Math.round((compTotal - 0.01) * 100) / 100;
+    // 配送先がアメリカ以外の場合、商品価格（÷1.184）のみが収入
+    if (currentCountry !== 'us' && total <= 2499.99) {
+      return Math.round((total / 1.184) * 100) / 100;
     }
+    return total;
+  } else {
+    // アメリカ以外モード: 競合最安値 − $0.01
+    if (selling <= 0) return 0;
+    const base = Math.round((selling - 0.01) * 100) / 100;
+    // 配送先がアメリカの場合、🇺🇸送料%分が加算される
+    if (currentCountry === 'us') {
+      const usShippingPct = getVal('usShippingPct') / 100;
+      const usShipping = Math.round(selling * usShippingPct * 100) / 100;
+      return Math.round((base + usShipping) * 100) / 100;
+    }
+    return base;
   }
-  return selling;
 }
 
 function updatePricingDisplay() {
   const selling = getVal('sellingPrice');
   if (currentPricingMode === 'us') {
-    const compShipping = getVal('compShipping');
+    const compShipping = getCompShippingUsd();
     const compTotal = selling + compShipping;
-    let listPrice, listShipping;
-    if (compTotal <= 0) {
-      listPrice = selling; listShipping = 0;
-    } else if ((compTotal - 0.01) > 2499.99) {
-      listPrice = Math.round((compTotal - 0.01) * 100) / 100;
-      listShipping = 0;
+    const total = compTotal > 0 ? Math.round((compTotal - 0.01) * 100) / 100 : 0;
+    // ÷1.184分割（$2,500超は分割しない）
+    if (total > 0) {
+      if (total > 2499.99) {
+        document.getElementById('listPrice').textContent = '$' + fmtD(total);
+        document.getElementById('listShipping').textContent = '$0.00';
+      } else {
+        const itemPrice = Math.round((total / 1.184) * 100) / 100;
+        const usShipping = Math.round((total - itemPrice) * 100) / 100;
+        document.getElementById('listPrice').textContent = '$' + fmtD(itemPrice);
+        document.getElementById('listShipping').textContent = '$' + fmtD(usShipping);
+      }
     } else {
-      listPrice = Math.round((compTotal * 0.816 - 0.01) * 100) / 100;
-      listShipping = Math.round((compTotal - 0.01) * 0.184 * 100) / 100;
+      document.getElementById('listPrice').textContent = '-';
+      document.getElementById('listShipping').textContent = '-';
     }
-    document.getElementById('listPrice').textContent = '$' + fmtD(listPrice);
-    document.getElementById('listShipping').textContent = '$' + fmtD(listShipping);
   } else {
-    const tariff = getVal('usTariffRate') / 100;
-    const tariffAmount = Math.round(selling * tariff * 100) / 100;
-    document.getElementById('otherPricingInfo').innerHTML =
-      '🇺🇸米国向け関税額: <strong>$' + fmtD(tariffAmount) + '</strong>（バイヤー負担）';
+    // 🇺🇸送料参考額（競合最安値 × 入力%）
+    const usShippingPct = getVal('usShippingPct') / 100;
+    const usShippingRef = selling > 0 ? Math.round(selling * usShippingPct * 100) / 100 : 0;
+    document.getElementById('usShippingRef').textContent = usShippingRef > 0 ? '$' + fmtD(usShippingRef) : '-';
   }
 }
 
@@ -1333,11 +1362,11 @@ function toggleFeeDetail() {
   const b = document.getElementById('feeToggle');
   if (c.classList.contains('show')) {
     c.classList.remove('show');
-    b.textContent = '内訳 ▼';
+    b.textContent = '手数料内訳 ▼';
     b.classList.remove('active');
   } else {
     c.classList.add('show');
-    b.textContent = '内訳 ▲';
+    b.textContent = '手数料内訳 ▲';
     b.classList.add('active');
   }
 }
@@ -1483,9 +1512,15 @@ async function fetchSpeedpakRates() {
   const weightG = weightKg * 1000;
   if (weightG <= 0 || L <= 0 || W <= 0 || H <= 0) return;
 
-  const selling = getEffectiveSellingPrice();
-  const compShipping = getVal('compShipping');
-  const declaredUsd = selling + compShipping;
+  // declaredValue: モードに関係なく出品合計を使用
+  const rawSelling = getVal('sellingPrice');
+  let declaredUsd;
+  if (currentPricingMode === 'us') {
+    const compShipping = getCompShippingUsd();
+    declaredUsd = rawSelling + compShipping > 0 ? Math.round((rawSelling + compShipping - 0.01) * 100) / 100 : 0;
+  } else {
+    declaredUsd = rawSelling > 0 ? Math.round((rawSelling - 0.01) * 100) / 100 : 0;
+  }
   const cc = COUNTRIES.find(c => c.id === currentCountry) || COUNTRIES[0];
 
   _speedpakLoading = true;
@@ -1646,25 +1681,6 @@ function calculate() {
   const revenueYen = selling * rate;
   const totalFeesYen = revenueYen - netReceived;
 
-  // 関税収入（バイヤー負担分、eBay手数料は掛からずPayoneer手数料のみ）
-  let tariffAmountUsd = 0;
-  if (currentPricingMode === 'us') {
-    // アメリカ向け: 出品送料 = 関税分（81.6/18.4分割の18.4%側）
-    const rawSelling = getVal('sellingPrice');
-    const compShipping = getVal('compShipping');
-    const compTotal = rawSelling + compShipping;
-    if (compTotal > 0 && (compTotal - 0.01) <= 2499.99) {
-      tariffAmountUsd = Math.round((compTotal - 0.01) * 0.184 * 100) / 100;
-    }
-  } else if (currentPricingMode === 'other' && currentCountry === 'us') {
-    // アメリカ以外モード + 米国向け配送: 関税率から算出
-    const usTariffRate = getVal('usTariffRate') / 100;
-    tariffAmountUsd = selling * usTariffRate;
-  }
-  const tariffRevenueYen = tariffAmountUsd > 0
-    ? Math.round(tariffAmountUsd * (1 - payoneerRate) * rate)
-    : 0;
-
   const purchaseTax = purchase * taxRate / taxMultiplier;
   const ebayFeeTaxPortion = totalEbayDeductions / taxMultiplier * taxRate * rate;
   const totalRefund = purchaseTax + ebayFeeTaxPortion;
@@ -1697,16 +1713,16 @@ function calculate() {
   const isUS = currentCountry === 'us';
 
   const groups = [
-    { id: 'fedex',    label: 'CPaSS FedEx International Connect Plus', icon: '🟣', cls: 'group-elogi',    tag: '推奨',      primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
-    { id: 'fedex-ip', label: 'CPaSS FedEx International Priority',   icon: '🟣', cls: 'group-elogi',    tag: '速達',      primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
-    { id: 'dhl',      label: 'CPaSS DHL',            icon: '🟡', cls: 'group-dhl',      tag: '推奨',      primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
-    { id: 'speedpak', label: 'CPaSS Economy',        icon: '🟠', cls: 'group-speedpak', tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
-    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
-    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   icon: '🔵', cls: 'group-elogi-blue', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
+    { id: 'fedex',    label: 'FedEx FICP（CPaSS）', tag: '推奨', primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
+    { id: 'fedex-ip', label: 'FedEx IP（CPaSS）',   tag: '速達', primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
+    { id: 'dhl',      label: 'DHL（CPaSS）',         tag: '推奨', primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
+    { id: 'speedpak', label: 'Economy（CPaSS）',     tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
+    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
+    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
     ...(getElogiUpsData(cc.upsZone) ? [
-      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', icon: '🟤', cls: 'group-ups', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
+      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
-    { id: 'jppost',   label: '日本郵便',             icon: '🟢', cls: cc.jpOk!==false?'group-jppost':'group-unavail', tag: cc.jpOk!==false?'補助':'非対応', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':(cc.jpZone?'この国は日本郵便の差出が制限されています（△）':'料金テーブル未設定') },
+    { id: 'jppost',   label: '日本郵便', tag: cc.jpOk!==false?'補助':'非対応', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':(cc.jpZone?'この国は日本郵便の差出が制限されています（△）':'料金テーブル未設定') },
   ];
 
   function addMethod(groupId, m) {
@@ -1867,7 +1883,7 @@ function calculate() {
   groups.forEach(g => {
     g.methods.forEach(m => {
       if (m.cost > 0) {
-        m.profit = Math.round(netReceived + tariffRevenueYen - purchase - m.cost);
+        m.profit = Math.round(netReceived - purchase - m.cost);
         m.profitWithRefund = Math.round(m.profit + totalRefund);
         m.profitRate = purchase > 0 ? (m.profit / purchase * 100) : 0;
         m.isOk = m.canSend && m.profit >= 500 && m.profitRate >= 5;
@@ -1878,55 +1894,64 @@ function calculate() {
     });
   });
 
-  // Best判定: FedEx/DHLを優先。Economyはおまけ。
-  // FedEx/DHL内で利益OKの最高利益メソッドをbest。なければ全体で最高利益をbest。
-  const fedexDhlMethods = allMethods.filter(m => m._groupId === 'fedex' || m._groupId === 'fedex-ip' || m._groupId === 'dhl' || m._groupId === 'elogi-ficp' || m._groupId === 'elogi-ip' || m._groupId === 'elogi-ups');
+  // Best判定: CPaSS FedEx/DHLから最高利益メソッドを選定（eLogi比較用は除外）
+  const fedexDhlMethods = allMethods.filter(m => m._groupId === 'fedex' || m._groupId === 'fedex-ip' || m._groupId === 'dhl');
   let bestFD = null, bestFDProfit = -Infinity;
   fedexDhlMethods.forEach(m => {
-    if (m.isOk && m.profit !== null && m.profit > bestFDProfit) { bestFDProfit = m.profit; bestFD = m; }
+    if (m.canSend && m.profit !== null && m.profit > bestFDProfit) { bestFDProfit = m.profit; bestFD = m; }
   });
 
+  // フォールバック: CPaSSにcanSendがなければ、eLogi/日本郵便除外で全体から探す
   let bestProfit = -Infinity, bestRefund = -Infinity;
   allMethods.forEach(m => {
-    if (!m.canSend) return; // 発送不可メソッドはサマリー対象外
+    if (!m.canSend) return;
+    if (m._groupId.startsWith('elogi')) return; // eLogi比較用は除外
     if (m.profit !== null && m.profit > bestProfit) bestProfit = m.profit;
     if (m.profitWithRefund !== null && m.profitWithRefund > bestRefund) bestRefund = m.profitWithRefund;
   });
 
-  function setSummaryVal(elId, value, cellId) {
+  function setProfitCard(cellId, value, elId) {
     const el = document.getElementById(elId);
-    const cell = document.getElementById(cellId);
     if (value === null || value === undefined) {
       el.textContent = '-';
-      if (cell) { cell.style.background = ''; }
+      el.className = 'p-val';
       return;
     }
     if (value < 0) {
       el.textContent = '⚠ ¥' + fmt(value);
-      el.style.color = 'var(--red)';
-      if (cell) cell.style.background = 'var(--red-bg)';
+      el.className = 'p-val val-negative';
     } else {
       el.textContent = '¥' + fmt(value);
-      el.style.color = '';
-      if (cell) cell.style.background = '';
+      el.className = 'p-val';
     }
   }
 
+  const bestNameEl = document.getElementById('bestMethodName');
+  const bestRateSubEl = document.getElementById('bestRateSub');
+
+  const summaryBar = document.querySelector('.profit-summary');
+
   if (bestFD) {
     allMethods.forEach(m => { m.isBest = (m === bestFD); });
-    setSummaryVal('bestProfitYen', bestFD.profit, 'summaryProfit');
-    setSummaryVal('bestProfitRefundYen', bestFD.profitWithRefund, 'summaryRefund');
+    setProfitCard('summaryProfit', bestFD.profit, 'bestProfitYen');
+    setProfitCard('summaryRefund', bestFD.profitWithRefund, 'bestProfitRefundYen');
+    // 利益NG → バー全体を赤背景に
+    summaryBar.classList.toggle('negative', !bestFD.isOk);
     const rateEl = document.getElementById('bestProfitRate');
     rateEl.textContent = bestFD.profitRate.toFixed(1) + '%';
-    rateEl.style.color = bestFD.profitRate < 0 ? 'var(--red)' : '';
+    bestNameEl.textContent = bestFD.name;
+    bestRateSubEl.textContent = '仕入額 ¥' + fmt(purchase) + ' に対して';
   } else {
     let bestMethod = null;
     allMethods.forEach(m => { m.isBest = m.profit !== null && m.profit === bestProfit && m.isOk; if (m.isBest && !bestMethod) bestMethod = m; });
-    setSummaryVal('bestProfitYen', bestProfit > -Infinity ? bestProfit : null, 'summaryProfit');
-    setSummaryVal('bestProfitRefundYen', bestRefund > -Infinity ? bestRefund : null, 'summaryRefund');
+    setProfitCard('summaryProfit', bestProfit > -Infinity ? bestProfit : null, 'bestProfitYen');
+    setProfitCard('summaryRefund', bestRefund > -Infinity ? bestRefund : null, 'bestProfitRefundYen');
+    // 利益NG → バー全体を赤背景に
+    summaryBar.classList.toggle('negative', !bestMethod || !bestMethod.isOk);
     const rateEl = document.getElementById('bestProfitRate');
     rateEl.textContent = bestMethod ? bestMethod.profitRate.toFixed(1) + '%' : '-';
-    rateEl.style.color = bestMethod && bestMethod.profitRate < 0 ? 'var(--red)' : '';
+    bestNameEl.textContent = bestMethod ? bestMethod.name : '';
+    bestRateSubEl.textContent = purchase > 0 ? '仕入額 ¥' + fmt(purchase) + ' に対して' : '';
   }
 
   // Sort by profit (descending)
@@ -1947,12 +1972,7 @@ function calculate() {
   groups.forEach(g => {
     const section = document.createElement('div');
     let sectionCls = 'group-section';
-    if (g.id === 'fedex' || g.id === 'fedex-ip') sectionCls += ' grp-fedex';
-    else if (g.id === 'dhl') sectionCls += ' grp-dhl';
-    else if (g.id === 'elogi-ficp' || g.id === 'elogi-ip') sectionCls += ' grp-elogi';
-    else if (g.id === 'elogi-ups') sectionCls += ' grp-ups';
-    else if (g.id === 'speedpak') { sectionCls += ' grp-speedpak'; if (!cc.economy) sectionCls += ' collapsed'; }
-    else if (g.id === 'jppost') sectionCls += ' grp-jppost';
+    if (g.id === 'speedpak' && !cc.economy) sectionCls += ' collapsed';
     if (g.collapsed) sectionCls += ' collapsed';
     section.className = sectionCls;
 
@@ -1961,8 +1981,21 @@ function calculate() {
     if (isCollapsed) {
       headerExtra = `<button class="group-toggle" onclick="this.closest('.group-section').classList.toggle('collapsed');this.textContent=this.closest('.group-section').classList.contains('collapsed')?'詳細 ▼':'閉じる ▲'">詳細 ▼</button>`;
     }
+    // eLogi メリットリンク（比較用タグの横）
+    let meritLink = '';
+    if (g.id === 'elogi-ficp') {
+      meritLink = `<span style="font-size:.62rem;color:var(--text3);cursor:pointer;margin-left:4px;text-decoration:underline" onclick="event.stopPropagation();const d=document.getElementById('elogiMeritPopup');d.style.display=d.style.display==='none'?'block':'none'">メリット</span>`;
+    }
     const noteHtml = g.note ? `<span class="g-note">— ${g.note}</span>` : '';
-    section.innerHTML = `<div class="group-header ${g.cls}"><span class="g-icon">${g.icon}</span><span class="g-label">${g.label}</span>${noteHtml}<span class="g-tag">${g.tag}</span>${headerExtra}</div>`;
+    section.innerHTML = `<div class="group-header"><span class="g-label">${g.label}</span>${noteHtml}${meritLink}${headerExtra}</div>`;
+    // eLogi メリット吹き出し
+    if (g.id === 'elogi-ficp') {
+      const popup = document.createElement('div');
+      popup.id = 'elogiMeritPopup';
+      popup.style.cssText = 'display:none;font-size:.68rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:-4px 12px 6px;line-height:1.4';
+      popup.innerHTML = `<b>配達料・手数料の免除</b><br>・地域外配達料 ・個人宅配達料 ・土日集荷手数料<br><span style="color:var(--text3)">地域外配達料免除: 区分A（韓国・台湾・香港）、欧州主要国（UK・DE・FR・IT・ES）<br>個人宅配達料・土日集荷手数料は全地域免除</span><hr style="border:none;border-top:1px dashed var(--border);margin:4px 0"><b>料金区分</b> <span style="color:var(--text3)">韓国/台湾/香港:A　US:E　CA:F　UK/DE/FR/IT/ES:H　AU:U</span>`;
+      section.appendChild(popup);
+    }
 
     // 日本郵便の注記
     if (g.id === 'jppost') {
@@ -1980,15 +2013,22 @@ function calculate() {
     g.methods.forEach(m => {
       const row = document.createElement('div');
       let cls = 'method-row';
-      if (m.isBest) cls += ' best';
-      else if (!m.canSend || (m.profit !== null && !m.isOk)) cls += ' ng';
+      // 利益OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
+      if (m.isOk && m.canSend && m.cost > 0) cls += ' usable';
+      else cls += ' dimmed';
       row.className = cls;
 
-      let badge = '';
-      if (!m.canSend) badge = '<span class="badge badge-na">不可</span>';
-      else if (m.isBest) badge = '<span class="badge badge-best">最高</span>';
-      else if (m.isOk) badge = '<span class="badge badge-ok">OK</span>';
-      else badge = '<span class="badge badge-ng">NG</span>';
+      // Tags
+      const tagItems = [];
+      if (m.isBest) tagItems.push('<span class="method-tag tag-recommend">推奨</span>');
+      if (m.isOk) tagItems.push('<span class="method-tag tag-ok">利益OK</span>');
+      if (m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
+      if (g.tag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
+      if (g.tag === '比較用') tagItems.push('<span class="method-tag tag-compare">比較用</span>');
+      if (g.tag === '4ヶ国限定') tagItems.push('<span class="method-tag tag-limit">4ヶ国限定</span>');
+      if (g.tag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
+      if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
+      const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
 
       let right;
       if (m.cost > 0 && m.profit !== null) {
@@ -2003,7 +2043,7 @@ function calculate() {
           popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
         }
         right = `<div class="mr-right">
-          <span class="lbl">送料 ${detailBtn}</span><span class="val">¥${fmt(m.cost)}</span>
+          <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
           <span class="lbl">利益</span><span class="${profitCls}">${profitTxt}</span>
           <span class="lbl">還付込</span><span class="${refundCls}">${refundTxt}</span>
         </div>${popupHtml}`;
@@ -2011,7 +2051,7 @@ function calculate() {
         right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
       }
 
-      row.innerHTML = `<div class="mr-left"><div class="mr-name">${m.name}${badge}</div><div class="mr-sub">${m.sub}</div></div>${right}`;
+      row.innerHTML = `<div class="mr-left"><div class="mr-name">${m.name}</div><div class="mr-sub">${m.sub}</div>${tags}</div>${right}`;
       grid.appendChild(row);
     });
 
@@ -2023,7 +2063,7 @@ function calculate() {
 // ========== LocalStorage Persistence ==========
 const SAVE_KEY = 'ebayCalcState';
 const SAVE_FIELDS = ['purchasePrice','sellingPrice','compShipping','weight','length','width','height',
-  'usTariffRate','categoryNo','exchangeRate','fuelSurcharge',
+  'categoryNo','exchangeRate','fuelSurcharge','usShippingPct',
   'ebayFeeRate','feeThreshold','ebayFeeRate2','perOrderFee',
   'promotedRate','intlFeeRate','payoneerRate','taxRate'];
 
@@ -2033,6 +2073,7 @@ function saveState() {
   s._country = document.getElementById('destCountry').value;
   s._pricingMode = currentPricingMode;
   s._storePlan = currentStorePlan;
+  s._compCurrency = compShippingCurrency;
   localStorage.setItem(SAVE_KEY, JSON.stringify(s));
 }
 
@@ -2044,6 +2085,7 @@ function restoreState() {
     if (s._country) document.getElementById('destCountry').value = s._country;
     if (s._pricingMode) setPricingMode(s._pricingMode);
     if (s._storePlan) setStorePlan(s._storePlan);
+    if (s._compCurrency) setCompShippingCurrency(s._compCurrency);
     return true;
   } catch(e) { return false; }
 }
