@@ -724,26 +724,6 @@ function updateFeeDescription() {
 
 // ========== Shipping Rate Tables (US向け・2025年版PDF準拠) ==========
 
-// --- SpeedPAK Economy 米国本土48州 (÷8,000 容積重量, 最大$1,300, 最大25kg) ---
-const speedpakEconomyRates = [
-  [100,1227],[200,1367],[300,1581],[400,1778],[500,2060],
-  [600,2222],[700,2321],[800,2703],[900,2820],[1000,3020],
-  [1100,3136],[1200,3250],[1300,3366],[1400,3704],[1500,3816],
-  [1600,3935],[1700,4046],[1800,4165],[1900,5056],[2000,5245],
-  [2500,5582],[3000,6333],[3500,6958],[4000,7704],
-  [4500,9135],[5000,11733],[5500,12500],[6000,13335],
-  [6500,14160],[7000,15209],[7500,16058],[8000,16893],
-  [8500,17562],[9000,18152],[9500,19106],[10000,19639],
-  [10500,20276],[11000,20864],[11500,21565],[12000,22199],
-  [12500,22887],[13000,23466],[13500,24054],[14000,24869],
-  [14500,25200],[15000,25988],[15500,26656],[16000,28149],
-  [16500,28775],[17000,29495],[17500,30196],[18000,30902],
-  [18500,31478],[19000,32204],[19500,32936],[20000,33947],
-  [20500,34655],[21000,35426],[21500,36145],[22000,36859],
-  [22500,37602],[23000,38516],[23500,39084],[24000,39678],
-  [24500,40374],[25000,40955]
-];
-
 // --- SpeedPAK FedEx FICP (International Connect Plus) Zone F=USE/CA (÷5,000, 最大68kg, DDP) ---
 const speedpakFicpRates = [
   [500,2115],[1000,2599],[1500,2840],[2000,3108],[2500,3383],
@@ -956,49 +936,19 @@ const dhlZone11 = [
 // --- DHL Envelope per zone (max 0.3kg) ---
 const dhlEnvelopeRates = { 2:2111, 3:2111, 4:2439, 5:2342, 10:2454, 11:2439 };
 
-// --- Economy UK (max 25kg, real weight ≤ 15kg, 7-10日, £135以下) ---
-const economyUK = [
-  [100,938],[200,1073],[300,1244],[400,1430],[500,1571],[600,1703],[700,1851],[800,1968],[900,2121],[1000,2240],
-  [1100,2411],[1200,2552],[1300,2690],[1400,2811],[1500,2947],[1600,3068],[1700,3234],[1800,3357],[1900,3497],[2000,3620],
-  [2500,4402],[3000,5095],[3500,5760],[4000,6412],[4500,7079],[5000,7810],[5500,8484],[6000,9142],[6500,9815],[7000,10475],
-  [7500,11149],[8000,11809],[8500,12483],[9000,13141],[9500,13815],[10000,14474],[10500,15148],[11000,15807],[11500,16482],[12000,17140],
-  [12500,17814],[13000,18472],[13500,19147],[14000,19806],[14500,20696],[15000,21362],[15500,22043],[16000,22710],[16500,23392],[17000,24058],
-  [17500,24739],[18000,25404],[18500,26086],[19000,26752],[19500,27434],[20000,28100],[20500,28783],[21000,29448],[21500,30129],[22000,30794],
-  [22500,33796],[23000,34512],[23500,35245],[24000,35960],[24500,36693],[25000,37410]
-];
-
-// --- Economy Germany (max 25kg, 7-11日, €150以下) ---
-const economyDE = [
-  [100,1336],[200,1460],[300,1589],[400,1634],[500,1769],[600,1863],[700,1978],[800,2178],[900,2273],[1000,2273],
-  [1100,2387],[1200,2609],[1300,2609],[1400,2609],[1500,2919],[1600,3313],[1700,3313],[1800,3617],[1900,3621],[2000,4092],
-  [2500,4618],[3000,5092],[3500,6088],[4000,6563],[4500,7049],[5000,7524],[5500,8540],[6000,9014],[6500,9500],[7000,10442],
-  [7500,10929],[8000,11405],[8500,12358],[9000,12832],[9500,13318],[10000,13805],[10500,14841],[11000,15316],[11500,15802],[12000,16743],
-  [12500,17231],[13000,17716],[13500,18659],[14000,19134],[14500,19621],[15000,20107],[15500,21183],[16000,21670],[16500,22143],[17000,23086],
-  [17500,23573],[18000,24060],[18500,25001],[19000,25488],[19500,25963],[20000,26451],[20500,27555],[21000,28042],[21500,28517],[22000,29471],
-  [22500,29946],[23000,30433],[23500,30453],[24000,30472],[24500,30492],[25000,30511]
-];
-
-// --- Economy Australia (real weight ≤ 22kg, billable ≤ 22.5kg, 6-12日, AUD1000以下) ---
-const economyAU = [
-  [100,1142],[200,1322],[300,1508],[400,1539],[500,1630],[600,1812],[700,1847],[800,1997],[900,2068],[1000,2068],
-  [1100,2139],[1200,2174],[1300,2209],[1400,2462],[1500,2462],[1600,2462],[1700,2462],[1800,2724],[1900,3153],[2000,3153],
-  [2500,3153],[3000,3507],[3500,4015],[4000,4369],[4500,4547],[5000,5290],[5500,5466],[6000,5820],[6500,5997],[7000,6977],
-  [7500,7155],[8000,7509],[8500,7687],[9000,8041],[9500,8219],[10000,8573],[10500,8749],[11000,9104],[11500,9281],[12000,9636],
-  [12500,9813],[13000,10167],[13500,10344],[14000,10700],[14500,10877],[15000,11230],[15500,11409],[16000,11762],[16500,11940],[17000,13581],
-  [17500,13758],[18000,14112],[18500,14290],[19000,14644],[19500,14821],[20000,15176],[20500,15176],[21000,15176],[21500,15176],[22000,15431],
-  [22500,15768]
-];
-
 // ========== Country Configuration ==========
 const COUNTRIES = [
-  { id:'us', name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoTable:speedpakEconomyRates, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
+  { id:'us', name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
   { id:'ca', name:'🇨🇦 カナダ', code:'CA', defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
-  { id:'eu', name:'🇪🇺 ヨーロッパ (UK/DE/FR等)', code:'DE', defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoTable:economyDE, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+  { id:'uk', name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
-  { id:'au', name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoTable:economyAU, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
+  { id:'eu', name:'🇪🇺 ヨーロッパ (DE/FR等)', code:'DE', defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+    ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
+    ecoSurcharge:()=>0 },
+  { id:'au', name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
   { id:'east_asia', name:'🌏 東アジア (韓国/台湾など)', code:'KR', defaultZip:'06100', fedexZone:null, dhlZone:null, jpZone:1, jpOk:true, elogiZone:null, upsZone:null, economy:false },
@@ -1565,20 +1515,23 @@ async function fetchSpeedpakRates() {
   calculate(); // ローディング状態を反映
 
   try {
+    const reqBody = {
+      weight: weightG,
+      length: L,
+      width: W,
+      height: H,
+      destCountry: cc.code,
+      destZipCode: cc.defaultZip,
+      declaredValueUsd: declaredUsd > 0 ? declaredUsd : undefined
+    };
+    console.log('[SpeedPAK API Request]', reqBody);
     const res = await fetch(SPEEDPAK_API_BASE + '/api/speedpak/estimate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        weight: weightG,
-        length: L,
-        width: W,
-        height: H,
-        destCountry: cc.code,
-        destZipCode: cc.defaultZip,
-        declaredValueUsd: declaredUsd > 0 ? declaredUsd : undefined
-      })
+      body: JSON.stringify(reqBody)
     });
     const data = await res.json();
+    console.log('[SpeedPAK API Response]', data);
     if (data.success) {
       _speedpakRates = data.rates;
       // 燃油サーチャージも自動更新
@@ -1885,7 +1838,23 @@ function calculate() {
     const r2 = [];
     if (!csW) r2.push(maxKg + 'kg超過');
     if (!csD) r2.push('サイズ超過');
-    addMethod('speedpak',{name:'Economy',sub:cc.ecoDays+'/'+cc.ecoMaxVal+'以下/体積÷8,000/'+_dutyType + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('economy'):null,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
+    let ecoReason;
+    if (r2.length) {
+      ecoReason = r2.join(', ');
+    } else if (c === null) {
+      if (_loading) {
+        ecoReason = '送料取得中';
+      } else if (!_speedpakRates) {
+        ecoReason = '料金取得失敗';
+        console.error('[Economy] SpeedPAK API未接続のためEconomy料金を取得できません');
+      } else {
+        ecoReason = 'Economy対象外';
+        console.error('[Economy] APIレスポンスにEconomy料金が含まれていません（' + cc.code + '宛）');
+      }
+    } else {
+      ecoReason = '';
+    }
+    addMethod('speedpak',{name:'Economy',sub:cc.ecoDays+'/'+cc.ecoMaxVal+'以下/体積÷8,000/'+_dutyType + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('economy'):null,reason:ecoReason,loading:_loading});
   } else {
     addMethod('speedpak',{name:'Economy',sub:'この国はEconomy非対応',cost:-1,canSend:false,reason:cc.name+' 非対応'});
   }
