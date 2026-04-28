@@ -1920,9 +1920,25 @@ function calculate() {
       }
       {
         const pakTable = getElogiIpPakTable(eZ);
-        const cs = weightG <= 2500 && pakTable;
-        let c = cs ? lookupRate(pakTable, weightG) : -1;
-        addMethod('elogi-ip',{name:'eLogi IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/実重量/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:!cs?'2.5kg超過':''});
+        const pakSorted = [L, W, H].sort((a,b) => b-a);
+        const csW = weightG <= 2500;
+        const csS = pakSorted[0] <= 52.71 && pakSorted[1] <= 44.45;
+        let csV = true;
+        let pakBillableG = weightG;
+        if (vol > 15400) {
+          pakBillableG = Math.max(weightG, vol / 5000 * 1000);
+          csV = pakBillableG <= 2500;
+        }
+        const csVal = selling <= 0 || selling <= 500;
+        const cs = csW && csS && csV && csVal && !!pakTable;
+        let c = cs ? lookupRate(pakTable, pakBillableG) : -1;
+        const pakR = [];
+        if (!csW) pakR.push('2.5kg超過');
+        if (!csS) pakR.push('サイズ超過（44.45×52.71cm超）');
+        if (csW && !csV) pakR.push('寸法重量2.5kg超過');
+        if (!csVal) pakR.push('申告価額$500超過');
+        const pakSub = vol > 15400 ? '体積÷5,000' : '実重量';
+        addMethod('elogi-ip',{name:'eLogi IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/'+pakSub+'/44.45×52.71cm/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:pakR.join(', ')});
       }
       {
         const pkgD = getElogiIpPkgData(eZ);
