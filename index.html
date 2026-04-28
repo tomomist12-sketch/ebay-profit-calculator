@@ -1707,9 +1707,11 @@ function calculate() {
 
   // ========== Shipping Methods ==========
   const weightG = weightKg * 1000;
-  const dims = [L, W, H].sort((a,b) => b-a);
-  const longest = dims[0];
-  const girth = longest + 2 * (dims[1] + dims[2]);
+  // FedEx公式仕様: 寸法は整数cmに切り上げ、長さ=最長辺、幅=中央辺、高さ=最短辺
+  const fedexDims = [Math.ceil(L), Math.ceil(W), Math.ceil(H)].sort((a,b) => b-a);
+  const fxLength = fedexDims[0];
+  const fxGirth = 2 * (fedexDims[1] + fedexDims[2]);
+  const fxLpG = fxLength + fxGirth; // 長さ+周囲
   const billableStandard = Math.max(weightKg, volWeight);
   const billableStandardG = billableStandard * 1000;
   const billableEcoKg = Math.max(weightKg, volWeightEco);
@@ -1784,13 +1786,15 @@ function calculate() {
     const sorted = [L, W, H].sort((a,b) => b-a);
     const csW = weightG <= 500;
     const csS = sorted[0] <= 33.5 && sorted[1] <= 23.5 && sorted[2] <= 3;
-    const cs = csW && csS;
+    const csVal = selling <= 0 || selling <= 500;
+    const cs = csW && csS && csVal;
     const c = cs ? spCost('ip_envelope') : null;
     const canSend = cs && c !== null && c > 0;
     const r2 = [];
     if (!csW) r2.push('500g超過');
     if (!csS) r2.push('サイズ超過(23.5x33.5x3cm)');
-    addMethod('fedex-ip',{name:'FedEx IP Envelope',sub:'1-3日/'+_dutyType+'/最大500g/内寸23.5×33.5×3cm/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_envelope'):null,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
+    if (!csVal) r2.push('申告価額$500超過');
+    addMethod('fedex-ip',{name:'FedEx IP Envelope',sub:'1-3日/'+_dutyType+'/最大500g/内寸23.5×33.5×3cm/$500以下/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_envelope'):null,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK FedEx IP Pak ---
@@ -1803,10 +1807,17 @@ function calculate() {
 
   // --- SpeedPAK FedEx IP Package ---
   {
-    const cs = billableStandardG <= 68000;
+    const csW = billableStandardG <= 68000;
+    const csL = fxLength <= 274;
+    const csG = fxLpG <= 330;
+    const cs = csW && csL && csG;
     const c = cs ? spCost('ip') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('fedex-ip',{name:'FedEx IP Package',sub:'1-3日/'+_dutyType+'/最大68kg/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip'):null,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
+    const r2 = [];
+    if (!csW) r2.push('68kg超過');
+    if (!csL) r2.push('最長辺274cm超過');
+    if (!csG) r2.push('長さ+周囲330cm超過');
+    addMethod('fedex-ip',{name:'FedEx IP Package',sub:'1-3日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip'):null,reason:r2.length?r2.join(', '):(c===null?'送料取得中':''),loading:_loading});
   }
 
   // --- SpeedPAK DHL Express Envelope ---
@@ -1902,27 +1913,37 @@ function calculate() {
     if (eZ) {
       const ficpD = getElogiFicpData(eZ);
       if (ficpD) {
-        let c = elogiLookup(ficpD[0], ficpD[1], billableStandardG);
-        const cs = c > 0;
-        addMethod('elogi-ficp',{name:'eLogi FICP',sub:'2-5日/'+_dutyType+'/体積÷5,000/サーチャージ込',cost:cs?c:-1,canSend:cs,reason:!cs?'重量超過':''});
+        const csW = billableStandardG <= 68000;
+        const csL = fxLength <= 274;
+        const csG = fxLpG <= 330;
+        const cs = csW && csL && csG;
+        let c = cs ? elogiLookup(ficpD[0], ficpD[1], billableStandardG) : -1;
+        const canSend = cs && c > 0;
+        const r2 = [];
+        if (!csW) r2.push('68kg超過');
+        if (!csL) r2.push('最長辺274cm超過');
+        if (!csG) r2.push('長さ+周囲330cm超過');
+        if (cs && c <= 0) r2.push('重量超過');
+        addMethod('elogi-ficp',{name:'eLogi FICP',sub:'2-5日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:canSend?c:-1,canSend:canSend,reason:r2.join(', ')});
       }
       {
         const sorted = [L, W, H].sort((a,b) => b-a);
         const csW = weightG <= 500;
         const csS = sorted[0] <= 33.5 && sorted[1] <= 23.5 && sorted[2] <= 3;
-        const cs = csW && csS;
+        const csVal = selling <= 0 || selling <= 500;
+        const cs = csW && csS && csVal;
         const envRate = getElogiIpEnvRate(eZ);
         const c = cs && envRate > 0 ? envRate : -1;
         const r2 = [];
         if (!csW) r2.push('500g超過');
         if (!csS) r2.push('サイズ超過');
-        addMethod('elogi-ip',{name:'eLogi IP Envelope',sub:'1-3日/'+_dutyType+'/最大500g/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+        if (!csVal) r2.push('申告価額$500超過');
+        addMethod('elogi-ip',{name:'eLogi IP Envelope',sub:'1-3日/'+_dutyType+'/最大500g/$500以下/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
       }
       {
         const pakTable = getElogiIpPakTable(eZ);
-        const pakSorted = [L, W, H].sort((a,b) => b-a);
         const csW = weightG <= 2500;
-        const csS = pakSorted[0] <= 52.71 && pakSorted[1] <= 44.45;
+        const csS = fedexDims[0] <= 52.71 && fedexDims[1] <= 44.45;
         let csV = true;
         let pakBillableG = weightG;
         if (vol > 15400) {
@@ -1943,9 +1964,18 @@ function calculate() {
       {
         const pkgD = getElogiIpPkgData(eZ);
         if (pkgD) {
-          let c = elogiLookup(pkgD[0], pkgD[1], billableStandardG);
-          const cs = c > 0;
-          addMethod('elogi-ip',{name:'eLogi IP Package',sub:'1-3日/'+_dutyType+'/体積÷5,000/サーチャージ込',cost:cs?c:-1,canSend:cs,reason:!cs?'重量超過':''});
+          const csW = billableStandardG <= 68000;
+          const csL = fxLength <= 274;
+          const csG = fxLpG <= 330;
+          const cs = csW && csL && csG;
+          let c = cs ? elogiLookup(pkgD[0], pkgD[1], billableStandardG) : -1;
+          const canSend = cs && c > 0;
+          const r2 = [];
+          if (!csW) r2.push('68kg超過');
+          if (!csL) r2.push('最長辺274cm超過');
+          if (!csG) r2.push('長さ+周囲330cm超過');
+          if (cs && c <= 0) r2.push('重量超過');
+          addMethod('elogi-ip',{name:'eLogi IP Package',sub:'1-3日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:canSend?c:-1,canSend:canSend,reason:r2.join(', ')});
         }
       }
     }
