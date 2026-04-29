@@ -3,7 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>eBayリサーチツール</title>
+<script>
+(function(){
+  var allowed=['https://tools.aione.co.jp'];
+  var shouldBlock=false;
+  if(window.self===window.top){shouldBlock=true;}
+  else{try{var ref=document.referrer?new URL(document.referrer).origin:'';if(allowed.indexOf(ref)===-1)shouldBlock=true;}catch(e){shouldBlock=true;}}
+  if(!shouldBlock)return;
+  function inject(){
+    document.documentElement.style.overflow='hidden';
+    document.body.style.overflow='hidden';
+    var o=document.createElement('div');
+    o.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;background:#f5f5f7;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;color:#1e293b;';
+    o.innerHTML='<div style="max-width:480px;background:#fff;border-radius:16px;padding:48px 32px;box-shadow:0 2px 12px rgba(0,0,0,.08);text-align:center;">'
+      +'<h1 style="font-size:1.4rem;margin-bottom:16px;">このページは直接アクセスできません</h1>'
+      +'<p style="color:#475569;margin-bottom:24px;">セラーノートにログインしてご利用ください。</p>'
+      +'<a href="https://tools.aione.co.jp/ebay/" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;">セラーノートへ</a>'
+      +'</div>';
+    document.body.appendChild(o);
+  }
+  if(document.body){inject();}else{document.addEventListener('DOMContentLoaded',inject);}
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
