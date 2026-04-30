@@ -48,6 +48,11 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:16px}
 .card h2{font-size:14px;font-weight:500;color:#666;margin:0 0 12px;padding:0;border:none;display:flex;align-items:center;gap:6px}
 .card h2 .icon{font-size:1rem}
+.copy-info-btn{background:none;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:.75rem;padding:1px 5px;margin-left:auto;color:#999;transition:all .15s}
+.copy-info-btn:hover{background:#f0f0f0;color:#666;border-color:#bbb}
+.copy-info-btn:active{transform:scale(.95)}
+.copy-toast{font-size:.7rem;color:#16a34a;font-weight:600;margin-left:4px;opacity:0;transition:opacity .3s;pointer-events:none}
+.copy-toast.show{opacity:1}
 
 /* ===== 2-Column Layout ===== */
 .main-layout{display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start}
@@ -209,7 +214,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 
   <!-- 商品情報 -->
   <div class="card">
-    <h2><span class="icon">📦</span> 商品情報</h2>
+    <h2><span class="icon">📦</span> 商品情報 <button class="copy-info-btn" onclick="copyProductInfo()" title="商品情報をコピー">📋</button><span class="copy-toast" id="copyToast">コピーしました</span></h2>
     <div class="mode-bar">
       <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')">🇺🇸 アメリカ向け</button>
       <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')">🌍 アメリカ以外</button>
@@ -2197,6 +2202,58 @@ function calculate() {
 }
 
 // ========== LocalStorage Persistence ==========
+// ========== Copy Product Info ==========
+function copyProductInfo() {
+  const purchase = getVal('purchasePrice');
+  const selling = getVal('sellingPrice');
+  const weightKg = getVal('weight');
+  const L = getVal('length');
+  const W = getVal('width');
+  const H = getVal('height');
+  const vol = L * W * H;
+  const volWeight = (vol / 5000).toFixed(3);
+  const volWeightEco = (vol / 8000).toFixed(3);
+
+  const lines = [];
+
+  if (currentPricingMode === 'us') {
+    lines.push('【🇺🇸 アメリカ向け】');
+  } else {
+    lines.push('【🌍 アメリカ以外】');
+  }
+
+  lines.push('仕入額: ' + Math.round(purchase).toLocaleString('ja-JP') + '円');
+  lines.push('売値: $' + selling);
+
+  if (currentPricingMode === 'us') {
+    const compShip = getVal('compShipping');
+    if (compShippingCurrency === 'jpy') {
+      lines.push('競合送料: ¥' + Math.round(compShip).toLocaleString('ja-JP'));
+    } else {
+      lines.push('競合送料: $' + compShip);
+    }
+  } else {
+    const usShipPct = getVal('usShippingPct');
+    lines.push('送料: ' + usShipPct + '%');
+    const refEl = document.getElementById('usShippingRef');
+    if (refEl && refEl.textContent && refEl.textContent !== '-') {
+      lines.push('送料参考額: ' + refEl.textContent);
+    }
+  }
+
+  lines.push('実重量: ' + weightKg + 'kg');
+  lines.push('サイズ: ' + L + ' × ' + W + ' × ' + H + ' cm');
+  lines.push('体積重量: ' + volWeight + 'kg');
+  lines.push('Economy: ' + volWeightEco + 'kg');
+
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('copyToast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1500);
+  });
+}
+
 const SAVE_KEY = 'ebayCalcState';
 const SAVE_FIELDS = ['purchasePrice','sellingPrice','compShipping','weight','length','width','height',
   'categoryNo','exchangeRate','fuelSurcharge','usShippingPct',
