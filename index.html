@@ -2216,12 +2216,6 @@ function copyProductInfo() {
 
   const lines = [];
 
-  if (currentPricingMode === 'us') {
-    lines.push('【🇺🇸 アメリカ向け】');
-  } else {
-    lines.push('【🌍 アメリカ以外】');
-  }
-
   lines.push('仕入額: ' + Math.round(purchase).toLocaleString('ja-JP') + '円');
   lines.push('売値: $' + selling);
 
