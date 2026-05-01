@@ -2216,25 +2216,6 @@ function copyProductInfo() {
 
   const lines = [];
 
-  lines.push('仕入額: ' + Math.round(purchase).toLocaleString('ja-JP') + '円');
-  lines.push('売値: $' + selling);
-
-  if (currentPricingMode === 'us') {
-    const compShip = getVal('compShipping');
-    if (compShippingCurrency === 'jpy') {
-      lines.push('競合送料: ¥' + Math.round(compShip).toLocaleString('ja-JP'));
-    } else {
-      lines.push('競合送料: $' + compShip);
-    }
-  } else {
-    const usShipPct = getVal('usShippingPct');
-    lines.push('送料: ' + usShipPct + '%');
-    const refEl = document.getElementById('usShippingRef');
-    if (refEl && refEl.textContent && refEl.textContent !== '-') {
-      lines.push('送料参考額: ' + refEl.textContent);
-    }
-  }
-
   lines.push('実重量: ' + weightKg + 'kg');
   lines.push('サイズ: ' + L + ' × ' + W + ' × ' + H + ' cm');
   lines.push('体積重量: ' + volWeight + 'kg');
