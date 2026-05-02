@@ -620,6 +620,69 @@ const CATEGORY_GROUP_MAP = {};
   [176985].forEach(id => CATEGORY_GROUP_MAP[id] = 'vinyl');
 })();
 
+// ========== postMessage受信: Seller Noteからの実績FVF率の上書き ==========
+
+// カテゴリ名（APIのcategoryPath最上位）→ FEE_RATESグループ名のマッピング
+const CATEGORY_TO_FEE_GROUP = {
+  'Cameras & Photo': 'camera',
+  'Cell Phones & Accessories': 'electronics',
+  'Computers/Tablets & Networking': 'electronics',
+  'Consumer Electronics': 'electronics',
+  'Video Games & Consoles': 'electronics',
+  'Musical Instruments & Gear': 'instruments',
+  'Coins & Paper Money': 'coins',
+  'Jewelry & Watches': 'jewelry',
+  'Books & Magazines': 'books',
+  'Movies & TV': 'books',
+  'Music': 'books',
+  'Stamps': 'stamps',
+  'eBay Motors': 'motors',
+};
+
+window.addEventListener('message', function(event) {
+  // originチェック: Seller Note本体のドメインのみ許可
+  if (event.origin !== 'https://tools.aione.co.jp') return;
+
+  var data = event.data;
+  if (!data || data.type !== 'FVF_RATES_UPDATE') return;
+
+  var payload = data.payload;
+  if (!payload || !payload.rates) return;
+
+  // FEE_RATESの両プランを実績データで上書き
+  var plans = ['store', 'noStore'];
+  var updated = 0;
+  for (var p = 0; p < plans.length; p++) {
+    var planName = plans[p];
+    var plan = FEE_RATES[planName];
+    if (!plan) continue;
+
+    for (var categoryName in payload.rates) {
+      var rateData = payload.rates[categoryName];
+      var groupName = CATEGORY_TO_FEE_GROUP[categoryName];
+
+      // マッピングにないカテゴリ: defaultグループのrate1を上書き対象にはしない（default=12.7%は維持）
+      if (!groupName || !plan[groupName]) continue;
+
+      var entry = plan[groupName];
+      // special(shoes)/tiersのあるグループは構造が異なるためスキップ
+      if (entry.special || entry.tiers) continue;
+
+      // rate1のみ上書き（thresholdとrate2はeBayの公式構造に依存するため変更しない）
+      entry.rate1 = rateData.avgRate;
+      entry.label = entry.label.replace(/\([\d.]+%[^)]*\)/, '(' + rateData.avgRate + '% 実績)');
+      updated++;
+    }
+  }
+
+  // 現在表示中のカテゴリがあれば再適用
+  if (typeof currentFeeGroup !== 'undefined' && currentFeeGroup) {
+    applyFeeGroup(getEffectiveGroup(currentFeeGroup));
+  }
+
+  console.log('[profit-calculator] FVF rates updated from actual data:', updated + ' entries');
+});
+
 function getGroupForCategory(catId) {
   // 新形式: EBAY_CATEGORIES (API生成)
   if (typeof EBAY_CATEGORIES !== 'undefined' && EBAY_CATEGORIES[catId]) {
