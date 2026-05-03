@@ -649,6 +649,24 @@ window.addEventListener('message', function(event) {
   var payload = data.payload;
   if (!payload || !payload.rates) return;
 
+  // APIキー（"Top|Sub|SubSub"形式）を最上位カテゴリで集約（count加重平均）
+  var grouped = {};
+  for (var apiKey in payload.rates) {
+    var rateData = payload.rates[apiKey];
+    var topCategory = apiKey.split('|')[0].trim();
+    var groupName = CATEGORY_TO_FEE_GROUP[topCategory];
+
+    console.log('[FVF Update] APIキー:', apiKey, '→ 最上位:', topCategory, '→ グループ:', groupName, '→ rate:', rateData.avgRate, 'count:', rateData.count);
+
+    if (!groupName) continue;
+
+    if (!grouped[groupName]) {
+      grouped[groupName] = { totalWeighted: 0, totalCount: 0 };
+    }
+    grouped[groupName].totalWeighted += rateData.avgRate * rateData.count;
+    grouped[groupName].totalCount += rateData.count;
+  }
+
   // FEE_RATESの両プランを実績データで上書き
   var plans = ['store', 'noStore'];
   var updated = 0;
@@ -657,21 +675,18 @@ window.addEventListener('message', function(event) {
     var plan = FEE_RATES[planName];
     if (!plan) continue;
 
-    for (var categoryName in payload.rates) {
-      var rateData = payload.rates[categoryName];
-      var groupName = CATEGORY_TO_FEE_GROUP[categoryName];
-
-      // マッピングにないカテゴリ: defaultグループのrate1を上書き対象にはしない（default=12.7%は維持）
-      if (!groupName || !plan[groupName]) continue;
-
-      var entry = plan[groupName];
+    for (var gn in grouped) {
+      if (!plan[gn]) continue;
+      var entry = plan[gn];
       // special(shoes)/tiersのあるグループは構造が異なるためスキップ
       if (entry.special || entry.tiers) continue;
 
-      // rate1のみ上書き（thresholdとrate2はeBayの公式構造に依存するため変更しない）
-      entry.rate1 = rateData.avgRate;
-      entry.label = entry.label.replace(/\([\d.]+%[^)]*\)/, '(' + rateData.avgRate + '% 実績)');
+      var avgRate = Math.round(grouped[gn].totalWeighted / grouped[gn].totalCount * 100) / 100;
+      entry.rate1 = avgRate;
+      entry.label = entry.label.replace(/\([\d.]+%[^)]*\)/, '(' + avgRate + '% 実績)');
       updated++;
+
+      console.log('[FVF Update] グループ', gn, '→', avgRate + '% (n=' + grouped[gn].totalCount + ')');
     }
   }
 
