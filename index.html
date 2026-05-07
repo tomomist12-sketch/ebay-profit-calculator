@@ -1844,7 +1844,7 @@ function calculate() {
     { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
     { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
     ...(getElogiUpsData(cc.upsZone) ? [
-      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い ※個人宅手数料など後日追加請求される可能性が高いので一見安く見えても他の配送方法と料金が変わらないことが多い' },
+      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
     { id: 'jppost',   label: '日本郵便', tag: cc.jpOk!==false?'補助':'非対応', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':(cc.jpZone?'この国は日本郵便の差出が制限されています（△）':'料金テーブル未設定') },
   ];
@@ -2219,6 +2219,14 @@ function calculate() {
       popup.style.cssText = 'display:none;font-size:.68rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:-4px 12px 6px;line-height:1.4';
       popup.innerHTML = `<b>手数料の免除</b><br><b>【地域外配達料が発生しない国】</b><br>米国、ヨーロッパ、アジア主要国等は、FICPを利用の場合は「地域外配達料」は発生しない。`;
       section.appendChild(popup);
+    }
+
+    // eLogi UPS 注意書き
+    if (g.id === 'elogi-ups') {
+      const upsNote = document.createElement('div');
+      upsNote.style.cssText = 'font-size:.72rem;color:#b45309;padding:4px 12px;margin-bottom:6px;line-height:1.4';
+      upsNote.textContent = '⚠ 個人宅手数料など後日追加請求される可能性が高いので、一見安く見えても他の配送方法と料金が変わらないことが多い';
+      section.appendChild(upsNote);
     }
 
     // 日本郵便の注記
