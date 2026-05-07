@@ -1645,8 +1645,8 @@ async function fetchSpeedpakRates() {
     console.log('[SpeedPAK API Response]', data);
     if (data.success) {
       _speedpakRates = data.rates;
-      // 燃油サーチャージも自動更新
-      if (data.fuelSurchargePercent !== undefined) {
+      // 燃油サーチャージも自動更新（20〜45%の妥当範囲のみ適用）
+      if (data.fuelSurchargePercent !== undefined && data.fuelSurchargePercent >= 20 && data.fuelSurchargePercent <= 45) {
         document.getElementById('fuelSurcharge').value = data.fuelSurchargePercent;
         const statusEl = document.getElementById('fuelStatus');
         if (statusEl) statusEl.textContent = '✓ ' + data.fuelSurchargePercent + '% (SpeedPAK API)';
@@ -1844,7 +1844,7 @@ function calculate() {
     { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
     { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
     ...(getElogiUpsData(cc.upsZone) ? [
-      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
+      { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い ※個人宅手数料など後日追加請求される可能性が高いので一見安く見えても他の配送方法と料金が変わらないことが多い' },
     ] : []),
     { id: 'jppost',   label: '日本郵便', tag: cc.jpOk!==false?'補助':'非対応', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':(cc.jpZone?'この国は日本郵便の差出が制限されています（△）':'料金テーブル未設定') },
   ];
