@@ -2221,14 +2221,6 @@ function calculate() {
       section.appendChild(popup);
     }
 
-    // eLogi UPS 注意書き
-    if (g.id === 'elogi-ups') {
-      const upsNote = document.createElement('div');
-      upsNote.style.cssText = 'font-size:.72rem;color:#b45309;padding:4px 12px;margin-bottom:6px;line-height:1.4';
-      upsNote.textContent = '⚠ 個人宅手数料など後日追加請求される可能性が高いので、一見安く見えても他の配送方法と料金が変わらないことが多い';
-      section.appendChild(upsNote);
-    }
-
     // 日本郵便の注記
     if (g.id === 'jppost') {
       const jpZone = cc.jpZone || 4;
@@ -2241,6 +2233,14 @@ function calculate() {
 
     const grid = document.createElement('div');
     grid.className = 'group-grid';
+
+    // eLogi UPS 注意書き（詳細展開時のみ表示）
+    if (g.id === 'elogi-ups') {
+      const upsNote = document.createElement('div');
+      upsNote.style.cssText = 'font-size:.72rem;color:#b45309;padding:4px 12px;margin-bottom:6px;line-height:1.4';
+      upsNote.textContent = '⚠ 個人宅手数料など後日追加請求される可能性が高いので、一見安く見えても他の配送方法と料金が変わらないことが多い';
+      grid.appendChild(upsNote);
+    }
 
     g.methods.forEach(m => {
       const row = document.createElement('div');
