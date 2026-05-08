@@ -192,7 +192,8 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .product-id-btn:disabled{opacity:.55;cursor:not-allowed}
 .load-status{margin-top:7px}
-.save-memo-field{margin-top:8px}
+.save-memo-field{display:none;margin-top:8px}
+.save-memo-field.show{display:block}
 .save-memo-field label{display:flex;align-items:baseline;gap:4px;font-size:.76rem;color:#64748b;font-weight:800;margin-bottom:5px;line-height:1}
 .save-memo-field label span{font-size:.68rem;color:var(--text3);font-weight:700}
 .save-memo-field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font:inherit;font-size:.82rem;line-height:1.35;color:var(--text);background:#fafafa;resize:vertical;transition:border-color .15s}
@@ -364,7 +365,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <span class="volume-weight-item">体積重量(÷5000): <strong id="volWeight" class="volume-weight-value">-</strong></span>
       <span class="volume-weight-item">Economy(÷8000): <strong id="volWeightEco" class="volume-weight-value">-</strong></span>
     </div>
-    <div class="save-memo-field">
+    <div class="save-memo-field" id="saveMemoField">
       <label for="saveMemo">メモ <span>任意</span></label>
       <textarea id="saveMemo" rows="2" maxlength="240" placeholder="例: 仕入先、状態、出品時の注意など"></textarea>
     </div>
@@ -2596,8 +2597,36 @@ function collectProfitCalculationPayload() {
   };
 }
 
+function isSaveMemoFieldVisible() {
+  const field = document.getElementById('saveMemoField');
+  return !!field && field.classList.contains('show');
+}
+
+function setSaveMemoFieldVisible(visible) {
+  const field = document.getElementById('saveMemoField');
+  const btn = document.getElementById('saveCalcBtn');
+  if (!field || !btn) return;
+  field.classList.toggle('show', visible);
+  btn.textContent = visible ? '💾 保存する' : '💾 保存';
+  if (visible) {
+    document.getElementById('saveMemo').focus();
+  }
+}
+
 async function saveProfitCalculation() {
+  if (!isSaveMemoFieldVisible()) {
+    const ebayItemId = getSaveEbayItemId();
+    if (!ebayItemId) {
+      showSaveStatus('eBay商品番号を入力してください', true);
+      return;
+    }
+    clearInlineStatus('saveStatus');
+    setSaveMemoFieldVisible(true);
+    return;
+  }
+
   let payload;
+  let didSave = false;
   try {
     payload = collectProfitCalculationPayload();
   } catch (err) {
@@ -2608,11 +2637,13 @@ async function saveProfitCalculation() {
   setButtonBusy('saveCalcBtn', true, '保存中...');
   try {
     const result = await requestSellerNote('PROFIT_CALC_SAVE', payload);
+    didSave = true;
     showSaveStatus(result.created ? '保存しました' : '上書き保存しました');
   } catch (err) {
     showSaveStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
   } finally {
     setButtonBusy('saveCalcBtn', false);
+    if (didSave) setSaveMemoFieldVisible(false);
   }
 }
 
@@ -2643,6 +2674,7 @@ async function loadProfitCalculationByInput() {
 function applySavedProfitCalculation(item) {
   document.getElementById('saveEbayItemId').value = item.ebayItemId || '';
   document.getElementById('saveMemo').value = item.memo || '';
+  setSaveMemoFieldVisible(false);
   document.getElementById('purchasePrice').value = item.purchasePrice ?? 0;
   document.getElementById('sellingPrice').value = item.sellPrice ?? 0;
   document.getElementById('compShipping').value = item.shippingFee ?? 0;
