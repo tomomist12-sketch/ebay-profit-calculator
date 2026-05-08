@@ -173,15 +173,27 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .shop-toggle:hover{color:var(--primary)}
 
 /* ===== Seller Note Save / Load ===== */
-.save-card{border-top:3px solid var(--green)}
-.save-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.save-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.title-row{position:relative;margin-bottom:10px}
+.title-row h1{margin:0}
+.saved-calc-top{position:absolute;right:0;top:0;height:30px;border:1px solid #ddd;border-radius:6px;background:#fafafa;color:#999;cursor:pointer;font-size:.78rem;font-weight:600;padding:0 12px;transition:all .15s}
+.saved-calc-top:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.product-card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.product-card-header h2{margin:0;flex:1}
+.save-header-actions{display:flex;align-items:center;gap:8px}
+.product-id-section{margin-bottom:10px}
+.product-id-label{font-size:.8rem;color:var(--text2);font-weight:700;margin-bottom:5px;display:block}
+.product-id-row{display:grid;grid-template-columns:minmax(0,1fr)72px 80px;gap:8px;align-items:center}
+.product-id-row input{height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;transition:border-color .15s;background:#fafafa}
+.product-id-row input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
+.product-id-btn{height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text3);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s}
+.product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.product-id-btn:disabled{opacity:.55;cursor:not-allowed}
 .save-btn{height:34px;border:1px solid var(--border);border-radius:8px;background:#fafafa;color:var(--text2);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s}
 .save-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .save-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
 .save-btn.primary:hover{background:#15803d;border-color:#15803d;color:#fff}
 .save-btn:disabled{opacity:.55;cursor:not-allowed}
-.save-badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--green-bg);color:#166534;padding:2px 8px;font-size:.68rem;font-weight:600;margin-left:auto}
+.save-badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--green-bg);color:#166534;padding:2px 8px;font-size:.68rem;font-weight:600}
 .save-toast{position:fixed;right:20px;bottom:20px;z-index:2000;background:#0f172a;color:#fff;border-radius:10px;padding:10px 14px;font-size:.82rem;box-shadow:var(--shadow2);opacity:0;transform:translateY(8px);pointer-events:none;transition:all .18s}
 .save-toast.show{opacity:1;transform:translateY(0)}
 .save-toast.error{background:#991b1b}
@@ -207,7 +219,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 </head>
 <body>
 
-<h1>eBayリサーチツール</h1>
+<div class="title-row">
+  <h1>eBayリサーチツール</h1>
+  <button class="saved-calc-top" onclick="openCalcListModal()">📋 保存した計算</button>
+</div>
 
 <div class="tool-bar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
   <!-- 1. キーワードガチャ -->
@@ -248,7 +263,24 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 
   <!-- 商品情報 -->
   <div class="card">
-    <h2><span class="icon">📦</span> 商品情報 <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button><span class="copy-toast" id="copyToast">コピーしました</span></h2>
+    <div class="product-card-header">
+      <h2><span class="icon">📦</span> 商品情報</h2>
+      <div class="save-header-actions">
+        <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button>
+        <button class="copy-info-btn" id="saveCalcBtn" onclick="saveProfitCalculation()">💾 保存</button>
+        <span id="saveEditBadge" class="save-badge" style="display:none"></span>
+        <span class="copy-toast" id="copyToast">コピーしました</span>
+      </div>
+    </div>
+    <div class="product-id-section">
+      <label class="product-id-label">🔍 eBay商品番号</label>
+      <div class="product-id-row">
+        <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
+        <button class="product-id-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">呼出</button>
+        <button class="product-id-btn" onclick="openEbayItem()">🔗 eBay</button>
+      </div>
+      <input type="hidden" id="saveMemo" value="">
+    </div>
     <div class="mode-bar">
       <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')">🇺🇸 アメリカ向け</button>
       <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')">🌍 アメリカ以外</button>
@@ -320,30 +352,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--text3)">
       <span>体積重量(÷5000): <strong id="volWeight" style="color:var(--text2)">-</strong></span>
       <span>Economy(÷8000): <strong id="volWeightEco" style="color:var(--text2)">-</strong></span>
-    </div>
-  </div>
-
-  <!-- 保存・呼出 -->
-  <div class="card save-card">
-    <h2><span class="icon">💾</span> 保存・呼出 <span id="saveEditBadge" class="save-badge" style="display:none"></span></h2>
-    <div class="save-grid">
-      <div class="field">
-        <label>eBay商品番号</label>
-        <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
-      </div>
-      <div class="field">
-        <label>メモ</label>
-        <input type="text" id="saveMemo" placeholder="商品名など">
-      </div>
-    </div>
-    <div class="save-actions">
-      <button class="save-btn primary" id="saveCalcBtn" onclick="saveProfitCalculation()">保存</button>
-      <button class="save-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">呼出</button>
-      <button class="save-btn" onclick="openCalcListModal()">一覧</button>
-    </div>
-    <div class="save-actions" style="grid-template-columns:1fr 1fr;margin-top:6px">
-      <button class="save-btn" onclick="openEbayItem()">eBayで開く</button>
-      <button class="save-btn" onclick="clearEditingProfitCalculation()">編集をやめる</button>
     </div>
   </div>
 
@@ -2763,7 +2771,7 @@ function restoreState() {
 
 // ========== Event Listeners ==========
 document.querySelectorAll('input').forEach(el => {
-  if (el.closest('.save-card')) {
+  if (el.closest('.product-id-section') || el.id === 'saveMemo') {
     el.addEventListener('input', saveState);
     return;
   }
