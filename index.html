@@ -2483,7 +2483,7 @@ function setButtonBusy(id, busy, label) {
 function requestSellerNote(type, payload) {
   return new Promise((resolve, reject) => {
     if (!window.parent || window.parent === window) {
-      reject(new Error('Seller Note内で開いてください'));
+      reject(new Error('Seller Noteにログインして利益計算ページから開いてください'));
       return;
     }
 
@@ -2510,6 +2510,15 @@ function requestSellerNote(type, payload) {
     window.addEventListener('message', handler);
     window.parent.postMessage({ type, messageId, payload }, SELLER_NOTE_ORIGIN);
   });
+}
+
+function getSellerNoteErrorMessage(err, loginMessage, fallback) {
+  const message = err && err.message ? String(err.message) : '';
+  const normalized = message.replace(/[。\s.]+$/g, '');
+  if (normalized === 'ログインが必要です' || normalized === 'Unauthorized') {
+    return loginMessage;
+  }
+  return message || fallback;
 }
 
 function normalizeEbayItemId(value) {
@@ -2571,7 +2580,7 @@ async function saveProfitCalculation() {
     updateEditingProfitCalculation({ id: result.id, ebayItemId: result.ebayItemId });
     showSaveToast(result.created ? '保存しました' : '上書き保存しました');
   } catch (err) {
-    showSaveToast(err.message || '保存できませんでした', true);
+    showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
   } finally {
     setButtonBusy('saveCalcBtn', false);
   }
@@ -2594,7 +2603,7 @@ async function loadProfitCalculationByInput() {
     applySavedProfitCalculation(item);
     showSaveToast('呼び出しました');
   } catch (err) {
-    showSaveToast(err.message || '呼び出せませんでした', true);
+    showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから呼び出してください', '呼び出せませんでした'), true);
   } finally {
     setButtonBusy('loadCalcBtn', false);
   }
@@ -2660,7 +2669,7 @@ async function fetchProfitCalculationList(page) {
     renderProfitCalculationList(result);
   } catch (err) {
     content.innerHTML = '<div class="calc-list-empty">一覧を取得できませんでした</div>';
-    showSaveToast(err.message || '一覧を取得できませんでした', true);
+    showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから一覧を開いてください', '一覧を取得できませんでした'), true);
   }
 }
 
