@@ -222,7 +222,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 
 <div class="title-row">
   <h1>eBayリサーチツール</h1>
-  <button class="saved-calc-top" onclick="openCalcListModal()">📋 保存した計算</button>
+  <button class="saved-calc-top" onclick="openCalcListModal()">📋 出品一覧</button>
 </div>
 
 <div class="tool-bar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
@@ -276,7 +276,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <label class="product-id-label"><span class="label-icon">🔍</span><span>eBay商品番号</span></label>
       <div class="product-id-row">
         <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
-        <button class="product-id-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">保存読込</button>
+        <button class="product-id-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">検索</button>
         <button class="product-id-btn" onclick="openEbayItem()">🔗 eBay</button>
       </div>
       <div id="loadStatus" class="inline-status load-status" role="status" aria-live="polite"></div>
@@ -479,7 +479,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 <div id="calcListModal" class="calc-modal" onclick="if(event.target===this)closeCalcListModal()">
   <div class="calc-modal-panel">
     <div class="calc-modal-header">
-      <div class="calc-modal-title">保存済み利益計算</div>
+      <div class="calc-modal-title">出品一覧</div>
       <button class="calc-modal-close" onclick="closeCalcListModal()" aria-label="閉じる">×</button>
     </div>
     <div class="calc-modal-body">
