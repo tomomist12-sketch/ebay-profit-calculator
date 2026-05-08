@@ -192,6 +192,9 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .product-id-btn:disabled{opacity:.55;cursor:not-allowed}
 .load-status{margin-top:7px}
+.product-save-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}
+.save-action-status{max-width:calc(100% - 88px)}
+.product-save-btn{height:34px;border-radius:8px;padding:0 14px;font-size:.82rem;font-weight:700;color:var(--text2)}
 .save-btn{height:34px;border:1px solid var(--border);border-radius:8px;background:#fafafa;color:var(--text2);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s}
 .save-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .save-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
@@ -268,7 +271,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <h2><span class="icon">📦</span> 商品情報</h2>
       <div class="save-header-actions">
         <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button>
-        <button class="copy-info-btn" id="saveCalcBtn" onclick="saveProfitCalculation()">💾 保存</button>
       </div>
     </div>
     <div id="headerActionStatus" class="inline-status header-action-status" role="status" aria-live="polite"></div>
@@ -353,6 +355,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--text3)">
       <span>体積重量(÷5000): <strong id="volWeight" style="color:var(--text2)">-</strong></span>
       <span>Economy(÷8000): <strong id="volWeightEco" style="color:var(--text2)">-</strong></span>
+    </div>
+    <div class="product-save-footer">
+      <div id="saveStatus" class="inline-status save-action-status" role="status" aria-live="polite"></div>
+      <button class="copy-info-btn product-save-btn" id="saveCalcBtn" onclick="saveProfitCalculation()">💾 保存</button>
     </div>
   </div>
 
@@ -2469,6 +2475,10 @@ function showHeaderStatus(message, isError, autoHide) {
   showInlineStatus('headerActionStatus', message, isError, autoHide);
 }
 
+function showSaveStatus(message, isError, autoHide) {
+  showInlineStatus('saveStatus', message, isError, autoHide);
+}
+
 function showLoadStatus(message, isError, autoHide) {
   showInlineStatus('loadStatus', message, isError, autoHide);
 }
@@ -2579,16 +2589,16 @@ async function saveProfitCalculation() {
   try {
     payload = collectProfitCalculationPayload();
   } catch (err) {
-    showHeaderStatus(err.message, true);
+    showSaveStatus(err.message, true);
     return;
   }
 
   setButtonBusy('saveCalcBtn', true, '保存中...');
   try {
     const result = await requestSellerNote('PROFIT_CALC_SAVE', payload);
-    showHeaderStatus(result.created ? '保存しました' : '上書き保存しました');
+    showSaveStatus(result.created ? '保存しました' : '上書き保存しました');
   } catch (err) {
-    showHeaderStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
+    showSaveStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
   } finally {
     setButtonBusy('saveCalcBtn', false);
   }
