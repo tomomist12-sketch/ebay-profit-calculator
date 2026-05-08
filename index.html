@@ -192,6 +192,15 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .product-id-btn:disabled{opacity:.55;cursor:not-allowed}
 .load-status{margin-top:7px}
+.save-memo-field{margin-top:8px}
+.save-memo-field label{display:flex;align-items:baseline;gap:4px;font-size:.76rem;color:#64748b;font-weight:800;margin-bottom:5px;line-height:1}
+.save-memo-field label span{font-size:.68rem;color:var(--text3);font-weight:700}
+.save-memo-field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font:inherit;font-size:.82rem;line-height:1.35;color:var(--text);background:#fafafa;resize:vertical;transition:border-color .15s}
+.save-memo-field textarea:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
+.save-memo-field textarea::placeholder{color:var(--text3)}
+.volume-weight-row{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:4px;font-size:.75rem;color:var(--text3)}
+.volume-weight-item{white-space:nowrap}
+.volume-weight-value{color:var(--text2)}
 .product-save-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}
 .save-action-status{max-width:calc(100% - 88px)}
 .product-save-btn{height:34px;border-radius:8px;padding:0 14px;font-size:.82rem;font-weight:700;color:var(--text2)}
@@ -282,7 +291,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <button class="product-id-btn" onclick="openEbayItem()">🔗 eBay</button>
       </div>
       <div id="loadStatus" class="inline-status load-status" role="status" aria-live="polite"></div>
-      <input type="hidden" id="saveMemo" value="">
     </div>
     <div class="mode-bar">
       <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')">🇺🇸 アメリカ向け</button>
@@ -352,9 +360,13 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <input type="text" inputmode="decimal" id="height" value="5" class="highlight">
       </div>
     </div>
-    <div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--text3)">
-      <span>体積重量(÷5000): <strong id="volWeight" style="color:var(--text2)">-</strong></span>
-      <span>Economy(÷8000): <strong id="volWeightEco" style="color:var(--text2)">-</strong></span>
+    <div class="volume-weight-row">
+      <span class="volume-weight-item">体積重量(÷5000): <strong id="volWeight" class="volume-weight-value">-</strong></span>
+      <span class="volume-weight-item">Economy(÷8000): <strong id="volWeightEco" class="volume-weight-value">-</strong></span>
+    </div>
+    <div class="save-memo-field">
+      <label for="saveMemo">メモ <span>任意</span></label>
+      <textarea id="saveMemo" rows="2" maxlength="240" placeholder="例: 仕入先、状態、出品時の注意など"></textarea>
     </div>
     <div class="product-save-footer">
       <div id="saveStatus" class="inline-status save-action-status" role="status" aria-live="polite"></div>
@@ -2795,7 +2807,7 @@ function restoreState() {
 }
 
 // ========== Event Listeners ==========
-document.querySelectorAll('input').forEach(el => {
+document.querySelectorAll('input, textarea').forEach(el => {
   if (el.closest('.product-id-section') || el.id === 'saveMemo') {
     el.addEventListener('input', () => {
       saveState();
