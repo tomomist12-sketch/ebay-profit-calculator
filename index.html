@@ -183,12 +183,15 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .save-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:auto;min-width:0}
 .product-id-section{margin-bottom:10px}
 .product-id-label{font-size:.74rem;color:#64748b;font-weight:700;margin-bottom:5px;display:block;letter-spacing:0}
-.product-id-row{display:grid;grid-template-columns:minmax(0,1fr)72px 80px;gap:8px;align-items:center}
+.product-id-row{display:grid;grid-template-columns:minmax(0,1fr)88px 72px;gap:8px;align-items:center}
 .product-id-row input{height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;transition:border-color .15s;background:#fafafa}
 .product-id-row input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
 .product-id-btn{height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text3);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s}
 .product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .product-id-btn:disabled{opacity:.55;cursor:not-allowed}
+.load-status{display:none;margin-top:6px;border-radius:6px;padding:4px 8px;background:#ecfdf5;font-size:.7rem;font-weight:700;color:#166534;line-height:1.35}
+.load-status.show{display:block}
+.load-status.error{background:#fef2f2;color:#991b1b}
 .save-btn{height:34px;border:1px solid var(--border);border-radius:8px;background:#fafafa;color:var(--text2);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s}
 .save-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .save-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
@@ -277,9 +280,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <label class="product-id-label">🔍 eBay商品番号</label>
       <div class="product-id-row">
         <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
-        <button class="product-id-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">呼出</button>
+        <button class="product-id-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">保存読込</button>
         <button class="product-id-btn" onclick="openEbayItem()">🔗 eBay</button>
       </div>
+      <div id="loadStatus" class="load-status" role="status" aria-live="polite"></div>
       <input type="hidden" id="saveMemo" value="">
     </div>
     <div class="mode-bar">
@@ -2467,6 +2471,29 @@ function showSaveToast(message, isError) {
   toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+function showLoadStatus(message, isError, autoHide) {
+  const status = document.getElementById('loadStatus');
+  if (!status) {
+    showSaveToast(message, isError);
+    return;
+  }
+  status.textContent = message;
+  status.classList.toggle('error', !!isError);
+  status.classList.add('show');
+  clearTimeout(status._hideTimer);
+  if (autoHide !== false && !isError) {
+    status._hideTimer = setTimeout(() => status.classList.remove('show'), 3500);
+  }
+}
+
+function clearLoadStatus() {
+  const status = document.getElementById('loadStatus');
+  if (!status) return;
+  clearTimeout(status._hideTimer);
+  status.textContent = '';
+  status.classList.remove('show', 'error');
+}
+
 function setButtonBusy(id, busy, label) {
   const btn = document.getElementById(id);
   if (!btn) return;
@@ -2589,21 +2616,22 @@ async function saveProfitCalculation() {
 async function loadProfitCalculationByInput() {
   const ebayItemId = getSaveEbayItemId();
   if (!ebayItemId) {
-    showSaveToast('eBay商品番号を入力してください', true);
+    showLoadStatus('eBay商品番号を入力してください', true);
     return;
   }
 
-  setButtonBusy('loadCalcBtn', true, '呼出中...');
+  showLoadStatus('保存データを確認中...', false, false);
+  setButtonBusy('loadCalcBtn', true, '読込中...');
   try {
     const item = await requestSellerNote('PROFIT_CALC_LOAD', { ebayItemId });
     if (!item) {
-      showSaveToast('保存データが見つかりません', true);
+      showLoadStatus('この商品番号の保存データはありません', true);
       return;
     }
     applySavedProfitCalculation(item);
-    showSaveToast('呼び出しました');
+    showLoadStatus('保存データを読み込みました', false);
   } catch (err) {
-    showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから呼び出してください', '呼び出せませんでした'), true);
+    showLoadStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから読み込んでください', '保存データを読み込めませんでした'), true);
   } finally {
     setButtonBusy('loadCalcBtn', false);
   }
@@ -2714,7 +2742,7 @@ function renderProfitCalculationList(result) {
           <div class="calc-list-meta">${memo} / $${Number(item.sellPrice || 0).toFixed(2)} / ¥${fmt(item.purchasePrice || 0)} / 更新 ${updated}</div>
         </div>
         <div class="calc-list-actions">
-          <button class="save-btn" style="width:58px" onclick="loadSavedProfitCalculation(${item.id})">呼出</button>
+          <button class="save-btn" style="width:58px" onclick="loadSavedProfitCalculation(${item.id})">読込</button>
           <button class="save-btn" style="width:58px" onclick="deleteSavedProfitCalculation(${item.id})">削除</button>
         </div>
       </div>`;
@@ -2736,7 +2764,7 @@ function loadSavedProfitCalculation(id) {
   }
   applySavedProfitCalculation(item);
   closeCalcListModal();
-  showSaveToast('呼び出しました');
+  showSaveToast('保存データを読み込みました');
 }
 
 async function deleteSavedProfitCalculation(id) {
@@ -2782,7 +2810,10 @@ function restoreState() {
 // ========== Event Listeners ==========
 document.querySelectorAll('input').forEach(el => {
   if (el.closest('.product-id-section') || el.id === 'saveMemo') {
-    el.addEventListener('input', saveState);
+    el.addEventListener('input', () => {
+      saveState();
+      if (el.id === 'saveEbayItemId') clearLoadStatus();
+    });
     return;
   }
   el.addEventListener('input', () => { calculate(); saveState(); debouncedFetchSpeedpak(); });
