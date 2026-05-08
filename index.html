@@ -172,6 +172,37 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .shop-toggle{font-size:.7rem;color:var(--text3);cursor:pointer;border:none;background:none;padding:0;text-decoration:underline}
 .shop-toggle:hover{color:var(--primary)}
 
+/* ===== Seller Note Save / Load ===== */
+.save-card{border-top:3px solid var(--green)}
+.save-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.save-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.save-btn{height:34px;border:1px solid var(--border);border-radius:8px;background:#fafafa;color:var(--text2);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s}
+.save-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.save-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.save-btn.primary:hover{background:#15803d;border-color:#15803d;color:#fff}
+.save-btn:disabled{opacity:.55;cursor:not-allowed}
+.save-badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--green-bg);color:#166534;padding:2px 8px;font-size:.68rem;font-weight:600;margin-left:auto}
+.save-toast{position:fixed;right:20px;bottom:20px;z-index:2000;background:#0f172a;color:#fff;border-radius:10px;padding:10px 14px;font-size:.82rem;box-shadow:var(--shadow2);opacity:0;transform:translateY(8px);pointer-events:none;transition:all .18s}
+.save-toast.show{opacity:1;transform:translateY(0)}
+.save-toast.error{background:#991b1b}
+.calc-modal{position:fixed;inset:0;z-index:1900;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:20px}
+.calc-modal.show{display:flex}
+.calc-modal-panel{width:min(760px,100%);max-height:min(720px,90vh);background:#fff;border-radius:12px;box-shadow:var(--shadow2);display:flex;flex-direction:column;overflow:hidden}
+.calc-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+.calc-modal-title{font-size:.95rem;font-weight:700}
+.calc-modal-close{border:none;background:#f8fafc;border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--text2);font-size:18px}
+.calc-modal-body{padding:14px 16px;overflow:auto}
+.calc-list-search{display:flex;gap:8px;margin-bottom:12px}
+.calc-list-search input{height:34px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.9rem;flex:1}
+.calc-list{display:flex;flex-direction:column;gap:8px}
+.calc-list-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.calc-list-main{min-width:0}
+.calc-list-id{font-size:.9rem;font-weight:700;color:var(--text)}
+.calc-list-meta{font-size:.72rem;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calc-list-actions{display:flex;gap:6px}
+.calc-list-empty{font-size:.82rem;color:var(--text3);text-align:center;padding:22px 0}
+.calc-pager{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px;font-size:.78rem;color:var(--text2)}
+
 </style>
 </head>
 <body>
@@ -289,6 +320,30 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--text3)">
       <span>体積重量(÷5000): <strong id="volWeight" style="color:var(--text2)">-</strong></span>
       <span>Economy(÷8000): <strong id="volWeightEco" style="color:var(--text2)">-</strong></span>
+    </div>
+  </div>
+
+  <!-- 保存・呼出 -->
+  <div class="card save-card">
+    <h2><span class="icon">💾</span> 保存・呼出 <span id="saveEditBadge" class="save-badge" style="display:none"></span></h2>
+    <div class="save-grid">
+      <div class="field">
+        <label>eBay商品番号</label>
+        <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
+      </div>
+      <div class="field">
+        <label>メモ</label>
+        <input type="text" id="saveMemo" placeholder="商品名など">
+      </div>
+    </div>
+    <div class="save-actions">
+      <button class="save-btn primary" id="saveCalcBtn" onclick="saveProfitCalculation()">保存</button>
+      <button class="save-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">呼出</button>
+      <button class="save-btn" onclick="openCalcListModal()">一覧</button>
+    </div>
+    <div class="save-actions" style="grid-template-columns:1fr 1fr;margin-top:6px">
+      <button class="save-btn" onclick="openEbayItem()">eBayで開く</button>
+      <button class="save-btn" onclick="clearEditingProfitCalculation()">編集をやめる</button>
     </div>
   </div>
 
@@ -411,6 +466,25 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 </div>
 </div><!-- /right-column -->
 </div><!-- /main-layout -->
+
+<div id="saveToast" class="save-toast"></div>
+
+<div id="calcListModal" class="calc-modal" onclick="if(event.target===this)closeCalcListModal()">
+  <div class="calc-modal-panel">
+    <div class="calc-modal-header">
+      <div class="calc-modal-title">保存済み利益計算</div>
+      <button class="calc-modal-close" onclick="closeCalcListModal()" aria-label="閉じる">×</button>
+    </div>
+    <div class="calc-modal-body">
+      <div class="calc-list-search">
+        <input type="text" id="calcListSearch" placeholder="商品番号・メモで検索" onkeydown="if(event.key==='Enter')fetchProfitCalculationList(1)">
+        <button class="save-btn" style="width:84px" onclick="fetchProfitCalculationList(1)">検索</button>
+      </div>
+      <div id="calcListContent" class="calc-list"></div>
+      <div id="calcListPager" class="calc-pager"></div>
+    </div>
+  </div>
+</div>
 
 <script src="ebay_category_tree.js"></script>
 <!-- フォールバック: 新ファイルがない場合は旧ファイルを使用 -->
@@ -2368,8 +2442,298 @@ function copyProductInfo() {
   });
 }
 
+// ========== Seller Note Save / Load ==========
+const SELLER_NOTE_ORIGIN = 'https://tools.aione.co.jp';
+let editingProfitCalculation = null;
+let savedProfitCalculationItems = [];
+let savedProfitCalculationPage = 1;
+let savedProfitCalculationTotalPages = 1;
+
+function showSaveToast(message, isError) {
+  const toast = document.getElementById('saveToast');
+  toast.textContent = message;
+  toast.classList.toggle('error', !!isError);
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function setButtonBusy(id, busy, label) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  if (busy) {
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = label || '処理中...';
+    btn.disabled = true;
+  } else {
+    btn.textContent = btn.dataset.originalText || btn.textContent;
+    btn.disabled = false;
+  }
+}
+
+function requestSellerNote(type, payload) {
+  return new Promise((resolve, reject) => {
+    if (!window.parent || window.parent === window) {
+      reject(new Error('Seller Note内で開いてください'));
+      return;
+    }
+
+    const messageId = type + '_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      reject(new Error('タイムアウトしました'));
+    }, 10000);
+
+    function handler(event) {
+      if (event.origin !== SELLER_NOTE_ORIGIN) return;
+      const data = event.data || {};
+      if (data.messageId !== messageId || data.type !== type + '_RESPONSE') return;
+
+      clearTimeout(timer);
+      window.removeEventListener('message', handler);
+      if (data.error) {
+        reject(new Error(data.error));
+      } else {
+        resolve(data.payload);
+      }
+    }
+
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type, messageId, payload }, SELLER_NOTE_ORIGIN);
+  });
+}
+
+function normalizeEbayItemId(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function getSaveEbayItemId() {
+  const el = document.getElementById('saveEbayItemId');
+  const id = normalizeEbayItemId(el.value);
+  if (el.value !== id) el.value = id;
+  return id;
+}
+
+function collectProfitCalculationPayload() {
+  const ebayItemId = getSaveEbayItemId();
+  if (!ebayItemId) throw new Error('eBay商品番号を入力してください');
+
+  return {
+    ebayItemId,
+    memo: document.getElementById('saveMemo').value.trim(),
+    purchasePrice: Math.round(getVal('purchasePrice')),
+    sellPrice: getVal('sellingPrice'),
+    shippingFee: getCompShippingUsd(),
+    weightKg: getVal('weight'),
+    lengthCm: getVal('length'),
+    widthCm: getVal('width'),
+    heightCm: getVal('height'),
+    categoryNo: String(document.getElementById('categoryNo').value || ''),
+    destinationMode: currentPricingMode === 'us' ? 'US' : 'NON_US',
+    storeLevel: currentStorePlan === 'store' ? 'BASIC_OR_ABOVE' : 'NONE_STARTER',
+  };
+}
+
+function updateEditingProfitCalculation(item) {
+  editingProfitCalculation = item || null;
+  const badge = document.getElementById('saveEditBadge');
+  if (!badge) return;
+  if (editingProfitCalculation && editingProfitCalculation.ebayItemId) {
+    badge.textContent = '編集中: ' + editingProfitCalculation.ebayItemId;
+    badge.style.display = '';
+  } else {
+    badge.textContent = '';
+    badge.style.display = 'none';
+  }
+}
+
+async function saveProfitCalculation() {
+  let payload;
+  try {
+    payload = collectProfitCalculationPayload();
+  } catch (err) {
+    showSaveToast(err.message, true);
+    return;
+  }
+
+  setButtonBusy('saveCalcBtn', true, '保存中...');
+  try {
+    const result = await requestSellerNote('PROFIT_CALC_SAVE', payload);
+    updateEditingProfitCalculation({ id: result.id, ebayItemId: result.ebayItemId });
+    showSaveToast(result.created ? '保存しました' : '上書き保存しました');
+  } catch (err) {
+    showSaveToast(err.message || '保存できませんでした', true);
+  } finally {
+    setButtonBusy('saveCalcBtn', false);
+  }
+}
+
+async function loadProfitCalculationByInput() {
+  const ebayItemId = getSaveEbayItemId();
+  if (!ebayItemId) {
+    showSaveToast('eBay商品番号を入力してください', true);
+    return;
+  }
+
+  setButtonBusy('loadCalcBtn', true, '呼出中...');
+  try {
+    const item = await requestSellerNote('PROFIT_CALC_LOAD', { ebayItemId });
+    if (!item) {
+      showSaveToast('保存データが見つかりません', true);
+      return;
+    }
+    applySavedProfitCalculation(item);
+    showSaveToast('呼び出しました');
+  } catch (err) {
+    showSaveToast(err.message || '呼び出せませんでした', true);
+  } finally {
+    setButtonBusy('loadCalcBtn', false);
+  }
+}
+
+function applySavedProfitCalculation(item) {
+  document.getElementById('saveEbayItemId').value = item.ebayItemId || '';
+  document.getElementById('saveMemo').value = item.memo || '';
+  document.getElementById('purchasePrice').value = item.purchasePrice ?? 0;
+  document.getElementById('sellingPrice').value = item.sellPrice ?? 0;
+  document.getElementById('compShipping').value = item.shippingFee ?? 0;
+  document.getElementById('weight').value = item.weightKg ?? 0;
+  document.getElementById('length').value = item.lengthCm ?? 0;
+  document.getElementById('width').value = item.widthCm ?? 0;
+  document.getElementById('height').value = item.heightCm ?? 0;
+  document.getElementById('categoryNo').value = item.categoryNo || '';
+
+  setCompShippingCurrency('usd');
+  setPricingMode(item.destinationMode === 'NON_US' ? 'other' : 'us');
+  setStorePlan(item.storeLevel === 'NONE_STARTER' ? 'noStore' : 'store');
+  onCategoryNoInput();
+  updatePricingDisplay();
+  calculate();
+  saveState();
+  updateEditingProfitCalculation({ id: item.id, ebayItemId: item.ebayItemId });
+}
+
+function clearEditingProfitCalculation() {
+  updateEditingProfitCalculation(null);
+  showSaveToast('編集状態を解除しました');
+}
+
+function openEbayItem() {
+  const ebayItemId = getSaveEbayItemId();
+  if (!ebayItemId) {
+    showSaveToast('eBay商品番号を入力してください', true);
+    return;
+  }
+  window.open('https://www.ebay.com/itm/' + encodeURIComponent(ebayItemId), '_blank');
+}
+
+function openCalcListModal() {
+  document.getElementById('calcListModal').classList.add('show');
+  fetchProfitCalculationList(1);
+}
+
+function closeCalcListModal() {
+  document.getElementById('calcListModal').classList.remove('show');
+}
+
+async function fetchProfitCalculationList(page) {
+  const content = document.getElementById('calcListContent');
+  const pager = document.getElementById('calcListPager');
+  const search = document.getElementById('calcListSearch').value.trim();
+  content.innerHTML = '<div class="calc-list-empty">読み込み中...</div>';
+  pager.innerHTML = '';
+
+  try {
+    const result = await requestSellerNote('PROFIT_CALC_LIST', { search, page: page || 1, limit: 20 });
+    savedProfitCalculationItems = result.items || [];
+    savedProfitCalculationPage = result.page || 1;
+    savedProfitCalculationTotalPages = result.totalPages || 1;
+    renderProfitCalculationList(result);
+  } catch (err) {
+    content.innerHTML = '<div class="calc-list-empty">一覧を取得できませんでした</div>';
+    showSaveToast(err.message || '一覧を取得できませんでした', true);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+}
+
+function formatSavedDate(value) {
+  if (!value) return '';
+  try {
+    return new Date(value).toLocaleString('ja-JP', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch (e) {
+    return '';
+  }
+}
+
+function renderProfitCalculationList(result) {
+  const content = document.getElementById('calcListContent');
+  const pager = document.getElementById('calcListPager');
+  const items = result.items || [];
+
+  if (!items.length) {
+    content.innerHTML = '<div class="calc-list-empty">保存データはありません</div>';
+  } else {
+    content.innerHTML = items.map(item => {
+      const memo = item.memo ? escapeHtml(item.memo) : 'メモなし';
+      const updated = formatSavedDate(item.updatedAt);
+      return `<div class="calc-list-item">
+        <div class="calc-list-main">
+          <div class="calc-list-id">${escapeHtml(item.ebayItemId)}</div>
+          <div class="calc-list-meta">${memo} / $${Number(item.sellPrice || 0).toFixed(2)} / ¥${fmt(item.purchasePrice || 0)} / 更新 ${updated}</div>
+        </div>
+        <div class="calc-list-actions">
+          <button class="save-btn" style="width:58px" onclick="loadSavedProfitCalculation(${item.id})">呼出</button>
+          <button class="save-btn" style="width:58px" onclick="deleteSavedProfitCalculation(${item.id})">削除</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const page = result.page || 1;
+  const totalPages = result.totalPages || 1;
+  pager.innerHTML = `<button class="save-btn" style="width:72px" ${page <= 1 ? 'disabled' : ''} onclick="fetchProfitCalculationList(${page - 1})">前へ</button>
+    <span>${page} / ${totalPages}</span>
+    <button class="save-btn" style="width:72px" ${page >= totalPages ? 'disabled' : ''} onclick="fetchProfitCalculationList(${page + 1})">次へ</button>`;
+}
+
+function loadSavedProfitCalculation(id) {
+  const item = savedProfitCalculationItems.find(i => Number(i.id) === Number(id));
+  if (!item) {
+    showSaveToast('保存データを読み込めませんでした', true);
+    return;
+  }
+  applySavedProfitCalculation(item);
+  closeCalcListModal();
+  showSaveToast('呼び出しました');
+}
+
+async function deleteSavedProfitCalculation(id) {
+  if (!confirm('この保存データを削除しますか？')) return;
+  try {
+    await requestSellerNote('PROFIT_CALC_DELETE', { id });
+    showSaveToast('削除しました');
+    fetchProfitCalculationList(savedProfitCalculationPage);
+  } catch (err) {
+    showSaveToast(err.message || '削除できませんでした', true);
+  }
+}
+
 const SAVE_KEY = 'ebayCalcState';
-const SAVE_FIELDS = ['purchasePrice','sellingPrice','compShipping','weight','length','width','height',
+const SAVE_FIELDS = ['saveEbayItemId','saveMemo','purchasePrice','sellingPrice','compShipping','weight','length','width','height',
   'categoryNo','exchangeRate','fuelSurcharge','usShippingPct',
   'ebayFeeRate','feeThreshold','ebayFeeRate2','perOrderFee',
   'promotedRate','intlFeeRate','payoneerRate','taxRate'];
@@ -2399,6 +2763,10 @@ function restoreState() {
 
 // ========== Event Listeners ==========
 document.querySelectorAll('input').forEach(el => {
+  if (el.closest('.save-card')) {
+    el.addEventListener('input', saveState);
+    return;
+  }
   el.addEventListener('input', () => { calculate(); saveState(); debouncedFetchSpeedpak(); });
 });
 document.getElementById('categoryNo').addEventListener('input', onCategoryNoInput);
