@@ -192,13 +192,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .product-id-btn:disabled{opacity:.55;cursor:not-allowed}
 .load-status{margin-top:7px}
-.save-memo-field{display:none;margin-top:8px}
-.save-memo-field.show{display:block}
-.save-memo-field label{display:flex;align-items:baseline;gap:4px;font-size:.76rem;color:#64748b;font-weight:800;margin-bottom:5px;line-height:1}
-.save-memo-field label span{font-size:.68rem;color:var(--text3);font-weight:700}
-.save-memo-field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font:inherit;font-size:.82rem;line-height:1.35;color:var(--text);background:#fafafa;resize:vertical;transition:border-color .15s}
-.save-memo-field textarea:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
-.save-memo-field textarea::placeholder{color:var(--text3)}
 .volume-weight-row{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:4px;font-size:.75rem;color:var(--text3)}
 .volume-weight-item{white-space:nowrap}
 .volume-weight-value{color:var(--text2)}
@@ -228,6 +221,15 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .calc-list-actions{display:flex;gap:6px}
 .calc-list-empty{font-size:.82rem;color:var(--text3);text-align:center;padding:22px 0}
 .calc-pager{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px;font-size:.78rem;color:var(--text2)}
+.save-memo-modal-panel{width:min(420px,100%)}
+.save-memo-item{display:flex;justify-content:space-between;gap:12px;background:#f8fafc;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:.78rem;color:var(--text3)}
+.save-memo-item strong{color:var(--text);font-family:"SF Mono",Consolas,monospace}
+.save-memo-label{display:flex;align-items:baseline;gap:4px;font-size:.82rem;color:var(--text2);font-weight:800;margin-bottom:6px;line-height:1}
+.save-memo-label span{font-size:.7rem;color:var(--text3);font-weight:700}
+.save-memo-textarea{width:100%;min-height:96px;border:1px solid var(--border);border-radius:10px;padding:9px 10px;font:inherit;font-size:.9rem;line-height:1.4;color:var(--text);background:#fafafa;resize:vertical;transition:border-color .15s}
+.save-memo-textarea:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
+.save-memo-textarea::placeholder{color:var(--text3)}
+.save-memo-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 
 </style>
 </head>
@@ -365,13 +367,9 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <span class="volume-weight-item">体積重量(÷5000): <strong id="volWeight" class="volume-weight-value">-</strong></span>
       <span class="volume-weight-item">Economy(÷8000): <strong id="volWeightEco" class="volume-weight-value">-</strong></span>
     </div>
-    <div class="save-memo-field" id="saveMemoField">
-      <label for="saveMemo">メモ <span>任意</span></label>
-      <textarea id="saveMemo" rows="2" maxlength="240" placeholder="例: 仕入先、状態、出品時の注意など"></textarea>
-    </div>
     <div class="product-save-footer">
       <div id="saveStatus" class="inline-status save-action-status" role="status" aria-live="polite"></div>
-      <button class="copy-info-btn product-save-btn" id="saveCalcBtn" onclick="saveProfitCalculation()">💾 保存</button>
+      <button class="copy-info-btn product-save-btn" id="saveCalcBtn" onclick="openSaveMemoModal()">💾 保存</button>
     </div>
   </div>
 
@@ -509,6 +507,28 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <div id="calcListStatus" class="inline-status modal-status" role="status" aria-live="polite"></div>
       <div id="calcListContent" class="calc-list"></div>
       <div id="calcListPager" class="calc-pager"></div>
+    </div>
+  </div>
+</div>
+
+<div id="saveMemoModal" class="calc-modal" onclick="if(event.target===this)closeSaveMemoModal(true)">
+  <div class="calc-modal-panel save-memo-modal-panel">
+    <div class="calc-modal-header">
+      <div class="calc-modal-title">保存メモ</div>
+      <button class="calc-modal-close" onclick="closeSaveMemoModal(true)" aria-label="閉じる">×</button>
+    </div>
+    <div class="calc-modal-body">
+      <div class="save-memo-item">
+        <span>商品番号</span>
+        <strong id="saveMemoItemId">-</strong>
+      </div>
+      <label class="save-memo-label" for="saveMemo">メモ <span>任意</span></label>
+      <textarea id="saveMemo" class="save-memo-textarea" rows="4" maxlength="240" placeholder="例: 仕入先、状態、出品時の注意など"></textarea>
+      <div id="saveMemoModalStatus" class="inline-status modal-status" role="status" aria-live="polite"></div>
+      <div class="save-memo-actions">
+        <button class="save-btn" style="width:92px" onclick="closeSaveMemoModal(true)">キャンセル</button>
+        <button class="save-btn primary" id="confirmSaveCalcBtn" style="width:104px" onclick="saveProfitCalculation()">保存する</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2469,6 +2489,7 @@ const SELLER_NOTE_ORIGIN = 'https://tools.aione.co.jp';
 let savedProfitCalculationItems = [];
 let savedProfitCalculationPage = 1;
 let savedProfitCalculationTotalPages = 1;
+let saveMemoDraftBeforeModal = '';
 
 function showInlineStatus(id, message, isError, autoHide) {
   const status = document.getElementById(id);
@@ -2498,6 +2519,10 @@ function showLoadStatus(message, isError, autoHide) {
 
 function showModalStatus(message, isError, autoHide) {
   showInlineStatus('calcListStatus', message, isError, autoHide);
+}
+
+function showSaveMemoModalStatus(message, isError, autoHide) {
+  showInlineStatus('saveMemoModalStatus', message, isError, autoHide);
 }
 
 function clearInlineStatus(id) {
@@ -2597,53 +2622,51 @@ function collectProfitCalculationPayload() {
   };
 }
 
-function isSaveMemoFieldVisible() {
-  const field = document.getElementById('saveMemoField');
-  return !!field && field.classList.contains('show');
+function openSaveMemoModal() {
+  const ebayItemId = getSaveEbayItemId();
+  if (!ebayItemId) {
+    showSaveStatus('eBay商品番号を入力してください', true);
+    return;
+  }
+
+  const memoInput = document.getElementById('saveMemo');
+  saveMemoDraftBeforeModal = memoInput.value;
+  document.getElementById('saveMemoItemId').textContent = ebayItemId;
+  clearInlineStatus('saveStatus');
+  clearInlineStatus('saveMemoModalStatus');
+  document.getElementById('saveMemoModal').classList.add('show');
+  setTimeout(() => memoInput.focus(), 0);
 }
 
-function setSaveMemoFieldVisible(visible) {
-  const field = document.getElementById('saveMemoField');
-  const btn = document.getElementById('saveCalcBtn');
-  if (!field || !btn) return;
-  field.classList.toggle('show', visible);
-  btn.textContent = visible ? '💾 保存する' : '💾 保存';
-  if (visible) {
-    document.getElementById('saveMemo').focus();
+function closeSaveMemoModal(restoreDraft) {
+  const modal = document.getElementById('saveMemoModal');
+  const memoInput = document.getElementById('saveMemo');
+  if (restoreDraft && memoInput) {
+    memoInput.value = saveMemoDraftBeforeModal;
+    saveState();
   }
+  modal.classList.remove('show');
+  clearInlineStatus('saveMemoModalStatus');
 }
 
 async function saveProfitCalculation() {
-  if (!isSaveMemoFieldVisible()) {
-    const ebayItemId = getSaveEbayItemId();
-    if (!ebayItemId) {
-      showSaveStatus('eBay商品番号を入力してください', true);
-      return;
-    }
-    clearInlineStatus('saveStatus');
-    setSaveMemoFieldVisible(true);
-    return;
-  }
-
   let payload;
-  let didSave = false;
   try {
     payload = collectProfitCalculationPayload();
   } catch (err) {
-    showSaveStatus(err.message, true);
+    showSaveMemoModalStatus(err.message, true);
     return;
   }
 
-  setButtonBusy('saveCalcBtn', true, '保存中...');
+  setButtonBusy('confirmSaveCalcBtn', true, '保存中...');
   try {
     const result = await requestSellerNote('PROFIT_CALC_SAVE', payload);
-    didSave = true;
+    closeSaveMemoModal(false);
     showSaveStatus(result.created ? '保存しました' : '上書き保存しました');
   } catch (err) {
-    showSaveStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
+    showSaveMemoModalStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
   } finally {
-    setButtonBusy('saveCalcBtn', false);
-    if (didSave) setSaveMemoFieldVisible(false);
+    setButtonBusy('confirmSaveCalcBtn', false);
   }
 }
 
@@ -2674,7 +2697,7 @@ async function loadProfitCalculationByInput() {
 function applySavedProfitCalculation(item) {
   document.getElementById('saveEbayItemId').value = item.ebayItemId || '';
   document.getElementById('saveMemo').value = item.memo || '';
-  setSaveMemoFieldVisible(false);
+  closeSaveMemoModal(false);
   document.getElementById('purchasePrice').value = item.purchasePrice ?? 0;
   document.getElementById('sellingPrice').value = item.sellPrice ?? 0;
   document.getElementById('compShipping').value = item.shippingFee ?? 0;
