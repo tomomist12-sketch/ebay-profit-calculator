@@ -197,7 +197,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .save-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
 .save-btn.primary:hover{background:#15803d;border-color:#15803d;color:#fff}
 .save-btn:disabled{opacity:.55;cursor:not-allowed}
-.save-badge{display:flex;align-items:center;width:max-content;max-width:100%;border-radius:999px;background:var(--green-bg);color:#166534;padding:2px 8px;margin:-2px 0 12px;font-size:.68rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .save-toast{position:fixed;right:20px;bottom:20px;z-index:2000;background:#0f172a;color:#fff;border-radius:10px;padding:10px 14px;font-size:.82rem;box-shadow:var(--shadow2);opacity:0;transform:translateY(8px);pointer-events:none;transition:all .18s}
 .save-toast.show{opacity:1;transform:translateY(0)}
 .save-toast.error{background:#991b1b}
@@ -275,7 +274,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <span class="copy-toast" id="copyToast">コピーしました</span>
       </div>
     </div>
-    <span id="saveEditBadge" class="save-badge" style="display:none"></span>
     <div class="product-id-section">
       <label class="product-id-label">🔍 eBay商品番号</label>
       <div class="product-id-row">
@@ -2457,7 +2455,6 @@ function copyProductInfo() {
 
 // ========== Seller Note Save / Load ==========
 const SELLER_NOTE_ORIGIN = 'https://tools.aione.co.jp';
-let editingProfitCalculation = null;
 let savedProfitCalculationItems = [];
 let savedProfitCalculationPage = 1;
 let savedProfitCalculationTotalPages = 1;
@@ -2579,19 +2576,6 @@ function collectProfitCalculationPayload() {
   };
 }
 
-function updateEditingProfitCalculation(item) {
-  editingProfitCalculation = item || null;
-  const badge = document.getElementById('saveEditBadge');
-  if (!badge) return;
-  if (editingProfitCalculation && editingProfitCalculation.ebayItemId) {
-    badge.textContent = '編集中: ' + editingProfitCalculation.ebayItemId;
-    badge.style.display = '';
-  } else {
-    badge.textContent = '';
-    badge.style.display = 'none';
-  }
-}
-
 async function saveProfitCalculation() {
   let payload;
   try {
@@ -2604,7 +2588,6 @@ async function saveProfitCalculation() {
   setButtonBusy('saveCalcBtn', true, '保存中...');
   try {
     const result = await requestSellerNote('PROFIT_CALC_SAVE', payload);
-    updateEditingProfitCalculation({ id: result.id, ebayItemId: result.ebayItemId });
     showSaveToast(result.created ? '保存しました' : '上書き保存しました');
   } catch (err) {
     showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
@@ -2656,12 +2639,6 @@ function applySavedProfitCalculation(item) {
   updatePricingDisplay();
   calculate();
   saveState();
-  updateEditingProfitCalculation({ id: item.id, ebayItemId: item.ebayItemId });
-}
-
-function clearEditingProfitCalculation() {
-  updateEditingProfitCalculation(null);
-  showSaveToast('編集状態を解除しました');
 }
 
 function openEbayItem() {
