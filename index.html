@@ -50,12 +50,12 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:16px}
 .card h2{font-size:14px;font-weight:500;color:#666;margin:0 0 12px;padding:0;border:none;display:flex;align-items:center;gap:6px}
 .card h2 .icon{font-size:1rem}
-.copy-info-btn{background:none;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:.75rem;padding:1px 5px;color:#999;transition:all .15s;white-space:nowrap;line-height:1.2;flex:0 0 auto}
+.copy-info-btn{height:26px;background:none;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:.75rem;padding:3px 8px;color:#999;transition:all .15s;white-space:nowrap;line-height:1.2;flex:0 0 auto}
 .copy-info-btn:hover{background:#f0f0f0;color:#666;border-color:#bbb}
 .copy-info-btn:active{transform:scale(.95)}
-.copy-toast{font-size:.7rem;color:#16a34a;font-weight:600;margin-left:4px;opacity:0;transition:opacity .3s;pointer-events:none}
-.copy-toast.error{color:#dc2626}
-.copy-toast.show{opacity:1}
+.inline-status{display:none;width:max-content;max-width:100%;border-radius:6px;padding:4px 8px;background:#ecfdf5;font-size:.7rem;font-weight:700;color:#166534;line-height:1.35}
+.inline-status.show{display:block}
+.inline-status.error{background:#fef2f2;color:#991b1b}
 
 /* ===== 2-Column Layout ===== */
 .main-layout{display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start}
@@ -177,29 +177,27 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .title-row h1{margin:0}
 .saved-calc-top{position:absolute;right:0;top:0;height:30px;border:1px solid #ddd;border-radius:6px;background:#fafafa;color:#999;cursor:pointer;font-size:.78rem;font-weight:600;padding:0 12px;transition:all .15s}
 .saved-calc-top:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
-.product-card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.product-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .product-card-header h2{margin:0;flex:0 0 auto;font-size:1.05rem;font-weight:700;color:var(--text);white-space:nowrap}
 .product-card-header h2 .icon{font-size:1.1rem}
 .save-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:auto;min-width:0}
-.product-id-section{margin-bottom:10px}
-.product-id-label{font-size:.74rem;color:#64748b;font-weight:700;margin-bottom:5px;display:block;letter-spacing:0}
+.header-action-status{margin:-2px 0 10px auto}
+.product-id-section{margin:2px 0 12px;padding-top:2px}
+.product-id-label{font-size:.76rem;color:#64748b;font-weight:800;margin-bottom:7px;display:flex;align-items:center;gap:4px;line-height:1;letter-spacing:0}
+.product-id-label .label-icon{font-size:.86rem;line-height:1}
 .product-id-row{display:grid;grid-template-columns:minmax(0,1fr)88px 72px;gap:8px;align-items:center}
-.product-id-row input{height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;transition:border-color .15s;background:#fafafa}
+.product-id-row input{height:38px;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:1rem;width:100%;transition:border-color .15s;background:#fafafa}
 .product-id-row input:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
-.product-id-btn{height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text3);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s}
+.product-id-btn{height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text3);cursor:pointer;font-size:.78rem;font-weight:800;transition:all .15s;white-space:nowrap}
 .product-id-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .product-id-btn:disabled{opacity:.55;cursor:not-allowed}
-.load-status{display:none;margin-top:6px;border-radius:6px;padding:4px 8px;background:#ecfdf5;font-size:.7rem;font-weight:700;color:#166534;line-height:1.35}
-.load-status.show{display:block}
-.load-status.error{background:#fef2f2;color:#991b1b}
+.load-status{margin-top:7px}
 .save-btn{height:34px;border:1px solid var(--border);border-radius:8px;background:#fafafa;color:var(--text2);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s}
 .save-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .save-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
 .save-btn.primary:hover{background:#15803d;border-color:#15803d;color:#fff}
 .save-btn:disabled{opacity:.55;cursor:not-allowed}
-.save-toast{position:fixed;right:20px;bottom:20px;z-index:2000;background:#0f172a;color:#fff;border-radius:10px;padding:10px 14px;font-size:.82rem;box-shadow:var(--shadow2);opacity:0;transform:translateY(8px);pointer-events:none;transition:all .18s}
-.save-toast.show{opacity:1;transform:translateY(0)}
-.save-toast.error{background:#991b1b}
+.modal-status{margin:0 0 10px}
 .calc-modal{position:fixed;inset:0;z-index:1900;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:20px}
 .calc-modal.show{display:flex}
 .calc-modal-panel{width:min(760px,100%);max-height:min(720px,90vh);background:#fff;border-radius:12px;box-shadow:var(--shadow2);display:flex;flex-direction:column;overflow:hidden}
@@ -271,17 +269,17 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <div class="save-header-actions">
         <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button>
         <button class="copy-info-btn" id="saveCalcBtn" onclick="saveProfitCalculation()">💾 保存</button>
-        <span class="copy-toast" id="copyToast">コピーしました</span>
       </div>
     </div>
+    <div id="headerActionStatus" class="inline-status header-action-status" role="status" aria-live="polite"></div>
     <div class="product-id-section">
-      <label class="product-id-label">🔍 eBay商品番号</label>
+      <label class="product-id-label"><span class="label-icon">🔍</span><span>eBay商品番号</span></label>
       <div class="product-id-row">
         <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
         <button class="product-id-btn" id="loadCalcBtn" onclick="loadProfitCalculationByInput()">保存読込</button>
         <button class="product-id-btn" onclick="openEbayItem()">🔗 eBay</button>
       </div>
-      <div id="loadStatus" class="load-status" role="status" aria-live="polite"></div>
+      <div id="loadStatus" class="inline-status load-status" role="status" aria-live="polite"></div>
       <input type="hidden" id="saveMemo" value="">
     </div>
     <div class="mode-bar">
@@ -478,8 +476,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 </div><!-- /right-column -->
 </div><!-- /main-layout -->
 
-<div id="saveToast" class="save-toast"></div>
-
 <div id="calcListModal" class="calc-modal" onclick="if(event.target===this)closeCalcListModal()">
   <div class="calc-modal-panel">
     <div class="calc-modal-header">
@@ -491,6 +487,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <input type="text" id="calcListSearch" placeholder="商品番号・メモで検索" onkeydown="if(event.key==='Enter')fetchProfitCalculationList(1)">
         <button class="save-btn" style="width:84px" onclick="fetchProfitCalculationList(1)">検索</button>
       </div>
+      <div id="calcListStatus" class="inline-status modal-status" role="status" aria-live="polite"></div>
       <div id="calcListContent" class="calc-list"></div>
       <div id="calcListPager" class="calc-pager"></div>
     </div>
@@ -2444,12 +2441,7 @@ function copyProductInfo() {
 
   const text = lines.join('\n');
   copyTextToClipboard(text).then(copied => {
-    const toast = document.getElementById('copyToast');
-    toast.textContent = copied ? 'コピーしました' : 'コピーできませんでした';
-    toast.classList.toggle('error', !copied);
-    toast.classList.add('show');
-    clearTimeout(toast._hideTimer);
-    toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+    showHeaderStatus(copied ? 'コピーしました' : 'コピーできませんでした', !copied);
   });
 }
 
@@ -2459,19 +2451,9 @@ let savedProfitCalculationItems = [];
 let savedProfitCalculationPage = 1;
 let savedProfitCalculationTotalPages = 1;
 
-function showSaveToast(message, isError) {
-  const toast = document.getElementById('saveToast');
-  toast.textContent = message;
-  toast.classList.toggle('error', !!isError);
-  toast.classList.add('show');
-  clearTimeout(toast._hideTimer);
-  toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2200);
-}
-
-function showLoadStatus(message, isError, autoHide) {
-  const status = document.getElementById('loadStatus');
+function showInlineStatus(id, message, isError, autoHide) {
+  const status = document.getElementById(id);
   if (!status) {
-    showSaveToast(message, isError);
     return;
   }
   status.textContent = message;
@@ -2483,12 +2465,28 @@ function showLoadStatus(message, isError, autoHide) {
   }
 }
 
-function clearLoadStatus() {
-  const status = document.getElementById('loadStatus');
+function showHeaderStatus(message, isError, autoHide) {
+  showInlineStatus('headerActionStatus', message, isError, autoHide);
+}
+
+function showLoadStatus(message, isError, autoHide) {
+  showInlineStatus('loadStatus', message, isError, autoHide);
+}
+
+function showModalStatus(message, isError, autoHide) {
+  showInlineStatus('calcListStatus', message, isError, autoHide);
+}
+
+function clearInlineStatus(id) {
+  const status = document.getElementById(id);
   if (!status) return;
   clearTimeout(status._hideTimer);
   status.textContent = '';
   status.classList.remove('show', 'error');
+}
+
+function clearLoadStatus() {
+  clearInlineStatus('loadStatus');
 }
 
 function setButtonBusy(id, busy, label) {
@@ -2581,16 +2579,16 @@ async function saveProfitCalculation() {
   try {
     payload = collectProfitCalculationPayload();
   } catch (err) {
-    showSaveToast(err.message, true);
+    showHeaderStatus(err.message, true);
     return;
   }
 
   setButtonBusy('saveCalcBtn', true, '保存中...');
   try {
     const result = await requestSellerNote('PROFIT_CALC_SAVE', payload);
-    showSaveToast(result.created ? '保存しました' : '上書き保存しました');
+    showHeaderStatus(result.created ? '保存しました' : '上書き保存しました');
   } catch (err) {
-    showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
+    showHeaderStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから保存してください', '保存できませんでした'), true);
   } finally {
     setButtonBusy('saveCalcBtn', false);
   }
@@ -2644,7 +2642,7 @@ function applySavedProfitCalculation(item) {
 function openEbayItem() {
   const ebayItemId = getSaveEbayItemId();
   if (!ebayItemId) {
-    showSaveToast('eBay商品番号を入力してください', true);
+    showLoadStatus('eBay商品番号を入力してください', true);
     return;
   }
   window.open('https://www.ebay.com/itm/' + encodeURIComponent(ebayItemId), '_blank');
@@ -2652,6 +2650,7 @@ function openEbayItem() {
 
 function openCalcListModal() {
   document.getElementById('calcListModal').classList.add('show');
+  clearInlineStatus('calcListStatus');
   fetchProfitCalculationList(1);
 }
 
@@ -2663,6 +2662,7 @@ async function fetchProfitCalculationList(page) {
   const content = document.getElementById('calcListContent');
   const pager = document.getElementById('calcListPager');
   const search = document.getElementById('calcListSearch').value.trim();
+  clearInlineStatus('calcListStatus');
   content.innerHTML = '<div class="calc-list-empty">読み込み中...</div>';
   pager.innerHTML = '';
 
@@ -2674,7 +2674,7 @@ async function fetchProfitCalculationList(page) {
     renderProfitCalculationList(result);
   } catch (err) {
     content.innerHTML = '<div class="calc-list-empty">一覧を取得できませんでした</div>';
-    showSaveToast(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから一覧を開いてください', '一覧を取得できませんでした'), true);
+    showModalStatus(getSellerNoteErrorMessage(err, 'Seller Noteにログインしてから一覧を開いてください', '一覧を取得できませんでした'), true);
   }
 }
 
@@ -2736,22 +2736,22 @@ function renderProfitCalculationList(result) {
 function loadSavedProfitCalculation(id) {
   const item = savedProfitCalculationItems.find(i => Number(i.id) === Number(id));
   if (!item) {
-    showSaveToast('保存データを読み込めませんでした', true);
+    showModalStatus('保存データを読み込めませんでした', true);
     return;
   }
   applySavedProfitCalculation(item);
   closeCalcListModal();
-  showSaveToast('保存データを読み込みました');
+  showLoadStatus('保存データを読み込みました', false);
 }
 
 async function deleteSavedProfitCalculation(id) {
   if (!confirm('この保存データを削除しますか？')) return;
   try {
     await requestSellerNote('PROFIT_CALC_DELETE', { id });
-    showSaveToast('削除しました');
-    fetchProfitCalculationList(savedProfitCalculationPage);
+    await fetchProfitCalculationList(savedProfitCalculationPage);
+    showModalStatus('削除しました', false);
   } catch (err) {
-    showSaveToast(err.message || '削除できませんでした', true);
+    showModalStatus(err.message || '削除できませんでした', true);
   }
 }
 
