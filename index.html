@@ -8,6 +8,8 @@
 <script>
 (function(){
   var allowed=['https://tools.aione.co.jp'];
+  var localHosts=['localhost','127.0.0.1','::1'];
+  if(window.location.protocol==='file:'||localHosts.indexOf(window.location.hostname)!==-1)return;
   var shouldBlock=false;
   if(window.self===window.top){shouldBlock=true;}
   else{try{var ref=document.referrer?new URL(document.referrer).origin:'';if(allowed.indexOf(ref)===-1)shouldBlock=true;}catch(e){shouldBlock=true;}}
@@ -52,6 +54,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .copy-info-btn:hover{background:#f0f0f0;color:#666;border-color:#bbb}
 .copy-info-btn:active{transform:scale(.95)}
 .copy-toast{font-size:.7rem;color:#16a34a;font-weight:600;margin-left:4px;opacity:0;transition:opacity .3s;pointer-events:none}
+.copy-toast.error{color:#dc2626}
 .copy-toast.show{opacity:1}
 
 /* ===== 2-Column Layout ===== */
@@ -516,22 +519,64 @@ function rollKw() {
   document.getElementById('kwResult').innerHTML = picked.map(w => '<span style="background:var(--primary-light);padding:2px 8px;border-radius:4px;margin-right:4px;display:inline-block;cursor:pointer" onclick="copyOneKw(this)" title="クリックでコピー">' + w + '</span>').join('');
 }
 
-function copyOneKw(span) {
-  const text = span.textContent.trim();
-  if (!text) return;
+function fallbackCopyText(text) {
   const ta = document.createElement('textarea');
   ta.value = text;
+  ta.setAttribute('readonly', '');
   ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '0';
+  ta.style.width = '1px';
+  ta.style.height = '1px';
   ta.style.opacity = '0';
+  ta.style.pointerEvents = 'none';
+
+  const selection = document.getSelection();
+  const selectedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
   document.body.appendChild(ta);
+  try {
+    ta.focus({ preventScroll: true });
+  } catch(e) {
+    ta.focus();
+  }
   ta.select();
-  document.execCommand('copy');
+  ta.setSelectionRange(0, ta.value.length);
+
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch(e) {
+    copied = false;
+  }
+
   document.body.removeChild(ta);
+  if (selection && selectedRange) {
+    selection.removeAllRanges();
+    selection.addRange(selectedRange);
+  }
+  return copied;
+}
+
+function copyTextToClipboard(text) {
+  if (!text) return Promise.resolve(false);
+  if (fallbackCopyText(text)) return Promise.resolve(true);
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+  }
+  return Promise.resolve(false);
+}
+
+function copyOneKw(span) {
+  const text = span.dataset.copyText || span.textContent.trim();
+  if (!text) return;
+  span.dataset.copyText = text;
   const orig = span.textContent;
   const origBg = span.style.background;
-  span.textContent = '✓ copy';
-  span.style.background = 'var(--green-bg)';
-  setTimeout(() => { span.textContent = orig; span.style.background = origBg; }, 800);
+  copyTextToClipboard(text).then(copied => {
+    span.textContent = copied ? 'コピー済み' : 'コピー失敗';
+    span.style.background = copied ? 'var(--green-bg)' : 'var(--red-bg)';
+    setTimeout(() => { span.textContent = orig; span.style.background = origBg; }, 800);
+  });
 }
 
 rollKw(); // 初期表示
@@ -2313,10 +2358,13 @@ function copyProductInfo() {
   lines.push('Economy: ' + volWeightEco + 'kg');
 
   const text = lines.join('\n');
-  navigator.clipboard.writeText(text).then(() => {
+  copyTextToClipboard(text).then(copied => {
     const toast = document.getElementById('copyToast');
+    toast.textContent = copied ? 'コピーしました' : 'コピーできませんでした';
+    toast.classList.toggle('error', !copied);
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1500);
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 1500);
   });
 }
 
