@@ -113,6 +113,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .method-row{display:grid;grid-template-columns:1fr auto;gap:0;border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);background:#fff;align-items:center;position:relative}
 .method-row.usable{background:#fafcff;border:2px solid #3b82f6;border-radius:var(--radius)}
 .method-row.dimmed{opacity:.4}
+.dim-reason{font-size:.68rem;color:#b45309;line-height:1.3;margin-top:1px}
 .method-row .mr-left{display:flex;flex-direction:column;gap:3px;min-width:0}
 .method-row .mr-name{font-size:.95rem;font-weight:600}
 .method-row .mr-sub{font-size:.75rem;color:var(--text3);line-height:1.4}
@@ -172,11 +173,77 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .shop-toggle{font-size:.7rem;color:var(--text3);cursor:pointer;border:none;background:none;padding:0;text-decoration:underline}
 .shop-toggle:hover{color:var(--primary)}
 
+/* ===== Save Feature ===== */
+.ebay-item-row{display:flex;gap:6px;align-items:flex-end;margin-bottom:10px}
+.ebay-item-row .field{flex:1;min-width:0}
+.ebay-item-row .mode-btn{flex:none;height:36px;padding:6px 12px;white-space:nowrap}
+.ebay-item-link{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text3);text-decoration:none;transition:all .15s;flex:none}
+.ebay-item-link:hover{border-color:var(--primary);color:var(--primary)}
+.edit-badge{background:var(--primary-light);border:1.5px solid var(--primary);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.edit-badge-info{font-size:.85rem;font-weight:600;color:var(--primary);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.edit-badge-actions{display:flex;gap:6px;flex-shrink:0}
+.edit-badge-actions button{padding:4px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);transition:all .15s}
+.edit-badge-actions .btn-overwrite{background:var(--primary);color:#fff;border-color:var(--primary)}
+.edit-badge-actions .btn-overwrite:hover{background:#2563eb}
+.edit-badge-actions .btn-cancel{background:var(--card);color:var(--text3)}
+.edit-badge-actions .btn-cancel:hover{border-color:var(--red);color:var(--red)}
+.save-actions{display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.save-btn{padding:8px 20px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:1.5px solid var(--primary);background:var(--primary);color:#fff;transition:all .15s}
+.save-btn:hover{background:#2563eb}
+.save-btn.outline{background:none;color:var(--primary)}
+.save-btn.outline:hover{background:var(--primary-light)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-content{background:var(--card);border-radius:var(--radius);padding:24px;max-width:400px;width:100%;box-shadow:var(--shadow2)}
+.modal-content h3{font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--text)}
+.modal-content .field{margin-bottom:12px}
+.modal-content .field input{background:#fafafa}
+.modal-content .field input:focus{background:#fff}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.modal-actions button{padding:6px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid var(--border);transition:all .15s}
+.modal-actions .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.modal-actions .btn-primary:hover{background:#2563eb}
+.modal-actions .btn-secondary{background:var(--card);color:var(--text2)}
+.modal-actions .btn-secondary:hover{background:#f1f5f9}
+.save-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2000;padding:10px 24px;border-radius:8px;font-size:.85rem;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:var(--shadow2)}
+.save-toast.show{opacity:1}
+.save-toast.success{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.save-toast.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.saved-list-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:900;overflow-y:auto;padding:16px 20px}
+.saved-list-container{max-width:700px;margin:0 auto}
+.saved-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.saved-list-header h2{font-size:1.1rem;font-weight:700}
+.saved-list-close{padding:6px 14px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .15s}
+.saved-list-close:hover{border-color:var(--red);color:var(--red)}
+.saved-list-search{width:100%;height:40px;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.9rem;margin-bottom:16px;background:#fafafa}
+.saved-list-search:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px var(--primary-light)}
+.saved-list-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;transition:border-color .15s}
+.saved-list-item:hover{border-color:var(--primary)}
+.saved-list-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.saved-list-item-id{font-size:.9rem;font-weight:700;color:var(--text);font-family:"SF Mono",Consolas,monospace}
+.saved-list-item-date{font-size:.75rem;color:var(--text3)}
+.saved-list-item-memo{font-size:.85rem;color:var(--text2);margin-bottom:4px}
+.saved-list-item-detail{font-size:.78rem;color:var(--text3);line-height:1.5}
+.saved-list-item-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.saved-list-item-actions button{padding:4px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);transition:all .15s}
+.saved-list-item-actions .btn-open{background:var(--primary);color:#fff;border-color:var(--primary)}
+.saved-list-item-actions .btn-open:hover{background:#2563eb}
+.saved-list-item-actions .btn-delete{background:var(--card);color:var(--red);border-color:var(--red-bg)}
+.saved-list-item-actions .btn-delete:hover{background:var(--red-bg)}
+.saved-list-empty{text-align:center;padding:40px 16px;color:var(--text3);font-size:.9rem}
+.saved-list-pagination{display:flex;justify-content:center;gap:6px;margin-top:16px}
+.saved-list-pagination button{padding:4px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .15s}
+.saved-list-pagination button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.saved-list-pagination button:hover:not(.active){border-color:var(--primary);color:var(--primary)}
+.saved-list-loading{text-align:center;padding:40px 16px;color:var(--text3);font-size:.85rem}
+
 </style>
 </head>
 <body>
 
-<h1>eBayリサーチツール</h1>
+<div style="display:flex;align-items:center;justify-content:center;position:relative">
+  <h1 style="flex:1;text-align:center">eBayリサーチツール</h1>
+  <button onclick="openSavedList()" class="copy-info-btn" style="position:absolute;right:0;padding:4px 10px;font-size:.78rem">📋 保存した計算</button>
+</div>
 
 <div class="tool-bar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
   <!-- 1. キーワードガチャ -->
@@ -215,12 +282,30 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 <div class="main-layout">
 <div class="left-column">
 
+  <!-- 編集中バッジ -->
+  <div id="editBadge" class="edit-badge" style="display:none">
+    <div class="edit-badge-info">📌 編集中：Item #<span id="editItemId"></span>　<span id="editMemo" style="font-weight:400"></span></div>
+    <div class="edit-badge-actions">
+      <button class="btn-overwrite" onclick="overwriteSave()">💾 上書き保存</button>
+      <button class="btn-cancel" onclick="exitEditMode()">✖ 編集をやめる</button>
+    </div>
+  </div>
+
   <!-- 商品情報 -->
   <div class="card">
-    <h2><span class="icon">📦</span> 商品情報 <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button><span class="copy-toast" id="copyToast">コピーしました</span></h2>
+    <h2><span class="icon">📦</span> 商品情報 <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button><button class="copy-info-btn" onclick="openSaveModal()" style="margin-left:2px">💾 保存</button><span class="copy-toast" id="copyToast">コピーしました</span></h2>
+    <!-- eBay商品番号 -->
+    <div class="ebay-item-row">
+      <div class="field" style="flex:1">
+        <label>🔍 eBay商品番号</label>
+        <input type="text" inputmode="numeric" id="ebayItemId" placeholder="例: 123456789012">
+      </div>
+      <button class="mode-btn" onclick="recallCalculation()" style="flex:none;height:36px;padding:6px 14px">呼出</button>
+      <a id="ebayItemLink" href="#" target="_blank" class="ebay-item-link" onclick="return !!document.getElementById('ebayItemId').value.trim()">🔗 eBay</a>
+    </div>
     <div class="mode-bar">
-      <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')">🇺🇸 アメリカ向け</button>
-      <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')">🌍 アメリカ以外</button>
+      <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')"><svg width="18" height="13" viewBox="0 0 18 13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px"><rect width="18" height="13" fill="#B22234"/><g fill="#fff"><rect y="1" width="18" height="1"/><rect y="3" width="18" height="1"/><rect y="5" width="18" height="1"/><rect y="7" width="18" height="1"/><rect y="9" width="18" height="1"/><rect y="11" width="18" height="1"/></g><rect width="8" height="7" fill="#3C3B6E"/></svg> アメリカ向け</button>
+      <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="3" ry="7" fill="none" stroke="currentColor" stroke-width="1.3"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.3"/></svg> アメリカ以外</button>
     </div>
     <div class="grid2" style="margin-bottom:6px">
       <div class="field">
@@ -232,7 +317,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <input type="text" inputmode="decimal" id="sellingPrice" value="0" class="highlight">
       </div>
     </div>
-    <!-- 🇺🇸 アメリカ向け -->
+    <!-- アメリカ向け -->
     <div id="usSection" style="margin-bottom:6px">
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px" id="compShippingRow">
         <div class="field" style="width:140px">
@@ -250,20 +335,20 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
           <div id="listPrice" style="font-size:1.1rem;font-weight:700;color:var(--primary);font-family:'SF Mono',Consolas,monospace">-</div>
         </div>
         <div style="flex:1;padding:8px 10px;border-radius:6px;background:#fef3c7;border:1.5px solid #f59e0b;text-align:center">
-          <div style="font-size:.68rem;color:#b45309;font-weight:600">🇺🇸送料（関税分）</div>
+          <div style="font-size:.68rem;color:#b45309;font-weight:600">US送料（関税分）</div>
           <div id="listShipping" style="font-size:1.1rem;font-weight:700;color:#b45309;font-family:'SF Mono',Consolas,monospace">-</div>
         </div>
       </div>
     </div>
-    <!-- 🌍 アメリカ以外 -->
+    <!-- アメリカ以外 -->
     <div id="otherSection" style="display:none">
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px">
         <div class="field" style="width:100px">
-          <label>🇺🇸送料 <span class="unit">(%)</span></label>
+          <label>US送料 <span class="unit">(%)</span></label>
           <input type="text" inputmode="decimal" id="usShippingPct" value="20" class="highlight">
         </div>
         <div style="padding:8px 10px;border-radius:6px;background:#fef3c7;border:1.5px solid #f59e0b;text-align:center;min-width:100px">
-          <div style="font-size:.68rem;color:#b45309;font-weight:600">🇺🇸送料参考額</div>
+          <div style="font-size:.68rem;color:#b45309;font-weight:600">US送料参考額</div>
           <div id="usShippingRef" style="font-size:1.1rem;font-weight:700;color:#b45309;font-family:'SF Mono',Consolas,monospace">-</div>
         </div>
       </div>
@@ -358,6 +443,21 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <div class="field"><label>消費税率 (%)</label><input type="text" inputmode="decimal" id="taxRate" value="10"></div>
       </div>
     </div>
+    <!-- 濃く表示する基準（しきい値設定） -->
+    <div style="margin-top:10px;padding:8px 10px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px">
+      <div style="font-size:.75rem;font-weight:600;color:var(--text1);margin-bottom:4px">📊 濃く表示する基準</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:.73rem;color:var(--text2)">利益</span>
+        <span style="font-size:.73rem;color:var(--text2)">¥</span>
+        <input type="number" id="profitThreshold" value="500" min="0" step="100" style="width:70px;height:28px;font-size:.82rem;text-align:right;border:1px solid var(--border);border-radius:4px;padding:0 6px">
+        <span style="font-size:.73rem;color:var(--text2)">以上</span>
+        <span style="font-size:.73rem;color:var(--text3);margin:0 2px">かつ</span>
+        <span style="font-size:.73rem;color:var(--text2)">利益率</span>
+        <input type="number" id="profitRateThreshold" value="5" min="0" step="0.5" style="width:55px;height:28px;font-size:.82rem;text-align:right;border:1px solid var(--border);border-radius:4px;padding:0 6px">
+        <span style="font-size:.73rem;color:var(--text2)">% 以上</span>
+      </div>
+      <div style="font-size:.62rem;color:var(--text3);margin-top:3px">※利益率＝利益÷仕入額。両方を満たす配送便を濃く（青枠）表示します</div>
+    </div>
   </div>
 
 <div class="fee-detail-section" style="text-align:center">
@@ -411,6 +511,42 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 </div>
 </div><!-- /right-column -->
 </div><!-- /main-layout -->
+
+<!-- ===== 保存モーダル ===== -->
+<div id="saveModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSaveModal()">
+  <div class="modal-content">
+    <h3>計算を保存</h3>
+    <div class="field">
+      <label>eBay商品番号 <span style="color:var(--red)">*</span></label>
+      <input type="text" inputmode="numeric" id="saveModalItemId" placeholder="例: 123456789012">
+    </div>
+    <div class="field">
+      <label>商品名メモ（任意）</label>
+      <input type="text" id="saveModalMemo" placeholder="例: Canon EF 50mm レンズ">
+    </div>
+    <div class="note" style="margin-top:8px">※ 同じ商品番号で保存すると既存のデータを上書きします</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSaveModal()">キャンセル</button>
+      <button class="btn-primary" onclick="executeSave()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 保存リストオーバーレイ ===== -->
+<div id="savedListOverlay" class="saved-list-overlay" style="display:none">
+  <div class="saved-list-container">
+    <div class="saved-list-header">
+      <h2>💾 保存した利益計算</h2>
+      <button class="saved-list-close" onclick="closeSavedList()">✖ 閉じる</button>
+    </div>
+    <input type="text" class="saved-list-search" id="savedListSearch" placeholder="🔍 商品番号またはメモで検索...">
+    <div id="savedListContent"></div>
+    <div id="savedListPagination" class="saved-list-pagination"></div>
+  </div>
+</div>
+
+<!-- ===== 汎用トースト ===== -->
+<div id="globalToast" class="save-toast"></div>
 
 <script src="ebay_category_tree.js"></script>
 <!-- フォールバック: 新ファイルがない場合は旧ファイルを使用 -->
@@ -1448,7 +1584,7 @@ function getEffectiveSellingPrice() {
     // アメリカ以外モード: 競合最安値 − $0.01
     if (selling <= 0) return 0;
     const base = Math.round((selling - 0.01) * 100) / 100;
-    // 配送先がアメリカの場合、🇺🇸送料%分が加算される
+    // 配送先がアメリカの場合、US送料%分が加算される
     if (currentCountry === 'us') {
       const usShippingPct = getVal('usShippingPct') / 100;
       const usShipping = Math.round(selling * usShippingPct * 100) / 100;
@@ -1480,7 +1616,7 @@ function updatePricingDisplay() {
       document.getElementById('listShipping').textContent = '-';
     }
   } else {
-    // 🇺🇸送料参考額（競合最安値 × 入力%）
+    // US送料参考額（競合最安値 × 入力%）
     const usShippingPct = getVal('usShippingPct') / 100;
     const usShippingRef = selling > 0 ? Math.round(selling * usShippingPct * 100) / 100 : 0;
     document.getElementById('usShippingRef').textContent = usShippingRef > 0 ? '$' + fmtD(usShippingRef) : '-';
@@ -2148,6 +2284,10 @@ function calculate() {
   }
 
   // Profit calculation
+  const _ptEl = document.getElementById('profitThreshold');
+  const profitTh = (_ptEl && _ptEl.value !== '') ? getVal('profitThreshold') : 500;
+  const _rtEl = document.getElementById('profitRateThreshold');
+  const effectiveRateTh = (_rtEl && _rtEl.value !== '') ? getVal('profitRateThreshold') : 5;
   let allMethods = [];
   groups.forEach(g => {
     g.methods.forEach(m => {
@@ -2155,7 +2295,7 @@ function calculate() {
         m.profit = Math.round(netReceived - purchase - m.cost);
         m.profitWithRefund = Math.round(m.profit + totalRefund);
         m.profitRate = purchase > 0 ? (m.profit / purchase * 100) : 0;
-        m.isOk = m.canSend && m.profit >= 500 && m.profitRate >= 5;
+        m.isOk = m.canSend && m.profit >= profitTh && m.profitRate >= effectiveRateTh;
       } else {
         m.profit = null; m.profitWithRefund = null; m.profitRate = 0; m.isOk = false;
       }
@@ -2295,6 +2435,25 @@ function calculate() {
       else cls += ' dimmed';
       row.className = cls;
 
+      // dimmed理由の生成
+      let dimReason = '';
+      if (!m.isOk) {
+        if (!m.canSend || m.cost <= 0) {
+          // canSend=false or 送料なし → 既存のreasonタグで表示されるので追加不要
+        } else if (m.profit !== null) {
+          const reasons = [];
+          if (m.profit < 0) {
+            reasons.push('赤字（利益 −¥' + fmt(Math.abs(m.profit)) + '）');
+          } else if (m.profit < profitTh) {
+            reasons.push('利益¥' + fmt(m.profit) + '（基準¥' + fmt(profitTh) + '未満）');
+          }
+          if (m.profitRate < effectiveRateTh) {
+            reasons.push('利益率' + m.profitRate.toFixed(1) + '%（仕入額比／基準' + effectiveRateTh + '%未満）');
+          }
+          if (reasons.length) dimReason = reasons.join('、');
+        }
+      }
+
       // Tags
       const tagItems = [];
       if (m.isBest) tagItems.push('<span class="method-tag tag-recommend">推奨</span>');
@@ -2306,6 +2465,7 @@ function calculate() {
       if (g.tag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
       if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
       const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
+      const dimReasonHtml = dimReason ? `<div class="dim-reason">${dimReason}</div>` : '';
 
       let right;
       if (m.cost > 0 && m.profit !== null) {
@@ -2328,13 +2488,20 @@ function calculate() {
         right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
       }
 
-      row.innerHTML = `<div class="mr-left"><div class="mr-name">${m.name}</div><div class="mr-sub">${m.sub}</div>${tags}</div>${right}`;
+      row.innerHTML = `<div class="mr-left"><div class="mr-name">${m.name}</div><div class="mr-sub">${m.sub}</div>${tags}${dimReasonHtml}</div>${right}`;
       grid.appendChild(row);
     });
 
     section.appendChild(grid);
     container.appendChild(section);
   });
+
+  // フッターノートの利益OK判定基準を動的更新
+  const fnEl = document.getElementById('footerNote');
+  if (fnEl) {
+    fnEl.textContent = '※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。利益OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%（仕入額比）。還付＝仕入税＋eBay手数料税。';
+  }
+
 }
 
 // ========== LocalStorage Persistence ==========
@@ -2397,12 +2564,436 @@ function restoreState() {
   } catch(e) { return false; }
 }
 
+// ========== Save Feature: postMessage通信 ==========
+const _pmCallbacks = {};
+let _pmCounter = 0;
+const PM_TIMEOUT = 10000;
+const PM_PARENT_ORIGIN = 'https://tools.aione.co.jp';
+
+function sendToParent(type, payload) {
+  return new Promise((resolve, reject) => {
+    if (window.self === window.top) {
+      reject(new Error('親アプリに接続されていません'));
+      return;
+    }
+    const messageId = 'pm_' + (++_pmCounter) + '_' + Date.now();
+    _pmCallbacks[messageId] = {
+      resolve,
+      reject,
+      timer: setTimeout(() => {
+        delete _pmCallbacks[messageId];
+        reject(new Error('タイムアウト：親アプリが応答しません'));
+      }, PM_TIMEOUT)
+    };
+    window.parent.postMessage({ type: type, messageId: messageId, payload: payload }, PM_PARENT_ORIGIN);
+  });
+}
+
+// 親からの応答を受信（既存FVF_RATES_UPDATEハンドラとは別に登録）
+window.addEventListener('message', function(event) {
+  if (event.origin !== PM_PARENT_ORIGIN) return;
+  var data = event.data;
+  if (!data || !data.messageId) return;
+  // FVF_RATES_UPDATE は既存ハンドラに任せる
+  if (data.type === 'FVF_RATES_UPDATE') return;
+  var cb = _pmCallbacks[data.messageId];
+  if (!cb) return;
+  clearTimeout(cb.timer);
+  delete _pmCallbacks[data.messageId];
+  if (data.error) {
+    cb.reject(new Error(data.error));
+  } else {
+    cb.resolve(data.payload);
+  }
+});
+
+
+// ========== Save Feature: API関数 ==========
+function collectSavePayload() {
+  return {
+    purchasePrice: getVal('purchasePrice'),
+    sellPrice: getVal('sellingPrice'),
+    shippingFee: getVal('compShipping'),
+    weightKg: getVal('weight'),
+    lengthCm: getVal('length'),
+    widthCm: getVal('width'),
+    heightCm: getVal('height'),
+    categoryNo: document.getElementById('categoryNo').value.trim(),
+    destinationMode: currentPricingMode === 'us' ? 'US' : 'NON_US',
+    storeLevel: currentStorePlan === 'store' ? 'BASIC_OR_ABOVE' : 'NONE_STARTER'
+  };
+}
+
+function apiSaveCalculation(ebayItemId, memo) {
+  var payload = collectSavePayload();
+  payload.ebayItemId = ebayItemId;
+  payload.memo = memo || '';
+  return sendToParent('PROFIT_CALC_SAVE', payload);
+}
+
+function apiLoadCalculation(ebayItemId) {
+  return sendToParent('PROFIT_CALC_LOAD', { ebayItemId: ebayItemId });
+}
+
+function apiListCalculations(search, page, limit) {
+  return sendToParent('PROFIT_CALC_LIST', { search: search || '', page: page || 1, limit: limit || 50 });
+}
+
+function apiDeleteCalculation(id) {
+  return sendToParent('PROFIT_CALC_DELETE', { id: id });
+}
+
+// ========== しきい値設定: DB保存/読み込み ==========
+const THRESHOLD_CACHE_KEY = 'profitThresholdCache';
+
+function loadThresholdFromCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(THRESHOLD_CACHE_KEY));
+    if (cached) {
+      if (cached.profitThreshold !== undefined) document.getElementById('profitThreshold').value = cached.profitThreshold;
+      if (cached.profitRateThreshold !== undefined) document.getElementById('profitRateThreshold').value = cached.profitRateThreshold;
+    }
+  } catch(e) {}
+}
+
+function saveThresholdToCache(profitTh, rateTh) {
+  try {
+    localStorage.setItem(THRESHOLD_CACHE_KEY, JSON.stringify({ profitThreshold: profitTh, profitRateThreshold: rateTh }));
+  } catch(e) {}
+}
+
+function loadThresholdFromDB() {
+  sendToParent('PROFIT_CALC_SETTINGS_LOAD', {}).then(function(res) {
+    var s = res && res.settings ? res.settings : res;
+    if (!s) return;
+    var ptEl = document.getElementById('profitThreshold');
+    var rtEl = document.getElementById('profitRateThreshold');
+    if (s.profitThreshold !== undefined && s.profitThreshold !== null) ptEl.value = s.profitThreshold;
+    if (s.profitRateThreshold !== undefined && s.profitRateThreshold !== null) rtEl.value = s.profitRateThreshold;
+    saveThresholdToCache(ptEl.value, rtEl.value);
+    calculate();
+  }).catch(function() {
+    // DB取得失敗時はキャッシュまたはデフォルト値のまま
+  });
+}
+
+var _thresholdSaveTimer = null;
+function saveThresholdToDB() {
+  clearTimeout(_thresholdSaveTimer);
+  _thresholdSaveTimer = setTimeout(function() {
+    var pt = document.getElementById('profitThreshold').value;
+    var rt = document.getElementById('profitRateThreshold').value;
+    saveThresholdToCache(pt, rt);
+    sendToParent('PROFIT_CALC_SETTINGS_SAVE', {
+      profitThreshold: pt !== '' ? Number(pt) : 500,
+      profitRateThreshold: rt !== '' ? Number(rt) : 5.0
+    }).catch(function() {
+      // DB保存失敗は無視（キャッシュには保存済み）
+    });
+  }, 800);
+}
+
+// ========== Save Feature: トースト ==========
+let _toastTimer = null;
+function showToast(message, isError) {
+  var toast = document.getElementById('globalToast');
+  toast.textContent = message;
+  toast.className = 'save-toast show ' + (isError ? 'error' : 'success');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
+// ========== Save Feature: 編集モード管理 ==========
+let _editingItem = null; // { ebayItemId, memo, id }
+
+function enterEditMode(ebayItemId, memo, id) {
+  _editingItem = { ebayItemId: ebayItemId, memo: memo || '', id: id };
+  var badge = document.getElementById('editBadge');
+  document.getElementById('editItemId').textContent = ebayItemId;
+  document.getElementById('editMemo').textContent = memo || '';
+  badge.style.display = '';
+  // 商品番号入力欄にも反映
+  document.getElementById('ebayItemId').value = ebayItemId;
+  updateEbayItemLink();
+}
+
+function exitEditMode() {
+  _editingItem = null;
+  document.getElementById('editBadge').style.display = 'none';
+  // 入力値はそのまま残す（バッジを消すだけ）
+}
+
+function overwriteSave() {
+  if (!_editingItem) return;
+  apiSaveCalculation(_editingItem.ebayItemId, _editingItem.memo)
+    .then(function(res) {
+      showToast('上書き保存しました');
+    })
+    .catch(function(err) {
+      showToast(err.message || '保存に失敗しました', true);
+    });
+}
+
+// ========== Save Feature: eBayリンク更新 ==========
+function updateEbayItemLink() {
+  var itemId = document.getElementById('ebayItemId').value.trim();
+  var link = document.getElementById('ebayItemLink');
+  if (itemId) {
+    link.href = 'https://www.ebay.com/itm/' + encodeURIComponent(itemId);
+    link.style.opacity = '1';
+    link.style.pointerEvents = 'auto';
+  } else {
+    link.href = '#';
+    link.style.opacity = '.4';
+    link.style.pointerEvents = 'none';
+  }
+}
+
+// ========== Save Feature: 呼び出し ==========
+function recallCalculation() {
+  var itemId = document.getElementById('ebayItemId').value.trim();
+  if (!itemId) {
+    showToast('eBay商品番号を入力してください', true);
+    return;
+  }
+  // 数字以外を除去してバリデーション
+  var cleaned = itemId.replace(/\D/g, '');
+  if (!cleaned) {
+    showToast('有効な商品番号を入力してください', true);
+    return;
+  }
+  showToast('読み込み中...');
+  apiLoadCalculation(cleaned)
+    .then(function(data) {
+      if (!data) {
+        showToast('該当する保存データがありません', true);
+        return;
+      }
+      restoreFromSaved(data);
+      enterEditMode(data.ebayItemId, data.memo, data.id);
+      showToast('データを読み込みました');
+    })
+    .catch(function(err) {
+      showToast(err.message || '読み込みに失敗しました', true);
+    });
+}
+
+function restoreFromSaved(data) {
+  // フォームフィールドに値を設定
+  if (data.purchasePrice !== undefined) document.getElementById('purchasePrice').value = data.purchasePrice;
+  if (data.sellPrice !== undefined) document.getElementById('sellingPrice').value = data.sellPrice;
+  if (data.shippingFee !== undefined) document.getElementById('compShipping').value = data.shippingFee;
+  if (data.weightKg !== undefined) document.getElementById('weight').value = data.weightKg;
+  if (data.lengthCm !== undefined) document.getElementById('length').value = data.lengthCm;
+  if (data.widthCm !== undefined) document.getElementById('width').value = data.widthCm;
+  if (data.heightCm !== undefined) document.getElementById('height').value = data.heightCm;
+  if (data.categoryNo) document.getElementById('categoryNo').value = data.categoryNo;
+
+  // モード切替
+  if (data.destinationMode === 'US') {
+    setPricingMode('us');
+  } else if (data.destinationMode === 'NON_US') {
+    setPricingMode('other');
+  }
+  if (data.storeLevel === 'BASIC_OR_ABOVE') {
+    setStorePlan('store');
+  } else if (data.storeLevel === 'NONE_STARTER') {
+    setStorePlan('noStore');
+  }
+
+  // 再計算
+  onCategoryNoInput();
+  calculate();
+  saveState();
+  debouncedFetchSpeedpak();
+}
+
+// ========== Save Feature: 保存モーダル ==========
+function openSaveModal() {
+  var modal = document.getElementById('saveModal');
+  var itemIdInput = document.getElementById('saveModalItemId');
+  var memoInput = document.getElementById('saveModalMemo');
+  // 既に編集中なら商品番号とメモをプリフィル
+  if (_editingItem) {
+    itemIdInput.value = _editingItem.ebayItemId;
+    memoInput.value = _editingItem.memo;
+  } else {
+    // 商品番号入力欄の値をプリフィル
+    itemIdInput.value = document.getElementById('ebayItemId').value.trim();
+    memoInput.value = '';
+  }
+  modal.style.display = '';
+}
+
+function closeSaveModal() {
+  document.getElementById('saveModal').style.display = 'none';
+}
+
+function executeSave() {
+  var itemId = document.getElementById('saveModalItemId').value.trim().replace(/\D/g, '');
+  var memo = document.getElementById('saveModalMemo').value.trim();
+  if (!itemId) {
+    showToast('eBay商品番号を入力してください', true);
+    return;
+  }
+  closeSaveModal();
+  showToast('保存中...');
+  apiSaveCalculation(itemId, memo)
+    .then(function(res) {
+      showToast('保存しました');
+      // 保存成功したら編集モードに入る
+      enterEditMode(itemId, memo, res && res.id);
+    })
+    .catch(function(err) {
+      showToast(err.message || '保存に失敗しました', true);
+    });
+}
+
+// ========== Save Feature: 保存リスト画面 ==========
+let _savedListPage = 1;
+let _savedListSearch = '';
+let _savedListDebounce = null;
+
+function openSavedList() {
+  document.getElementById('savedListOverlay').style.display = '';
+  document.getElementById('savedListSearch').value = '';
+  _savedListPage = 1;
+  _savedListSearch = '';
+  fetchSavedList();
+}
+
+function closeSavedList() {
+  document.getElementById('savedListOverlay').style.display = 'none';
+}
+
+function fetchSavedList() {
+  var content = document.getElementById('savedListContent');
+  content.innerHTML = '<div class="saved-list-loading">読み込み中...</div>';
+  document.getElementById('savedListPagination').innerHTML = '';
+  apiListCalculations(_savedListSearch, _savedListPage, 50)
+    .then(function(res) {
+      renderSavedList(res);
+    })
+    .catch(function(err) {
+      content.innerHTML = '<div class="saved-list-empty">' + (err.message || 'データの取得に失敗しました') + '</div>';
+    });
+}
+
+let _savedListItems = []; // renderSavedListで保持
+
+function renderSavedList(res) {
+  var content = document.getElementById('savedListContent');
+  var items = res.items || [];
+  _savedListItems = items;
+  var totalPages = res.totalPages || 1;
+
+  if (items.length === 0) {
+    content.innerHTML = '<div class="saved-list-empty">保存されたデータがありません</div>';
+    document.getElementById('savedListPagination').innerHTML = '';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var dateStr = item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ja-JP') : '';
+    var modeLabel = item.destinationMode === 'US' ? '<svg width="18" height="13" viewBox="0 0 18 13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px"><rect width="18" height="13" fill="#B22234"/><g fill="#fff"><rect y="1" width="18" height="1"/><rect y="3" width="18" height="1"/><rect y="5" width="18" height="1"/><rect y="7" width="18" height="1"/><rect y="9" width="18" height="1"/><rect y="11" width="18" height="1"/></g><rect width="8" height="7" fill="#3C3B6E"/></svg> アメリカ向け' : '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="3" ry="7" fill="none" stroke="currentColor" stroke-width="1.3"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.3"/></svg> アメリカ以外';
+    html += '<div class="saved-list-item">';
+    html += '<div class="saved-list-item-header">';
+    html += '<span class="saved-list-item-id">Item #' + escapeHtml(item.ebayItemId) + ' <a href="https://www.ebay.com/itm/' + encodeURIComponent(item.ebayItemId) + '" target="_blank" style="text-decoration:none">🔗</a></span>';
+    html += '<span class="saved-list-item-date">' + escapeHtml(dateStr) + '</span>';
+    html += '</div>';
+    if (item.memo) {
+      html += '<div class="saved-list-item-memo">' + escapeHtml(item.memo) + '</div>';
+    }
+    html += '<div class="saved-list-item-detail">';
+    html += '仕入¥' + Number(item.purchasePrice || 0).toLocaleString() + ' / 売値$' + Number(item.sellPrice || 0).toFixed(2) + ' / ' + Number(item.weightKg || 0) + 'kg';
+    if (item.categoryNo) html += '<br>カテゴリ: ' + escapeHtml(item.categoryNo);
+    html += '<br>モード: ' + modeLabel;
+    html += '</div>';
+    html += '<div class="saved-list-item-actions">';
+    html += '<button class="btn-open" onclick="openFromList(' + i + ')">開く ▶</button>';
+    html += '<button class="btn-delete" onclick="deleteFromList(' + i + ')">削除</button>';
+    html += '</div>';
+    html += '</div>';
+  }
+  content.innerHTML = html;
+
+  // ページネーション
+  if (totalPages > 1) {
+    var pagHtml = '';
+    for (var p = 1; p <= totalPages; p++) {
+      pagHtml += '<button onclick="_savedListPage=' + p + ';fetchSavedList()" class="' + (p === _savedListPage ? 'active' : '') + '">' + p + '</button>';
+    }
+    document.getElementById('savedListPagination').innerHTML = pagHtml;
+  } else {
+    document.getElementById('savedListPagination').innerHTML = '';
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+function openFromList(index) {
+  var itemData = _savedListItems[index];
+  if (!itemData) return;
+  closeSavedList();
+  restoreFromSaved(itemData);
+  enterEditMode(itemData.ebayItemId, itemData.memo, itemData.id);
+  showToast('データを読み込みました');
+}
+
+function deleteFromList(index) {
+  var itemData = _savedListItems[index];
+  if (!itemData) return;
+  if (!confirm('Item #' + itemData.ebayItemId + ' の保存データを削除しますか？')) return;
+  apiDeleteCalculation(itemData.id)
+    .then(function() {
+      showToast('削除しました');
+      // 編集中のアイテムが削除された場合は編集モードを解除
+      if (_editingItem && String(_editingItem.id) === String(itemData.id)) {
+        exitEditMode();
+      }
+      fetchSavedList();
+    })
+    .catch(function(err) {
+      showToast(err.message || '削除に失敗しました', true);
+    });
+}
+
 // ========== Event Listeners ==========
+// 保存機能で追加したinputを除外して既存のイベントリスナーを登録
+const _saveFeatureInputIds = ['ebayItemId', 'saveModalItemId', 'saveModalMemo', 'savedListSearch'];
+const _thresholdInputIds = ['profitThreshold', 'profitRateThreshold'];
 document.querySelectorAll('input').forEach(el => {
+  if (_saveFeatureInputIds.includes(el.id)) return;
+  if (_thresholdInputIds.includes(el.id)) return; // しきい値は専用リスナーで処理
   el.addEventListener('input', () => { calculate(); saveState(); debouncedFetchSpeedpak(); });
+});
+// しきい値専用: calculate + DB保存（localStorageのsaveStateには入れない）
+_thresholdInputIds.forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { calculate(); saveThresholdToDB(); });
 });
 document.getElementById('categoryNo').addEventListener('input', onCategoryNoInput);
 document.getElementById('destCountry').addEventListener('change', onCountryChange);
+
+// eBay商品番号入力時にリンクを更新
+document.getElementById('ebayItemId').addEventListener('input', updateEbayItemLink);
+
+// 保存リスト検索
+document.getElementById('savedListSearch').addEventListener('input', function() {
+  clearTimeout(_savedListDebounce);
+  _savedListDebounce = setTimeout(function() {
+    _savedListSearch = document.getElementById('savedListSearch').value.trim();
+    _savedListPage = 1;
+    fetchSavedList();
+  }, 400);
+});
 
 // Initial setup
 initCountrySelector();
@@ -2416,10 +3007,13 @@ const restored = restoreState();
 }
 onCategoryNoInput(); // 常にカテゴリNo.から手数料を自動判定
 updateFeeDescription();
+updateEbayItemLink(); // eBayリンク初期化
+loadThresholdFromCache(); // しきい値: まずlocalStorageキャッシュから即座に復元
 initExchangeRate();
 initFuelSurcharge();
 calculate();
 fetchSpeedpakRates(); // 初回のSpeedPAK API呼び出し
+loadThresholdFromDB(); // しきい値: DBから正本を取得（到着後に再calculate）
 </script>
 </body>
 </html>
