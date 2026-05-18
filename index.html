@@ -113,9 +113,10 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .method-row{display:grid;grid-template-columns:1fr auto;gap:0;border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);background:#fff;align-items:center;position:relative}
 .method-row.usable{background:#fafcff;border:2px solid #3b82f6;border-radius:var(--radius)}
 .method-row.dimmed{opacity:.4}
-.dim-reason{font-size:.68rem;color:#b45309;line-height:1.3;margin-top:1px}
 .method-row .mr-left{display:flex;flex-direction:column;gap:3px;min-width:0}
-.method-row .mr-name{font-size:.95rem;font-weight:600}
+.method-row .mr-name-row{display:flex;align-items:baseline;gap:6px;min-width:0}
+.method-row .mr-name{font-size:.95rem;font-weight:600;flex:0 0 auto;max-width:100%}
+.dim-reason{font-size:.62rem;color:#b45309;line-height:1.2;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .method-row .mr-sub{font-size:.75rem;color:var(--text3);line-height:1.4}
 .method-row .mr-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .method-row .mr-right{display:grid;grid-template-columns:auto auto;gap:2px 12px;font-size:.9rem;text-align:right;white-space:nowrap;align-content:center}
@@ -440,9 +441,9 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <div class="field"><label>消費税率 (%)</label><input type="text" inputmode="decimal" id="taxRate" value="10"></div>
       </div>
     </div>
-    <!-- 濃く表示する基準（しきい値設定） -->
+    <!-- 出品OK表示の基準（しきい値設定） -->
     <div style="margin-top:10px;padding:8px 10px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px">
-      <div style="font-size:.75rem;font-weight:600;color:var(--text1);margin-bottom:4px">📊 濃く表示する基準</div>
+      <div style="font-size:.75rem;font-weight:600;color:var(--text1);margin-bottom:4px">📊 出品OK表示の基準</div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span style="font-size:.73rem;color:var(--text2)">利益</span>
         <span style="font-size:.73rem;color:var(--text2)">¥</span>
@@ -484,7 +485,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div class="p-label">推奨便 利益</div>
     <div class="p-val" id="bestProfitYen">-</div>
     <div class="p-sub" id="bestMethodName"></div>
-    <div style="font-size:10px;color:#93c5fd;margin-top:2px">利益OK判定：≥¥500 かつ ≥5%</div>
+    <div style="font-size:10px;color:#93c5fd;margin-top:2px">出品OK判定：≥¥500 かつ ≥5%</div>
   </div>
   <div class="profit-summary-divider"></div>
   <div class="profit-summary-item" id="summaryRefund">
@@ -504,7 +505,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <div id="resultsContainer"></div>
 </div>
 <div class="note" style="text-align:center;margin-top:-12px;margin-bottom:16px" id="footerNote">
-  ※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。利益OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
+  ※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。出品OK判定：≥¥500 かつ ≥5%。還付＝仕入税＋eBay手数料税。
 </div>
 </div><!-- /right-column -->
 </div><!-- /main-layout -->
@@ -2431,7 +2432,7 @@ function calculate() {
     g.methods.forEach(m => {
       const row = document.createElement('div');
       let cls = 'method-row';
-      // 利益OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
+      // 出品OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
       if (m.isOk && m.canSend && m.cost > 0) cls += ' usable';
       else cls += ' dimmed';
       row.className = cls;
@@ -2449,7 +2450,7 @@ function calculate() {
             reasons.push('利益¥' + fmt(m.profit) + '（基準¥' + fmt(profitTh) + '未満）');
           }
           if (m.profitRate < effectiveRateTh) {
-            reasons.push('利益率' + m.profitRate.toFixed(1) + '%（仕入額比／基準' + effectiveRateTh + '%未満）');
+            reasons.push('利益率' + m.profitRate.toFixed(1) + '%（基準' + effectiveRateTh + '%未満）');
           }
           if (reasons.length) dimReason = reasons.join('、');
         }
@@ -2458,7 +2459,7 @@ function calculate() {
       // Tags
       const tagItems = [];
       if (m.isBest) tagItems.push('<span class="method-tag tag-recommend">推奨</span>');
-      if (m.isOk) tagItems.push('<span class="method-tag tag-ok">利益OK</span>');
+      if (m.isOk) tagItems.push('<span class="method-tag tag-ok">出品OK</span>');
       if (m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
       if (g.tag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
       if (g.tag === '比較用') tagItems.push('<span class="method-tag tag-compare">比較用</span>');
@@ -2466,7 +2467,7 @@ function calculate() {
       if (g.tag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
       if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
       const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
-      const dimReasonHtml = dimReason ? `<div class="dim-reason">${dimReason}</div>` : '';
+      const dimReasonHtml = dimReason ? `<span class="dim-reason" title="${dimReason}">${dimReason}</span>` : '';
 
       let right;
       if (m.cost > 0 && m.profit !== null) {
@@ -2489,7 +2490,7 @@ function calculate() {
         right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
       }
 
-      row.innerHTML = `<div class="mr-left"><div class="mr-name">${m.name}</div><div class="mr-sub">${m.sub}</div>${tags}${dimReasonHtml}</div>${right}`;
+      row.innerHTML = `<div class="mr-left"><div class="mr-name-row"><div class="mr-name">${m.name}</div>${dimReasonHtml}</div><div class="mr-sub">${m.sub}</div>${tags}</div>${right}`;
       grid.appendChild(row);
     });
 
@@ -2500,7 +2501,7 @@ function calculate() {
   // フッターノートの利益OK判定基準を動的更新
   const fnEl = document.getElementById('footerNote');
   if (fnEl) {
-    fnEl.textContent = '※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。利益OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%（仕入額比）。還付＝仕入税＋eBay手数料税。';
+    fnEl.textContent = '※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。出品OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%（仕入額比）。還付＝仕入税＋eBay手数料税。';
   }
 
 }
