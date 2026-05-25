@@ -1868,6 +1868,36 @@ function spDuty() {
   }
   return 0;
 }
+// アメリカ向け関税額を取得（日本郵便・eLogi用）：SpeedPAK API → フォールバック15%概算
+function getUsDuty(cc, selling, rate) {
+  if (cc.code !== 'US') return { amount: 0, isEstimate: false, loading: false };
+  // API読み込み中またはまだ取得前 → loading状態を返す（概算を出さない）
+  if (_speedpakLoading || (!_speedpakRates && selling > 0)) {
+    return { amount: 0, isEstimate: false, loading: true };
+  }
+  const apiDuty = spDuty();
+  if (apiDuty > 0) return { amount: apiDuty, isEstimate: false, loading: false };
+  // フォールバック: 出品価格 × 15% × 為替レート（円換算）
+  if (selling > 0 && rate > 0) {
+    return { amount: Math.round(selling * 0.15 * rate), isEstimate: true, loading: false };
+  }
+  return { amount: 0, isEstimate: false, loading: false };
+}
+// 日本郵便・eLogi用feeDetails生成：配送料＋関税内訳（SpeedPAK API詳細 or 概算）
+// 関税なしの場合はnullを返す（明細ボタン非表示）
+function buildDutyFeeDetails(shippingLabel, shippingCost, dutyInfo) {
+  if (dutyInfo.amount <= 0) return null;
+  const details = [{charges: shippingLabel, chargesEn: 'Shipping Rate', freight: shippingCost}];
+  // SpeedPAK APIから関税内訳が取れればそのまま使う
+  const apiDetails = spDutyDetails();
+  if (!dutyInfo.isEstimate && apiDetails.length > 0) {
+    apiDetails.forEach(d => details.push(d));
+  } else {
+    const label = dutyInfo.isEstimate ? '推定関税（税率15%概算）' : '推定関税及び税金料金';
+    details.push({charges: label, chargesEn: 'Estimated Duty&Tax', freight: dutyInfo.amount});
+  }
+  return details;
+}
 // SpeedPAK関税系feeDetails取得ヘルパー：関税・手数料の内訳を他の配送方法から取得
 function spDutyDetails() {
   if (!_speedpakRates) return [];
@@ -2024,8 +2054,8 @@ function calculate() {
     { id: 'fedex-ip', label: 'FedEx IP（CPaSS）',   tag: '速達', primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
     { id: 'dhl',      label: 'DHL（CPaSS）',         tag: '推奨', primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
     { id: 'speedpak', label: 'Economy（CPaSS）',     tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
-    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
-    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用 ※関税は後日請求のため含まれていません' },
+    { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
+    { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     ...(getElogiUpsData(cc.upsZone) ? [
       { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
@@ -2164,6 +2194,12 @@ function calculate() {
     addMethod('speedpak',{name:'Economy',sub:'この国はEconomy非対応',cost:-1,canSend:false,reason:cc.name+' 非対応'});
   }
 
+  // ===== アメリカ向け関税（日本郵便・eLogi用） =====
+  const usDutyInfo = getUsDuty(cc, selling, rate);
+  const usDutyAmount = usDutyInfo.amount;
+  const usDutyEstimate = usDutyInfo.isEstimate;
+  const usDutyLoading = usDutyInfo.loading;
+
   // ===== 日本郵便（国別料金） =====
   {
     const jpZone = cc.jpZone || 4;
@@ -2184,7 +2220,8 @@ function calculate() {
       if (eplTooSmall) r2.push('サイズ小さい（最小14.8×10.5cm）');
       if (eplTooLarge) r2.push('サイズ超過（最大60cm/3辺合計90cm）');
       if (!eplWeightOk) r2.push('2kg超過');
-      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+      { const shipOnly = cs&&c>0 ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:totalCost,canSend:cs&&c>0,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
     }
     {
       const emsDims = [L, W, H].sort((a,b) => b-a);
@@ -2197,7 +2234,8 @@ function calculate() {
       if (!jpOk) r2.push('差出不可（△）');
       if (emsTooLarge) r2.push('サイズ超過（最大150cm/3辺合計300cm）');
       if (!emsWeightOk) r2.push('30kg超過');
-      addMethod('jppost',{name:'EMS',sub:zoneName+'/最速/最大30kg/実重量',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+      { const shipOnly = cs&&c>0 ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+      addMethod('jppost',{name:'EMS',sub:zoneName+'/最速/最大30kg/実重量',cost:totalCost,canSend:cs&&c>0,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
     }
   }
 
@@ -2218,7 +2256,8 @@ function calculate() {
         if (!csL) r2.push('最長辺274cm超過');
         if (!csG) r2.push('長さ+周囲330cm超過');
         if (cs && c <= 0) r2.push('重量超過');
-        addMethod('elogi-ficp',{name:'eLogi FICP',sub:'2-5日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:canSend?c:-1,canSend:canSend,reason:r2.join(', ')});
+        { const shipOnly = canSend ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+        addMethod('elogi-ficp',{name:'eLogi FICP',sub:'2-5日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:totalCost,canSend:canSend,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
       }
       {
         const sorted = [L, W, H].sort((a,b) => b-a);
@@ -2232,7 +2271,8 @@ function calculate() {
         if (!csW) r2.push('500g超過');
         if (!csS) r2.push('サイズ超過');
         if (!csVal) r2.push('申告価額$500超過');
-        addMethod('elogi-ip',{name:'eLogi IP Envelope',sub:'1-3日/'+_dutyType+'/最大500g/$500以下/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:r2.join(', ')});
+        { const shipOnly = cs&&c>0 ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+        addMethod('elogi-ip',{name:'eLogi IP Envelope',sub:'1-3日/'+_dutyType+'/最大500g/$500以下/サーチャージ込',cost:totalCost,canSend:cs&&c>0,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
       }
       {
         const pakTable = getElogiIpPakTable(eZ);
@@ -2253,7 +2293,8 @@ function calculate() {
         if (csW && !csV) pakR.push('寸法重量2.5kg超過');
         if (!csVal) pakR.push('申告価額$500超過');
         const pakSub = vol > 15400 ? '体積÷5,000' : '実重量';
-        addMethod('elogi-ip',{name:'eLogi IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/'+pakSub+'/44.45×52.71cm/サーチャージ込',cost:cs&&c>0?c:-1,canSend:cs&&c>0,reason:pakR.join(', ')});
+        { const shipOnly = cs&&c>0 ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+        addMethod('elogi-ip',{name:'eLogi IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/'+pakSub+'/44.45×52.71cm/サーチャージ込',cost:totalCost,canSend:cs&&c>0,reason:pakR.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
       }
       {
         const pkgD = getElogiIpPkgData(eZ);
@@ -2269,7 +2310,8 @@ function calculate() {
           if (!csL) r2.push('最長辺274cm超過');
           if (!csG) r2.push('長さ+周囲330cm超過');
           if (cs && c <= 0) r2.push('重量超過');
-          addMethod('elogi-ip',{name:'eLogi IP Package',sub:'1-3日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:canSend?c:-1,canSend:canSend,reason:r2.join(', ')});
+          { const shipOnly = canSend ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+          addMethod('elogi-ip',{name:'eLogi IP Package',sub:'1-3日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:totalCost,canSend:canSend,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
         }
       }
     }
@@ -2281,7 +2323,8 @@ function calculate() {
     if (upsD) {
       let c = elogiLookup(upsD[0], upsD[1], billableStandardG);
       const cs = c > 0;
-      addMethod('elogi-ups',{name:'UPS Express Saver',sub:'2-5日/'+_dutyType+'/体積÷5,000/サーチャージ込',cost:cs?c:-1,canSend:cs,reason:!cs?'重量超過':''});
+      { const shipOnly = cs ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+      addMethod('elogi-ups',{name:'UPS Express Saver',sub:'2-5日/'+_dutyType+'/体積÷5,000/サーチャージ込',cost:totalCost,canSend:cs,reason:!cs?'重量超過':'',feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
     }
   }
 
@@ -2481,11 +2524,12 @@ function calculate() {
           const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
           popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
         }
+        const dutyLoadingNote = m._dutyLoading ? '<div style="font-size:.65rem;color:var(--text3);text-align:right;margin-top:1px">関税取得中...</div>' : '';
         right = `<div class="mr-right">
           <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
           <span class="lbl">利益</span><span class="${profitCls}">${profitTxt}</span>
           <span class="lbl">還付込</span><span class="${refundCls}">${refundTxt}</span>
-        </div>${popupHtml}`;
+        </div>${dutyLoadingNote}${popupHtml}`;
       } else {
         right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
       }
@@ -2501,7 +2545,8 @@ function calculate() {
   // フッターノートの利益OK判定基準を動的更新
   const fnEl = document.getElementById('footerNote');
   if (fnEl) {
-    fnEl.textContent = '※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。出品OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%（仕入額比）。還付＝仕入税＋eBay手数料税。';
+    const dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担）。' : '';
+    fnEl.textContent = '※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。' + dutyNote + '出品OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%（仕入額比）。還付＝仕入税＋eBay手数料税。';
   }
 
 }
