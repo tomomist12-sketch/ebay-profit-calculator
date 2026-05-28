@@ -1794,15 +1794,10 @@ async function fetchSpeedpakRates() {
   const weightG = weightKg * 1000;
   if (weightG <= 0 || L <= 0 || W <= 0 || H <= 0) return;
 
-  // declaredValue: モードに関係なく出品合計を使用
+  // declaredValue: CPaSSの実画面に合わせ、商品単価のみを申告（送料は含めない）
+  // 関税は「商品の価値」に対してかかるもので、送料は対象外。
   const rawSelling = getVal('sellingPrice');
-  let declaredUsd;
-  if (currentPricingMode === 'us') {
-    const compShipping = getCompShippingUsd();
-    declaredUsd = rawSelling + compShipping > 0 ? Math.round((rawSelling + compShipping - 0.01) * 100) / 100 : 0;
-  } else {
-    declaredUsd = rawSelling > 0 ? Math.round((rawSelling - 0.01) * 100) / 100 : 0;
-  }
+  const declaredUsd = rawSelling > 0 ? Math.round((rawSelling - 0.01) * 100) / 100 : 0;
   const cc = COUNTRIES.find(c => c.id === currentCountry) || COUNTRIES[0];
 
   _speedpakLoading = true;
