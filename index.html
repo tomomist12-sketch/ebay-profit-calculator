@@ -2168,7 +2168,22 @@ function calculate() {
     const csW = billableEcoKg <= maxKg && weightKg <= realMaxKg;
     const csD = cc.ecoSizeCheck ? cc.ecoSizeCheck(L, W, H, billableEcoG) : true;
     const cs = csW && csD;
-    const c = cs ? spCost('economy') : null;
+    // SpeedPAK APIはEconomyの dutyAmount を0で返すバグがあるため、他の配送方法から関税額を流用する。
+    // 関税は商品価格・送り先で決まるため、配送方法に関わらず同じ金額が適用される。
+    const ecoBase = cs ? spCost('economy') : null;
+    const ecoDuty = ecoBase !== null && ecoBase > 0 ? spDuty() : 0;
+    const c = ecoBase !== null ? ecoBase + ecoDuty : null;
+    let details = cs && c !== null && c > 0 ? spFeeDetails('economy') : null;
+    // 関税を加算した場合は明細にも関税内訳を追加
+    if (details && ecoDuty > 0) {
+      details = [...details];
+      const dutyItems = spDutyDetails();
+      if (dutyItems.length > 0) {
+        dutyItems.forEach(d => details.push(d));
+      } else {
+        details.push({charges:'推定関税及び税金料金', chargesEn:'Estimated Duty&Tax', freight:ecoDuty});
+      }
+    }
     const canSend = cs && c !== null && c > 0;
     const r2 = [];
     if (!csW) r2.push(maxKg + 'kg超過');
@@ -2189,7 +2204,7 @@ function calculate() {
     } else {
       ecoReason = '';
     }
-    addMethod('speedpak',{name:'Economy',sub:cc.ecoDays+'/'+cc.ecoMaxVal+'以下/体積÷8,000/'+_dutyType + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('economy'):null,reason:ecoReason,loading:_loading});
+    addMethod('speedpak',{name:'Economy',sub:cc.ecoDays+'/'+cc.ecoMaxVal+'以下/体積÷8,000/'+_dutyType + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:details,reason:ecoReason,loading:_loading});
   } else {
     addMethod('speedpak',{name:'Economy',sub:'この国はEconomy非対応',cost:-1,canSend:false,reason:cc.name+' 非対応'});
   }
