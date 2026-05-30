@@ -263,6 +263,27 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <!-- 3. ショッピング一括検索 -->
   <div style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--sp)">
     <div style="font-size:.72rem;margin-bottom:4px"><span style="font-weight:700;color:var(--sp)">🔍 ショッピング一括検索</span> <span style="color:var(--text3)">— 国内の最安値を検索</span></div>
+    <div id="popupNotice" style="display:none;font-size:.68rem;background:#fef3c7;border:1px solid #fcd34d;color:#78350f;border-radius:6px;padding:5px 8px;margin-bottom:6px;line-height:1.4;align-items:flex-start;gap:6px">
+      <span style="flex-shrink:0">💡</span>
+      <span style="flex:1"><strong>初回利用時の注意:</strong> 複数店舗を一度に開く際、ブラウザの<strong>ポップアップブロックを解除</strong>してください。アドレスバー右側のアイコンから「常に許可」を選択すると、次回以降スムーズに開けます。</span>
+      <button type="button" onclick="dismissPopupNotice()" aria-label="閉じる" title="次回から表示しない" style="flex-shrink:0;background:transparent;border:0;color:#92400e;font-size:.85rem;cursor:pointer;padding:0 2px;line-height:1">✕</button>
+    </div>
+    <script>
+      (function(){
+        try {
+          var notice = document.getElementById('popupNotice');
+          if (!notice) return;
+          if (localStorage.getItem('popupNoticeDismissed') !== '1') {
+            notice.style.display = 'flex';
+          }
+        } catch(_) { /* localStorage 不可なら何もしない */ }
+      })();
+      function dismissPopupNotice() {
+        try { localStorage.setItem('popupNoticeDismissed', '1'); } catch(_) {}
+        var n = document.getElementById('popupNotice');
+        if (n) n.style.display = 'none';
+      }
+    </script>
     <div style="display:flex;gap:4px;margin-bottom:4px">
       <input type="text" id="shopQuery" placeholder="キーワード..." style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.82rem;min-width:0" onkeydown="if(event.key==='Enter')shopSearch()">
       <button class="shop-search-btn" onclick="shopSearch()" style="font-size:.72rem;padding:4px 10px">検索</button>
