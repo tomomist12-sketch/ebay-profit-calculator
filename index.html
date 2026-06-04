@@ -427,16 +427,6 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
         <button onclick="fetchRate(false)" style="font-size:.62rem;padding:1px 6px;border:1px solid var(--border);border-radius:4px;background:#fafafa;cursor:pointer;color:var(--text3);margin-left:4px">手動取得</button>
       </div>
     </div>
-    <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:5px">
-      <div class="field" style="width:140px">
-        <label>燃油サーチャージ <span class="unit">(%)</span></label>
-        <input type="text" inputmode="decimal" id="fuelSurcharge" value="28.75" class="highlight">
-      </div>
-      <div style="font-size:.68rem;color:var(--text3);margin-bottom:4px;line-height:1.3">
-        SpeedPAK APIから自動取得<br><span id="fuelStatus" style="color:var(--text3)">自動取得中...</span>
-        <button onclick="fetchFuelSurcharge(false)" style="font-size:.62rem;padding:1px 6px;border:1px solid var(--border);border-radius:4px;background:#fafafa;cursor:pointer;color:var(--text3);margin-left:4px">手動取得</button>
-      </div>
-    </div>
     <button class="toggle-btn" id="settingsToggle" onclick="toggleSettings()">詳細設定 ▼</button>
     <div class="settings-content" id="settingsContent">
       <div class="grid2" style="gap:6px;margin-top:6px">
@@ -1719,87 +1709,14 @@ function initExchangeRate() {
   fetchRate(true);
 }
 
-// ========== Fuel Surcharge Auto-Fetch (EIA API経由) ==========
-// FedEx Express International Export 燃料割増金テーブル (Effective Dec 1, 2025)
-// USGC Kerosene-Type Jet Fuel $/gallon → サーチャージ%
-// 国際輸出用: 国内テーブルより約2.5%高い
-// $2.120 → 30.50% (FedEx公式 2026年2月16-22日週で確認済み)
-// $0.05刻みで0.5%ずつ変動
-const FUEL_TABLE = [
-  [1.36, 23.0],[1.41, 23.5],[1.46, 24.0],[1.51, 24.5],[1.56, 25.0],
-  [1.61, 25.5],[1.66, 26.0],[1.71, 26.5],[1.76, 27.0],[1.81, 27.5],
-  [1.86, 28.0],[1.91, 28.5],[1.96, 29.0],[2.01, 29.5],[2.06, 30.0],
-  [2.11, 30.5],[2.16, 31.0],[2.21, 31.5],[2.26, 32.0],[2.31, 32.5],
-  [2.36, 33.0],[2.41, 33.5],[2.46, 34.0],[2.51, 34.5],[2.56, 35.0],
-  [2.61, 35.5],[2.66, 36.0],[2.71, 36.5],[2.76, 37.0],[2.81, 37.5],
-  [2.86, 38.0],[2.91, 38.5],[2.96, 39.0],[3.01, 39.5],[3.06, 40.0],
-];
-const FUEL_CACHE_KEY = 'fedex_fuel_surcharge';
-const FUEL_CACHE_TIME_KEY = 'fedex_fuel_surcharge_time';
-const FUEL_CACHE_PRICE_KEY = 'fedex_fuel_price';
-const FUEL_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7日キャッシュ（EIAは週次更新）
-
-function _fuelPriceToSurcharge(pricePerGallon) {
-  for (let i = FUEL_TABLE.length - 1; i >= 0; i--) {
-    if (pricePerGallon >= FUEL_TABLE[i][0]) return FUEL_TABLE[i][1];
-  }
-  return FUEL_TABLE[0][1]; // 最低値
-}
-
-async function _fetchJetFuelPrice() {
-  // EIA API: USGC Kerosene-Type Jet Fuel Spot Price (週次)
-  const url = 'https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=DEMO_KEY&frequency=weekly&data[0]=value&facets[series][]=EER_EPJK_PF4_RGC_DPG&sort[0][column]=period&sort[0][direction]=desc&length=1';
-  const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  const d = await r.json();
-  if (d.response && d.response.data && d.response.data.length > 0) {
-    return { price: parseFloat(d.response.data[0].value), date: d.response.data[0].period };
-  }
-  return null;
-}
-
-async function fetchFuelSurcharge(silent) {
-  const statusEl = document.getElementById('fuelStatus');
-  if (statusEl) statusEl.textContent = '取得中...';
-  try {
-    const result = await _fetchJetFuelPrice();
-    if (result) {
-      const surcharge = _fuelPriceToSurcharge(result.price);
-      document.getElementById('fuelSurcharge').value = surcharge;
-      localStorage.setItem(FUEL_CACHE_KEY, surcharge);
-      localStorage.setItem(FUEL_CACHE_PRICE_KEY, result.price);
-      localStorage.setItem(FUEL_CACHE_TIME_KEY, Date.now());
-      if (statusEl) statusEl.textContent = '✓ ' + surcharge + '% (燃料$' + result.price.toFixed(3) + '/gal ' + result.date + ')';
-      calculate();
-      if (!silent) alert('FedEx燃油サーチャージ: ' + surcharge + '%\n(ジェット燃料: $' + result.price.toFixed(3) + '/gal, ' + result.date + '週)');
-    } else {
-      throw new Error('データなし');
-    }
-  } catch(e) {
-    const cached = localStorage.getItem(FUEL_CACHE_KEY);
-    if (cached) {
-      const age = Date.now() - (parseInt(localStorage.getItem(FUEL_CACHE_TIME_KEY)) || 0);
-      const days = Math.floor(age / (24*60*60*1000));
-      if (statusEl) statusEl.textContent = '⚠ ' + cached + '% (' + days + '日前)';
-    } else {
-      if (statusEl) statusEl.textContent = '⚠ 取得失敗';
-    }
-    if (!silent) alert('自動取得できませんでした。\n手動で入力してください。\n\n現在の値: ' + document.getElementById('fuelSurcharge').value + '%');
-  }
-}
-
-function initFuelSurcharge() {
-  const cached = localStorage.getItem(FUEL_CACHE_KEY);
-  const cachedTime = parseInt(localStorage.getItem(FUEL_CACHE_TIME_KEY)) || 0;
-  const age = Date.now() - cachedTime;
-  if (cached && age < FUEL_CACHE_TTL) {
-    document.getElementById('fuelSurcharge').value = cached;
-    const price = localStorage.getItem(FUEL_CACHE_PRICE_KEY) || '?';
-    const statusEl = document.getElementById('fuelStatus');
-    if (statusEl) statusEl.textContent = '✓ ' + cached + '% (燃料$' + price + '/gal)';
-  }
-  // キャッシュ有無に関わらず常にバックグラウンドで最新値を取得
-  fetchFuelSurcharge(true);
-}
+// ========== Fuel Surcharge ==========
+// 通常は SpeedPAK(CPaSS) API の送料に燃油サーチャージが込みで返るため、
+// 手動の燃油サーチャージ入力は廃止した。
+// 唯一、FedEx FICP で API が落ちた時のフォールバック概算でのみ燃油率を使うため、
+// その用途の固定値だけを定数で保持する（FedEx International 直近水準）。
+const FICP_FALLBACK_FUEL_RATE = 0.40; // 40%（FedEx Intl Export の上限付近）
+// SpeedPAK API が燃油率を返した場合はそれで上書きされる（フォールバック概算の精度向上用）
+let _ficpFallbackFuelRate = FICP_FALLBACK_FUEL_RATE;
 
 // ========== SpeedPAK API Integration ==========
 const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
@@ -1844,11 +1761,10 @@ async function fetchSpeedpakRates() {
     console.log('[SpeedPAK API Response]', data);
     if (data.success) {
       _speedpakRates = data.rates;
-      // 燃油サーチャージも自動更新（20〜45%の妥当範囲のみ適用）
+      // 燃油サーチャージは SpeedPAK API の送料に込みで返るため、手動フィールドは廃止。
+      // FICP フォールバック用に直近の燃油率があれば保持しておく（任意）。
       if (data.fuelSurchargePercent !== undefined && data.fuelSurchargePercent >= 20 && data.fuelSurchargePercent <= 45) {
-        document.getElementById('fuelSurcharge').value = data.fuelSurchargePercent;
-        const statusEl = document.getElementById('fuelStatus');
-        if (statusEl) statusEl.textContent = '✓ ' + data.fuelSurchargePercent + '% (SpeedPAK API)';
+        _ficpFallbackFuelRate = data.fuelSurchargePercent / 100;
       }
     } else {
       _speedpakRates = null;
@@ -2007,7 +1923,8 @@ function calculate() {
   const rate = getVal('exchangeRate');
   const taxRate = getVal('taxRate') / 100;
   const taxMultiplier = 1 + taxRate;
-  const fuelSurchargeRate = getVal('fuelSurcharge') / 100; // 燃油サーチャージ率
+  // 燃油率は手動入力を廃止。FICP の API フォールバック概算でのみ使う固定値。
+  const fuelSurchargeRate = _ficpFallbackFuelRate;
 
   const vol = L * W * H;
   const volWeight = vol / 5000;
@@ -2958,7 +2875,7 @@ async function deleteSavedProfitCalculation(id) {
 
 const SAVE_KEY = 'ebayCalcState';
 const SAVE_FIELDS = ['saveEbayItemId','saveMemo','purchasePrice','sellingPrice','compShipping','weight','length','width','height',
-  'categoryNo','exchangeRate','fuelSurcharge','usShippingPct',
+  'categoryNo','exchangeRate','usShippingPct',
   'ebayFeeRate','feeThreshold','ebayFeeRate2','perOrderFee',
   'promotedRate','intlFeeRate','payoneerRate','taxRate'];
 
@@ -3149,7 +3066,6 @@ onCategoryNoInput(); // 常にカテゴリNo.から手数料を自動判定
 updateFeeDescription();
 loadThresholdFromCache(); // しきい値: まずlocalStorageキャッシュから即座に復元
 initExchangeRate();
-initFuelSurcharge();
 calculate();
 fetchSpeedpakRates(); // 初回のSpeedPAK API呼び出し
 loadThresholdFromDB(); // しきい値: DBから正本を取得（到着後に再calculate）
