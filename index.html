@@ -948,18 +948,26 @@ function getActualBaseRateForCategory() {
   // そのグループが現在のプランに存在しない場合（例: ストア無しのcamera）は
   // 従来のフォールバック挙動を維持し、誤適用を避ける
   if (getEffectiveGroup(grp) !== grp) return null;
-  let totW = 0, totC = 0;
+  // 選択中の店舗プラン（'store'=Basic以上 / 'noStore'=ストアなし）でデータを分けて集計。
+  // ストア契約の有無で実績を別々に集めているので、プランに合う実績だけを使う。
+  const isStore = (currentStorePlan === 'store');
+  let pW = 0, pC = 0;   // プラン別（契約者 or 非契約者）の実績
+  let aW = 0, aC = 0;   // 合算（プラン別が不足した場合のフォールバック）
   for (const path in window._actualRatesRaw) {
     const segs = path.split('|');
     if (segs[segs.length - 1].trim() !== leaf) continue;          // 葉カテゴリ名が一致
     if (CATEGORY_TO_FEE_GROUP[segs[0].trim()] !== grp) continue;  // 同一手数料グループ(=US系)のみ→クロスサイト/別料率の混入を防ぐ
     const rd = window._actualRatesRaw[path];
-    if (!rd || !rd.count) continue;
-    totW += rd.avgRate * rd.count;
-    totC += rd.count;
+    if (!rd) continue;
+    if (rd.count) { aW += rd.avgRate * rd.count; aC += rd.count; }
+    const pRate = isStore ? rd.avgRateStore : rd.avgRateNoStore;
+    const pCnt  = isStore ? rd.countStore   : rd.countNoStore;
+    if (pRate != null && pCnt) { pW += pRate * pCnt; pC += pCnt; }
   }
-  if (totC < 3) return null; // サンプル不足は採用しない
-  const billed = totW / totC;
+  let billed;
+  if (pC >= 3) billed = pW / pC;        // プラン別実績が十分 → それを使う（最も正確）
+  else if (aC >= 3) billed = aW / aC;   // 不足時は合算実績にフォールバック
+  else return null;                      // 実績不足 → グループ標準料率へ
   const _tr = getVal('taxRate');
   const taxMul = 1 + ((_tr > 0 ? _tr : 10) / 100);
   return Math.round(billed / taxMul * 100) / 100; // 税抜き基本料率
