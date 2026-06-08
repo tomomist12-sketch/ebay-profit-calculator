@@ -836,6 +836,17 @@ const CATEGORY_TO_FEE_GROUP = {
   'eBay Motors': 'motors',
   'Health & Beauty': 'default',
   'Home & Garden': 'default',
+  // 以下、これまで未マッピングで実績データが捨てられていた主要カテゴリ（いずれもeBay基本料率12.7%=defaultグループ）
+  'Toys & Hobbies': 'default',
+  'Collectibles': 'default',
+  'Crafts': 'default',
+  'Sporting Goods': 'default',
+  'Business & Industrial': 'default',
+  'Clothing, Shoes & Accessories': 'default',
+  'Dolls & Bears': 'default',
+  'Pottery & Glass': 'default',
+  'Entertainment Memorabilia': 'default',
+  'Pet Supplies': 'default',
 };
 
 window.addEventListener('message', function(event) {
@@ -881,8 +892,14 @@ window.addEventListener('message', function(event) {
       if (entry.special || entry.tiers) continue;
 
       var avgRate = Math.round(grouped[gn].totalWeighted / grouped[gn].totalCount * 100) / 100;
-      entry.rate1 = avgRate;
-      entry.label = entry.label.replace(/\([\d.]+%[^)]*\)/, '(' + avgRate + '% 実績)');
+      // 実績avgRateはeBay手数料への消費税(10%)込みの値。FEE_RATESのrate1は税抜き基本料率
+      // （計算時にtaxMultiplierで税を上乗せする設計）なので、税抜きに戻してから格納する。
+      // これをしないと calculate() で再度×1.1され税が二重計上される。
+      var _tr = getVal('taxRate');
+      var taxMul = 1 + ((_tr > 0 ? _tr : 10) / 100);
+      var baseRate = Math.round(avgRate / taxMul * 100) / 100;
+      entry.rate1 = baseRate;
+      entry.label = entry.label.replace(/\([\d.]+%[^)]*\)/, '(' + avgRate + '% 実績/税込)');
       updated++;
 
       console.log('[FVF Update] グループ', gn, '→', avgRate + '% (n=' + grouped[gn].totalCount + ')');
@@ -1022,7 +1039,12 @@ function updateFeeDescription() {
     }
   }
 
-  descEl.textContent = 'FVF: ' + appliedRates.join('+') + '($' + fvf.toFixed(2) + ')';
+  // 表示は実際にeBayから請求される税込みレートに合わせる（fvfは税抜き基本額なので×taxMul）
+  var _tr = getVal('taxRate');
+  var taxMul = 1 + ((_tr > 0 ? _tr : 10) / 100);
+  var billedFvf = fvf * taxMul;
+  var billedPct = selling > 0 ? (billedFvf / selling * 100) : 0;
+  descEl.textContent = 'FVF(税込): ' + billedPct.toFixed(2) + '% ($' + billedFvf.toFixed(2) + ')';
 }
 
 // Category search and fee group dropdown removed (auto-detect from category No.)
