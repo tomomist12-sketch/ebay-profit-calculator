@@ -859,7 +859,12 @@ window.addEventListener('message', function(event) {
   var payload = data.payload;
   if (!payload || !payload.rates) return;
 
+  // サブカテゴリ単位の実績レート（フルパスをkey）をそのまま保持し、
+  // カテゴリ番号入力時に「葉カテゴリ名×同一手数料グループ」で直接引けるようにする。
+  window._actualRatesRaw = payload.rates;
+
   // APIキー（"Top|Sub|SubSub"形式）を最上位カテゴリで集約（count加重平均）
+  // ※こちらは個別カテゴリの実績が無い場合のグループ単位フォールバック用
   var grouped = {};
   for (var apiKey in payload.rates) {
     var rateData = payload.rates[apiKey];
@@ -930,6 +935,36 @@ function getEffectiveGroup(group) {
   return group;
 }
 
+// 入力中のカテゴリ番号について、その「葉カテゴリ名 × 同一手数料グループ」に一致する
+// 実績レートを直接集計して返す（サブカテゴリ単位の精度）。
+// 実績データは消費税込みなので、税抜き基本料率に戻して返す。該当なし/件数不足は null。
+function getActualBaseRateForCategory() {
+  if (!window._actualRatesRaw) return null;
+  const catId = parseInt(document.getElementById('categoryNo').value);
+  if (!catId || typeof EBAY_CATEGORIES === 'undefined' || !EBAY_CATEGORIES[catId]) return null;
+  const leaf = (EBAY_CATEGORIES[catId].name || '').trim();
+  const grp = EBAY_CATEGORIES[catId].group || 'default';
+  if (!leaf) return null;
+  // そのグループが現在のプランに存在しない場合（例: ストア無しのcamera）は
+  // 従来のフォールバック挙動を維持し、誤適用を避ける
+  if (getEffectiveGroup(grp) !== grp) return null;
+  let totW = 0, totC = 0;
+  for (const path in window._actualRatesRaw) {
+    const segs = path.split('|');
+    if (segs[segs.length - 1].trim() !== leaf) continue;          // 葉カテゴリ名が一致
+    if (CATEGORY_TO_FEE_GROUP[segs[0].trim()] !== grp) continue;  // 同一手数料グループ(=US系)のみ→クロスサイト/別料率の混入を防ぐ
+    const rd = window._actualRatesRaw[path];
+    if (!rd || !rd.count) continue;
+    totW += rd.avgRate * rd.count;
+    totC += rd.count;
+  }
+  if (totC < 3) return null; // サンプル不足は採用しない
+  const billed = totW / totC;
+  const _tr = getVal('taxRate');
+  const taxMul = 1 + ((_tr > 0 ? _tr : 10) / 100);
+  return Math.round(billed / taxMul * 100) / 100; // 税抜き基本料率
+}
+
 // カテゴリ名を取得（新旧両方に対応）
 function getCategoryName(catId) {
   if (typeof EBAY_CATEGORIES !== 'undefined' && EBAY_CATEGORIES[catId]) {
@@ -970,7 +1005,9 @@ function applyFeeGroup(group) {
     document.getElementById('feeThreshold').value = g.tiers[0][1];
     document.getElementById('ebayFeeRate2').value = g.tiers.length > 1 ? g.tiers[1][0] : 0;
   } else {
-    document.getElementById('ebayFeeRate').value = g.rate1;
+    // カテゴリ別の実績レートがあればそれを優先（無ければグループ標準料率）
+    const actualBase = getActualBaseRateForCategory();
+    document.getElementById('ebayFeeRate').value = (actualBase != null ? actualBase : g.rate1);
     document.getElementById('feeThreshold').value = g.th;
     document.getElementById('ebayFeeRate2').value = g.rate2;
   }
@@ -1030,12 +1067,15 @@ function updateFeeDescription() {
       if (remaining <= 0) break;
     }
   } else {
+    // カテゴリ別の実績レートがあればそれを優先（無ければグループ標準料率）
+    const actualBase = getActualBaseRateForCategory();
+    const r1 = (actualBase != null ? actualBase : g.rate1);
     if (selling <= g.th) {
-      fvf = selling * (g.rate1 / 100);
-      appliedRates.push(g.rate1 + '%');
+      fvf = selling * (r1 / 100);
+      appliedRates.push(r1 + '%');
     } else {
-      fvf = g.th * (g.rate1 / 100) + (selling - g.th) * (g.rate2 / 100);
-      appliedRates.push(g.rate1 + '%', g.rate2 + '%');
+      fvf = g.th * (r1 / 100) + (selling - g.th) * (g.rate2 / 100);
+      appliedRates.push(r1 + '%', g.rate2 + '%');
     }
   }
 
