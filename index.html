@@ -1792,6 +1792,7 @@ let _ficpFallbackFuelRate = FICP_FALLBACK_FUEL_RATE;
 const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
 let _speedpakRates = null;      // APIレスポンスの rates オブジェクト
 let _speedpakLoading = false;   // API取得中フラグ
+let _speedpakError = false;     // 直近のCPaSS(SpeedPAK)取得が失敗したか（エラー or success:false）
 let _speedpakDebounceTimer = null;
 
 async function fetchSpeedpakRates() {
@@ -1809,6 +1810,7 @@ async function fetchSpeedpakRates() {
   const cc = COUNTRIES.find(c => c.id === currentCountry) || COUNTRIES[0];
 
   _speedpakLoading = true;
+  _speedpakError = false;
   calculate(); // ローディング状態を反映
 
   try {
@@ -1838,10 +1840,12 @@ async function fetchSpeedpakRates() {
       }
     } else {
       _speedpakRates = null;
+      _speedpakError = true;
     }
   } catch(e) {
     console.warn('SpeedPAK API error:', e);
     _speedpakRates = null;
+    _speedpakError = true;
   } finally {
     _speedpakLoading = false;
     calculate();
@@ -2088,7 +2092,13 @@ function calculate() {
       const baseRate = lookupRate(ficpTable, billableStandardG);
       if (baseRate > 0) {
         const fuel = Math.round(baseRate * fuelSurchargeRate);
-        const duty = spDuty(); // 他の配送方法から関税額を取得
+        let duty = spDuty(); // 他の配送方法から関税額を取得
+        let dutyEstimate = false;
+        // CPaSS取得失敗などで関税が取れない場合、US(DDP)宛は 出品価格 × 15% × 為替 で概算する
+        if (duty === 0 && cc.code === 'US' && selling > 0 && rate > 0) {
+          duty = Math.round(selling * 0.15 * rate);
+          dutyEstimate = true;
+        }
         c = baseRate + fuel + duty;
         details = [
           {charges:'運送料金', chargesEn:'Shipping Rate', freight:baseRate},
@@ -2099,9 +2109,10 @@ function calculate() {
         if (dutyItems.length > 0) {
           dutyItems.forEach(d => details.push(d));
         } else if (duty > 0) {
-          details.push({charges:'推定関税及び税金料金', chargesEn:'Estimated Duty&Tax', freight:duty});
+          details.push({charges: dutyEstimate ? '推定関税（税率15%概算）' : '推定関税及び税金料金', chargesEn:'Estimated Duty&Tax', freight:duty});
         }
-        subNote = '（概算）';
+        // CPaSS API がエラーのときはその旨を明示（関税は15%概算）
+        subNote = _speedpakError ? '（⚠️CPaSS取得失敗・関税15%概算）' : '（概算）';
       }
     }
     const canSend = cs && c !== null && c > 0;
