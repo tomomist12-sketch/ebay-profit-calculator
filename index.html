@@ -1658,9 +1658,9 @@ function getEffectiveSellingPrice() {
     const compTotal = selling + compShipping;
     if (compTotal <= 0) return 0;
     const total = Math.round((compTotal - 0.01) * 100) / 100;
-    // 配送先がアメリカ以外の場合、商品価格（÷1.184）のみが収入
+    // 配送先がアメリカ以外の場合、商品価格（÷1.12）のみが収入
     if (currentCountry !== 'us' && total <= 2499.99) {
-      return Math.round((total / 1.184) * 100) / 100;
+      return Math.round((total / 1.12) * 100) / 100;
     }
     return total;
   } else {
@@ -1683,13 +1683,13 @@ function updatePricingDisplay() {
     const compShipping = getCompShippingUsd();
     const compTotal = selling + compShipping;
     const total = compTotal > 0 ? Math.round((compTotal - 0.01) * 100) / 100 : 0;
-    // ÷1.184分割（$2,500超は分割しない）
+    // ÷1.12分割（$2,500超は分割しない）
     if (total > 0) {
       if (total > 2499.99) {
         document.getElementById('listPrice').textContent = '$' + fmtD(total);
         document.getElementById('listShipping').textContent = '$0.00';
       } else {
-        const itemPrice = Math.round((total / 1.184) * 100) / 100;
+        const itemPrice = Math.round((total / 1.12) * 100) / 100;
         const usShipping = Math.round((total - itemPrice) * 100) / 100;
         document.getElementById('listPrice').textContent = '$' + fmtD(itemPrice);
         document.getElementById('listShipping').textContent = '$' + fmtD(usShipping);
@@ -1874,7 +1874,7 @@ function spDuty() {
   }
   return 0;
 }
-// アメリカ向け関税額を取得（日本郵便・eLogi用）：SpeedPAK API → フォールバック15%概算
+// アメリカ向け関税額を取得（日本郵便・eLogi用）：SpeedPAK API → フォールバック10%概算
 function getUsDuty(cc, selling, rate) {
   if (cc.code !== 'US') return { amount: 0, isEstimate: false, loading: false };
   // API読み込み中またはまだ取得前 → loading状態を返す（概算を出さない）
@@ -1885,7 +1885,7 @@ function getUsDuty(cc, selling, rate) {
   if (apiDuty > 0) return { amount: apiDuty, isEstimate: false, loading: false };
   // フォールバック: 出品価格 × 15% × 為替レート（円換算）
   if (selling > 0 && rate > 0) {
-    return { amount: Math.round(selling * 0.15 * rate), isEstimate: true, loading: false };
+    return { amount: Math.round(selling * 0.10 * rate), isEstimate: true, loading: false };
   }
   return { amount: 0, isEstimate: false, loading: false };
 }
@@ -1899,7 +1899,7 @@ function buildDutyFeeDetails(shippingLabel, shippingCost, dutyInfo) {
   if (!dutyInfo.isEstimate && apiDetails.length > 0) {
     apiDetails.forEach(d => details.push(d));
   } else {
-    const label = dutyInfo.isEstimate ? '推定関税（税率15%概算）' : '推定関税及び税金料金';
+    const label = dutyInfo.isEstimate ? '推定関税（税率10%概算）' : '推定関税及び税金料金';
     details.push({charges: label, chargesEn: 'Estimated Duty&Tax', freight: dutyInfo.amount});
   }
   return details;
@@ -2096,7 +2096,7 @@ function calculate() {
         let dutyEstimate = false;
         // CPaSS取得失敗などで関税が取れない場合、US(DDP)宛は 出品価格 × 15% × 為替 で概算する
         if (duty === 0 && cc.code === 'US' && selling > 0 && rate > 0) {
-          duty = Math.round(selling * 0.15 * rate);
+          duty = Math.round(selling * 0.10 * rate);
           dutyEstimate = true;
         }
         c = baseRate + fuel + duty;
@@ -2109,10 +2109,10 @@ function calculate() {
         if (dutyItems.length > 0) {
           dutyItems.forEach(d => details.push(d));
         } else if (duty > 0) {
-          details.push({charges: dutyEstimate ? '推定関税（税率15%概算）' : '推定関税及び税金料金', chargesEn:'Estimated Duty&Tax', freight:duty});
+          details.push({charges: dutyEstimate ? '推定関税（税率10%概算）' : '推定関税及び税金料金', chargesEn:'Estimated Duty&Tax', freight:duty});
         }
-        // CPaSS API がエラーのときはその旨を明示（関税は15%概算）
-        subNote = _speedpakError ? '（⚠️CPaSS取得失敗・関税15%概算）' : '（概算）';
+        // CPaSS API がエラーのときはその旨を明示（関税は10%概算）
+        subNote = _speedpakError ? '（⚠️CPaSS取得失敗・関税10%概算）' : '（概算）';
       }
     }
     const canSend = cs && c !== null && c > 0;
