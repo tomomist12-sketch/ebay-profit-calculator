@@ -2620,22 +2620,28 @@ function copyProductInfo() {
 // ========== Reset Product Info ==========
 function resetProductInfo() {
   if (!confirm('入力した商品情報をリセットしますか？')) return;
-  // 商品情報カードの入力欄を初期値に戻す（手数料・レート等は変更しない）
+  // 商品情報カードの入力欄をまっさらに戻す（手数料率・レート・店舗プラン等は変更しない）
   const defaults = {
     saveEbayItemId: '',
     purchasePrice: '0',
     sellingPrice: '0',
     compShipping: '0',
-    usShippingPct: '20',
-    weight: '0.5',
-    length: '10',
-    width: '10',
-    height: '5',
+    usShippingPct: '0',
+    weight: '0',
+    length: '0',
+    width: '0',
+    height: '0',
   };
   Object.entries(defaults).forEach(([id, val]) => {
     const el = document.getElementById(id);
     if (el) el.value = val;
   });
+  // カテゴリNo.も空に戻し、カテゴリ名表示を「-」へ更新（onCategoryNoInput内でsaveStateも実行）
+  const catNoEl = document.getElementById('categoryNo');
+  if (catNoEl) {
+    catNoEl.value = '';
+    onCategoryNoInput();
+  }
   clearLoadStatus();
   calculate();
   saveState();
