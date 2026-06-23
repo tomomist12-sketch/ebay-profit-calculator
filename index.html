@@ -42,7 +42,17 @@
   --shadow2:0 4px 12px rgba(0,0,0,.08);
   --radius:12px;
 }
-body{font-family:system-ui,-apple-system,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:16px 20px;margin:0 auto;max-width:1400px}
+/* 国旗絵文字ポリフィル（Windowsの Segoe UI に国旗が含まれていないため）。
+   unicode-range で 🇦-🇿（U+1F1E6〜1F1FF）と黒旗系（U+1F3F4, U+E0062〜）のみに適用、
+   他の文字や絵文字には一切影響なし */
+@font-face {
+  font-family: "Twemoji Country Flags";
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+  src: url('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/TwemojiCountryFlags.woff2') format('woff2');
+  font-display: swap;
+}
+body{font-family:"Twemoji Country Flags",system-ui,-apple-system,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:16px 20px;margin:0 auto;max-width:1400px}
+select,option,input,button,textarea{font-family:inherit}
 h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .subtitle{text-align:center;font-size:.82rem;color:var(--text3);margin-bottom:12px}
 
@@ -306,6 +316,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <h2><span class="icon">📦</span> 商品情報</h2>
       <div class="save-header-actions">
         <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button>
+        <button class="copy-info-btn" onclick="resetProductInfo()">リセット</button>
       </div>
     </div>
     <div id="headerActionStatus" class="inline-status header-action-status" role="status" aria-live="polite"></div>
@@ -2604,6 +2615,31 @@ function copyProductInfo() {
   copyTextToClipboard(text).then(copied => {
     showHeaderStatus(copied ? 'コピーしました' : 'コピーできませんでした', !copied);
   });
+}
+
+// ========== Reset Product Info ==========
+function resetProductInfo() {
+  if (!confirm('入力した商品情報をリセットしますか？')) return;
+  // 商品情報カードの入力欄を初期値に戻す（手数料・レート等は変更しない）
+  const defaults = {
+    saveEbayItemId: '',
+    purchasePrice: '0',
+    sellingPrice: '0',
+    compShipping: '0',
+    usShippingPct: '20',
+    weight: '0.5',
+    length: '10',
+    width: '10',
+    height: '5',
+  };
+  Object.entries(defaults).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+  clearLoadStatus();
+  calculate();
+  saveState();
+  showHeaderStatus('リセットしました', false, true);
 }
 
 // ========== Seller Note Save / Load ==========
