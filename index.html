@@ -243,6 +243,73 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .save-memo-textarea::placeholder{color:var(--text3)}
 .save-memo-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 
+/* ===== モバイル対応 (〜700px) ===== */
+@media (max-width: 700px) {
+  body{padding:8px 10px}
+  h1{font-size:1.1rem;text-align:left;padding:4px 0}
+  .subtitle{font-size:.75rem;margin-bottom:8px}
+
+  /* タイトル横の「出品一覧」ボタンを通常配置に */
+  .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .saved-calc-top{position:static;height:28px;font-size:.7rem;padding:0 8px}
+
+  /* 3カラムツールバー → 1カラム */
+  .tool-bar{grid-template-columns:1fr !important;gap:6px;margin-bottom:8px}
+
+  /* 2カラムメイン → 1カラム */
+  .main-layout{grid-template-columns:1fr;gap:12px}
+  .left-column{position:static;top:auto;gap:12px}
+
+  /* カードのpadding詰め */
+  .card{padding:.75rem .85rem;margin-bottom:12px}
+
+  /* 利益サマリー: 1行→2列グリッドで縦積み */
+  .profit-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:10px 12px;margin-bottom:14px}
+  .profit-summary-divider{display:none}
+  .profit-summary-item{flex:initial;gap:6px;flex-wrap:wrap}
+  .profit-summary-item .p-label{font-size:11px}
+  .profit-summary-item .p-val{font-size:16px}
+
+  /* 商品情報ヘッダーが折り返せるように */
+  .product-card-header{flex-wrap:wrap;gap:6px}
+  .save-header-actions{margin-left:0;gap:6px}
+  .copy-info-btn{height:24px;font-size:.7rem;padding:2px 6px}
+
+  /* eBay商品番号の3列 → 検索/eBayボタンを下段に */
+  .product-id-row{grid-template-columns:1fr;gap:6px}
+  .product-id-row input{height:34px;font-size:.9rem}
+  .product-id-btn{height:32px;font-size:.74rem}
+
+  /* mode-bar (アメリカ向け/以外, ストアプラン) */
+  .mode-btn{padding:5px 6px;font-size:.74rem}
+
+  /* 4列の寸法入力は2x2に */
+  .grid4{grid-template-columns:1fr 1fr;gap:6px}
+
+  /* fieldのラベルは折り返す */
+  .field label{white-space:normal;font-size:.74rem}
+  .field input{height:34px;font-size:.9rem}
+
+  /* method-row (配送方法カード) を縦積み */
+  .method-row{grid-template-columns:1fr;gap:8px;padding:10px 12px}
+  .method-row .mr-right{grid-template-columns:auto 1fr;justify-items:end;text-align:right;gap:2px 8px}
+  .method-row .mr-right .lbl{text-align:left;justify-self:start}
+
+  /* shop-search-bar 内のサイト一覧 */
+  .shop-sites{gap:2px 4px}
+  .shop-sites label{font-size:.68rem}
+
+  /* fee popup を画面に収める */
+  .fee-popup{right:0;left:0;min-width:0;max-width:100%}
+
+  /* モーダル */
+  .calc-modal{padding:8px}
+  .calc-modal-body{padding:10px 12px}
+
+  /* 競合送料/US送料の横並び崩れ防止 */
+  #compShippingRow{flex-wrap:wrap}
+}
+
 </style>
 </head>
 <body>
