@@ -319,7 +319,11 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <button class="saved-calc-top" onclick="openCalcListModal()">📋 出品一覧</button>
 </div>
 
-<div class="tool-bar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+  <button class="toggle-btn active" id="toolBarToggle" onclick="toggleToolBar()" style="font-weight:600">🧰 リサーチツール <span id="toolBarArrow">▲</span></button>
+  <span style="font-size:.7rem;color:var(--text3)">キーワード生成・eBay販売履歴・国内一括検索</span>
+</div>
+<div class="tool-bar" id="toolBar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
   <!-- 1. キーワードガチャ -->
   <div style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--primary)">
     <div style="font-size:.72rem;margin-bottom:4px"><span style="font-weight:700;color:var(--primary)">🎲 ランダムキーワード生成</span> <span style="color:var(--text3)">— キーワードを押すとコピーできます</span></div>
@@ -372,6 +376,38 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div class="shop-sites" id="shopSites"></div>
   </div>
 </div>
+<script>
+  function toggleToolBar() {
+    var bar = document.getElementById('toolBar');
+    var arrow = document.getElementById('toolBarArrow');
+    var btn = document.getElementById('toolBarToggle');
+    var isOpen = bar.style.display !== 'none';
+    if (isOpen) {
+      bar.style.display = 'none';
+      if (arrow) arrow.textContent = '▼';
+      if (btn) btn.classList.remove('active');
+      try { localStorage.setItem('toolBarCollapsed', '1'); } catch(_) {}
+    } else {
+      bar.style.display = 'grid';
+      if (arrow) arrow.textContent = '▲';
+      if (btn) btn.classList.add('active');
+      try { localStorage.setItem('toolBarCollapsed', '0'); } catch(_) {}
+    }
+  }
+  // 前回「折りたたむ」を選んでいた場合は初期表示で閉じておく
+  (function(){
+    try {
+      if (localStorage.getItem('toolBarCollapsed') === '1') {
+        var bar = document.getElementById('toolBar');
+        var arrow = document.getElementById('toolBarArrow');
+        var btn = document.getElementById('toolBarToggle');
+        if (bar) bar.style.display = 'none';
+        if (arrow) arrow.textContent = '▼';
+        if (btn) btn.classList.remove('active');
+      }
+    } catch(_) { /* localStorage 不可なら何もしない */ }
+  })();
+</script>
 
 <!-- ===== 2カラムレイアウト ===== -->
 <div class="main-layout">
