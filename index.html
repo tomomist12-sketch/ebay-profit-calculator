@@ -84,6 +84,12 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .profit-summary.negative .p-val{color:#fff}
 .profit-summary.negative .profit-summary-divider{background:#f87171}
 .profit-summary-divider{width:1px;height:20px;background:#60a5fa;flex-shrink:0}
+/* 出品可否バッジ（サマリーバー内）。赤バーのときは白地に赤文字で強調 */
+.p-verdict{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.p-verdict .vd-badge{font-size:12px;font-weight:800;padding:3px 10px;border-radius:6px;white-space:nowrap;background:rgba(255,255,255,.2);color:#fff}
+.p-verdict .vd-reason{font-size:11px;line-height:1.35;color:#bfdbfe}
+.profit-summary.negative .p-verdict .vd-badge{background:#fff;color:#b91c1c}
+.profit-summary.negative .p-verdict .vd-reason{color:#fee2e2;font-weight:600}
 
 /* ===== Fee Detail Section ===== */
 .fee-detail-section{margin-bottom:16px}
@@ -269,6 +275,11 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   .profit-summary-item{flex:initial;gap:6px;flex-wrap:wrap}
   .profit-summary-item .p-label{font-size:11px}
   .profit-summary-item .p-val{font-size:16px}
+  /* 出品可否は幅いっぱいを使って折り返す */
+  #summaryProfit{grid-column:1 / -1}
+  .p-verdict{flex-basis:100%;gap:6px}
+  .p-verdict .vd-badge{font-size:11px;padding:2px 8px}
+  .p-verdict .vd-reason{font-size:10px}
 
   /* 商品情報ヘッダーが折り返せるように */
   .product-card-header{flex-wrap:wrap;gap:6px}
@@ -610,7 +621,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     <div class="p-label">推奨便 利益</div>
     <div class="p-val" id="bestProfitYen">-</div>
     <div class="p-sub" id="bestMethodName"></div>
-    <div style="font-size:10px;color:#93c5fd;margin-top:2px">出品OK判定：≥¥500 かつ ≥5%</div>
+    <div class="p-verdict" id="bestVerdict"><span class="vd-reason">出品OK判定：≥¥500 かつ ≥5%</span></div>
   </div>
   <div class="profit-summary-divider"></div>
   <div class="profit-summary-item" id="summaryRefund">
@@ -2089,6 +2100,23 @@ function calcFVFBase(amount, grp, ebayRate1, threshold, ebayRate2, perOrder) {
   return { fvfBase, effectivePerOrder };
 }
 
+// ========== 出品不可の理由組み立て（サマリーバー / 配送方法行で共通） ==========
+function buildNgReasons(m, profitTh, rateTh) {
+  const reasons = [];
+  if (!m || m.isOk) return reasons;
+  // 発送不可・送料未取得は既存のreasonタグ側で表示されるのでここでは扱わない
+  if (!m.canSend || !(m.cost > 0) || m.profit === null) return reasons;
+  if (m.profit < 0) {
+    reasons.push('赤字（利益 −¥' + fmt(Math.abs(m.profit)) + '）');
+  } else if (m.profit < profitTh) {
+    reasons.push('利益¥' + fmt(m.profit) + '（基準¥' + fmt(profitTh) + '未満）');
+  }
+  if (m.profitRate < rateTh) {
+    reasons.push('利益率' + m.profitRate.toFixed(1) + '%（基準' + rateTh + '%未満）');
+  }
+  return reasons;
+}
+
 // ========== Main Calculation ==========
 
 function calculate() {
@@ -2523,6 +2551,25 @@ function calculate() {
     }
   }
 
+  // 推奨便が出品OKか／NGなら理由をサマリーバーに明示する
+  function setVerdict(m) {
+    const el = document.getElementById('bestVerdict');
+    if (!el) return;
+    const stdTxt = '出品OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%';
+    // 仕入額未入力のうちは判定を出さず基準だけ表示
+    if (!m || purchase <= 0) {
+      el.innerHTML = '<span class="vd-reason">' + stdTxt + '</span>';
+      return;
+    }
+    if (m.isOk) {
+      el.innerHTML = '<span class="vd-badge">✅ 出品OK</span><span class="vd-reason">' + stdTxt + '</span>';
+      return;
+    }
+    const reasons = buildNgReasons(m, profitTh, effectiveRateTh);
+    const why = reasons.length ? reasons.join('、') : (m.canSend ? stdTxt : '発送不可');
+    el.innerHTML = '<span class="vd-badge">⛔ 出品不可</span><span class="vd-reason">' + why + '</span>';
+  }
+
   const bestNameEl = document.getElementById('bestMethodName');
   const bestRateSubEl = document.getElementById('bestRateSub');
 
@@ -2534,6 +2581,7 @@ function calculate() {
     setProfitCard('summaryRefund', bestFD.profitWithRefund, 'bestProfitRefundYen');
     // 利益NG → バー全体を赤背景に
     summaryBar.classList.toggle('negative', !bestFD.isOk);
+    setVerdict(bestFD);
     const rateEl = document.getElementById('bestProfitRate');
     rateEl.textContent = bestFD.profitRate.toFixed(1) + '%';
     bestNameEl.textContent = bestFD.name;
@@ -2545,6 +2593,7 @@ function calculate() {
     setProfitCard('summaryRefund', bestRefund > -Infinity ? bestRefund : null, 'bestProfitRefundYen');
     // 利益NG → バー全体を赤背景に
     summaryBar.classList.toggle('negative', !bestMethod || !bestMethod.isOk);
+    setVerdict(bestMethod);
     const rateEl = document.getElementById('bestProfitRate');
     rateEl.textContent = bestMethod ? bestMethod.profitRate.toFixed(1) + '%' : '-';
     bestNameEl.textContent = bestMethod ? bestMethod.name : '';
@@ -2623,24 +2672,8 @@ function calculate() {
       else cls += ' dimmed';
       row.className = cls;
 
-      // dimmed理由の生成
-      let dimReason = '';
-      if (!m.isOk) {
-        if (!m.canSend || m.cost <= 0) {
-          // canSend=false or 送料なし → 既存のreasonタグで表示されるので追加不要
-        } else if (m.profit !== null) {
-          const reasons = [];
-          if (m.profit < 0) {
-            reasons.push('赤字（利益 −¥' + fmt(Math.abs(m.profit)) + '）');
-          } else if (m.profit < profitTh) {
-            reasons.push('利益¥' + fmt(m.profit) + '（基準¥' + fmt(profitTh) + '未満）');
-          }
-          if (m.profitRate < effectiveRateTh) {
-            reasons.push('利益率' + m.profitRate.toFixed(1) + '%（基準' + effectiveRateTh + '%未満）');
-          }
-          if (reasons.length) dimReason = reasons.join('、');
-        }
-      }
+      // dimmed理由の生成（サマリーバーと同じ文言をbuildNgReasonsで生成）
+      const dimReason = buildNgReasons(m, profitTh, effectiveRateTh).join('、');
 
       // Tags
       const tagItems = [];
