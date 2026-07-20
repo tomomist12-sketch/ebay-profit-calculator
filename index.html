@@ -592,6 +592,21 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       </div>
       <div style="font-size:.62rem;color:var(--text3);margin-top:3px">※利益率＝利益÷仕入額。両方を満たす配送便を濃く（青枠）表示します</div>
     </div>
+    <!-- EU関税（2026-07-01〜：150ユーロ以下は品目ごとに定額€3） -->
+    <div style="margin-top:10px;padding:8px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px">
+      <div style="font-size:.75rem;font-weight:600;color:var(--text1);margin-bottom:4px">🇪🇺 EU関税（ヨーロッパ宛・150ユーロ以下）</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:.73rem;color:var(--text2)">eLogiの立替手数料</span>
+        <span style="font-size:.73rem;color:var(--text2)">€</span>
+        <input type="number" id="euDisbursementFee" value="12" min="0" step="1" style="width:60px;height:28px;font-size:.82rem;text-align:right;border:1px solid var(--border);border-radius:4px;padding:0 6px">
+        <span style="font-size:.73rem;color:var(--text3)">（クーリエ・国により€12〜21）</span>
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:5px;margin-top:6px;font-size:.7rem;color:var(--text2);cursor:pointer;line-height:1.35">
+        <input type="checkbox" id="euFedexCardWaiver" style="cursor:pointer;margin-top:1px;flex-shrink:0">
+        <span>FedExの関税クレカ自動引き落としを設定済み（eLogi FedEx系の立替手数料を0にする）</span>
+      </label>
+      <div style="font-size:.62rem;color:var(--text3);margin-top:4px">※2026/7/1〜、EU宛の150ユーロ以下は関税€3/内容品（45ユーロ未満でも課税）。CPaSSは€3＋2.1%を自動加算、eLogiは€3＋上記の立替手数料。Economyは料金に込みで取得済み。イギリスは対象外。</div>
+    </div>
   </div>
 
 <div class="fee-detail-section" style="text-align:center">
@@ -1445,7 +1460,7 @@ const COUNTRIES = [
   { id:'uk', name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
-  { id:'eu', name:'🇪🇺 ヨーロッパ (DE/FR等)', code:'DE', defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+  { id:'eu', name:'🇪🇺 ヨーロッパ (DE/FR等)', code:'DE', euDuty:true, defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
   { id:'au', name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
@@ -1862,6 +1877,13 @@ function toggleFeeDetail() {
 const RATE_CACHE_KEY = 'exchange_rate_jpy';
 const RATE_CACHE_TIME_KEY = 'exchange_rate_time';
 const RATE_CACHE_TTL = 6 * 60 * 60 * 1000; // 6時間キャッシュ
+// EU関税(€3)の円換算に使う 1USDあたりのEUR。為替APIのレスポンスから同時に取得する
+const EUR_CACHE_KEY = 'exchange_rate_eur';
+const EUR_PER_USD_FALLBACK = 0.88; // 取得できなかった時の保険
+function getEurPerUsd() {
+  const v = parseFloat(localStorage.getItem(EUR_CACHE_KEY));
+  return (v > 0 && v < 10) ? v : EUR_PER_USD_FALLBACK;
+}
 
 async function fetchRate(silent) {
   const statusEl = document.getElementById('rateStatus');
@@ -1872,6 +1894,8 @@ async function fetchRate(silent) {
     if (d.rates && d.rates.JPY) {
       const rate = d.rates.JPY.toFixed(4);
       document.getElementById('exchangeRate').value = rate;
+      // EU関税(€3)の円換算用にEURレートも同時に保存する
+      if (d.rates.EUR > 0) localStorage.setItem(EUR_CACHE_KEY, d.rates.EUR);
       localStorage.setItem(RATE_CACHE_KEY, rate);
       localStorage.setItem(RATE_CACHE_TIME_KEY, Date.now());
       if (statusEl) statusEl.textContent = '✓ ¥' + rate + '/$ (自動取得)';
@@ -2100,6 +2124,45 @@ function calcFVFBase(amount, grp, ebayRate1, threshold, ebayRate2, perOrder) {
   return { fvfBase, effectivePerOrder };
 }
 
+// ========== EU関税（2026-07-01〜：申告価格150ユーロ以下は品目ごとに定額€3） ==========
+// EUのデミニミス（少額免税）廃止に伴う一時関税。配送経路ごとに上乗せされる費用が違う。
+//   CPaSS(SpeedPAK) FedEx/DHL : €3 ＋ 推定関税処理手数料2.1%
+//   CPaSS Economy             : APIが関税込みの料金を返すため、ここでは加算しない（二重計上防止）
+//   eLogi FedEx/UPS           : €3 ＋ クーリエ立替手数料（設定値。FedExはクレカ自動引落設定で免除される場合あり）
+//   日本郵便                  : DDU（買い手が受取時に支払う）のためセラー負担なし
+// ※イギリス(GB)はEU離脱済みのため対象外。COUNTRIES の euDuty フラグで判定する。
+// ※BtoC（販売者からの発送）は45ユーロ未満でも課税。免税はCtoC（個人間の贈答品）のみ。
+const EU_FLAT_DUTY_EUR = 3;         // 内容品ごとの定額関税（HSコードごとではない：日本郵便 2026-07 周知）
+const EU_DUTY_THRESHOLD_EUR = 150;  // この申告価格以下が対象。これを超えるとEU共通税率（買い手負担/DDU）
+const EU_DUTY_PROCESS_RATE = 0.021; // CPaSSの推定関税処理手数料
+// IOSS利用の国際郵便物が差出停止中の国（2026/7/24〜、8月頃再開見込み）。eBay販売はIOSS利用のため影響を受ける
+const EU_IOSS_SUSPENDED = ['オーストリア','デンマーク','ドイツ','フィンランド','フランス','ベルギー','ポルトガル','ルクセンブルク'];
+
+function isEuLowValue(cc, declaredUsd) {
+  if (!cc || !cc.euDuty || !(declaredUsd > 0)) return false;
+  return declaredUsd * getEurPerUsd() <= EU_DUTY_THRESHOLD_EUR;
+}
+
+// 配送方法グループごとのEU関税（円）。対象外は0を返す
+function getEuDutyYen(groupId, cc, declaredUsd, rate) {
+  if (!isEuLowValue(cc, declaredUsd) || !(rate > 0)) return 0;
+  const yenPerEur = rate / getEurPerUsd();
+  const duty = EU_FLAT_DUTY_EUR * yenPerEur;
+  const disbursement = () => getVal('euDisbursementFee') * yenPerEur;
+  switch (groupId) {
+    case 'fedex': case 'fedex-ip': case 'dhl':
+      return Math.round(duty * (1 + EU_DUTY_PROCESS_RATE));
+    case 'elogi-ficp': case 'elogi-ip': {
+      const waiver = document.getElementById('euFedexCardWaiver');
+      return Math.round(duty + (waiver && waiver.checked ? 0 : disbursement()));
+    }
+    case 'elogi-ups':
+      return Math.round(duty + disbursement());
+    default:
+      return 0; // speedpak(Economy)=API込み / jppost=DDU
+  }
+}
+
 // ========== 出品不可の理由組み立て（サマリーバー / 配送方法行で共通） ==========
 function buildNgReasons(m, profitTh, rateTh) {
   const reasons = [];
@@ -2211,8 +2274,21 @@ function calculate() {
     { id: 'jppost',   label: '日本郵便', tag: cc.jpOk!==false?'補助':'非対応', primary: false, methods: [], note: cc.jpOk!==false?'CPaSS非対応・自分で発送手続きが必要':(cc.jpZone?'この国は日本郵便の差出が制限されています（△）':'料金テーブル未設定') },
   ];
 
+  // EU関税の判定に使う申告価格。CPaSSへ送る declaredValue と同じ「商品単価のみ（送料除く）」に合わせる
+  const declaredUsdForDuty = (() => {
+    const s = getVal('sellingPrice');
+    return s > 0 ? Math.round((s - 0.01) * 100) / 100 : 0;
+  })();
+
   function addMethod(groupId, m) {
     m._groupId = groupId;
+    // EU関税（150ユーロ以下）を配送方法ごとに上乗せする。
+    // 発送不可(cost<=0)の行には加算しない。Economy・日本郵便は getEuDutyYen が0を返す。
+    const euDuty = getEuDutyYen(groupId, cc, declaredUsdForDuty, rate);
+    if (euDuty > 0 && m.cost > 0) {
+      m.cost += euDuty;
+      m.feeDetails = [...(m.feeDetails || []), {charges:'EU関税（€3）＋手数料', chargesEn:'EU Flat Duty', freight:euDuty}];
+    }
     const g = groups.find(g => g.id === groupId);
     if (g) g.methods.push(m);
   }
@@ -2221,7 +2297,8 @@ function calculate() {
   const _loading = _speedpakLoading;
   const _apiSrc = _speedpakRates ? 'API' : '';
   const _subSuffix = _apiSrc ? '' : (_loading ? '（取得中...）' : '（API未接続）');
-  const _dutyType = cc.code === 'US' ? 'DDP' : 'DDU';
+  // EU宛は150ユーロ以下がDDP必須（2026-07-01〜）。それ以外の非US宛は従来どおりDDU
+  const _dutyType = (cc.code === 'US' || isEuLowValue(cc, declaredUsdForDuty)) ? 'DDP' : 'DDU';
 
   // --- SpeedPAK FedEx FICP ---
   {
@@ -2326,8 +2403,11 @@ function calculate() {
     const cs = csW && csD;
     // SpeedPAK APIはEconomyの dutyAmount を0で返すバグがあるため、他の配送方法から関税額を流用する。
     // 関税は商品価格・送り先で決まるため、配送方法に関わらず同じ金額が適用される。
+    // ただしEU宛のようにEconomy自身のdutyAmountが返る場合、totalAmountに関税が含まれているため
+    // 流用すると二重計上になる。その場合は流用しない。
     const ecoBase = cs ? spCost('economy') : null;
-    const ecoDuty = ecoBase !== null && ecoBase > 0 ? spDuty() : 0;
+    const ecoApiDuty = (_speedpakRates && _speedpakRates.economy && _speedpakRates.economy.dutyAmount) || 0;
+    const ecoDuty = (ecoBase !== null && ecoBase > 0 && ecoApiDuty === 0) ? spDuty() : 0;
     const c = ecoBase !== null ? ecoBase + ecoDuty : null;
     let details = cs && c !== null && c > 0 ? spFeeDetails('economy') : null;
     // 関税を加算した場合は明細にも関税内訳を追加
@@ -2664,6 +2744,14 @@ function calculate() {
       grid.appendChild(upsNote);
     }
 
+    // EU宛の日本郵便: IOSS利用の郵便物が一部の国あてで差出停止中（日本郵便 2026-07 周知）
+    if (g.id === 'jppost' && cc.euDuty) {
+      const iossNote = document.createElement('div');
+      iossNote.style.cssText = 'font-size:.72rem;color:#b91c1c;padding:4px 12px;margin-bottom:6px;line-height:1.4';
+      iossNote.textContent = '⚠ 2026/7/24〜 ' + EU_IOSS_SUSPENDED.join('・') + 'あてはIOSS利用の郵便物を差し出せません（8月頃再開見込み）。eBay販売はIOSS利用のため、これらの国はCPaSS/eLogiを使ってください。';
+      grid.appendChild(iossNote);
+    }
+
     g.methods.forEach(m => {
       const row = document.createElement('div');
       let cls = 'method-row';
@@ -2721,7 +2809,12 @@ function calculate() {
   // フッターノートの利益OK判定基準を動的更新
   const fnEl = document.getElementById('footerNote');
   if (fnEl) {
-    const dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担）。' : '';
+    let dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担）。' : '';
+    if (cc.euDuty) {
+      dutyNote += isEuLowValue(cc, declaredUsdForDuty)
+        ? '申告$' + fmtD(declaredUsdForDuty) + '（≒€' + Math.round(declaredUsdForDuty * getEurPerUsd()) + '）は150ユーロ以下のためEU定額関税€3の対象（DDP・セラー負担）。CPaSSは€3+2.1%、eLogiは€3+立替手数料を加算済み。'
+        : '申告価格が150ユーロ超のためEU定額関税€3は対象外（DDU・買い手負担）。';
+    }
     fnEl.textContent = '※SpeedPAK系送料はAPIからリアルタイム取得（燃油サーチャージ込み）。eLogi/日本郵便は固定テーブル。' + dutyNote + '出品OK判定：≥¥' + fmt(profitTh) + ' かつ ≥' + effectiveRateTh + '%（仕入額比）。還付＝仕入税＋eBay手数料税。';
   }
 
@@ -3136,7 +3229,7 @@ const SAVE_KEY = 'ebayCalcState';
 const SAVE_FIELDS = ['saveEbayItemId','saveMemo','purchasePrice','sellingPrice','compShipping','weight','length','width','height',
   'categoryNo','exchangeRate','usShippingPct',
   'ebayFeeRate','feeThreshold','ebayFeeRate2','perOrderFee',
-  'promotedRate','intlFeeRate','payoneerRate','taxRate'];
+  'promotedRate','intlFeeRate','payoneerRate','taxRate','euDisbursementFee'];
 
 function saveState() {
   const s = {};
@@ -3145,6 +3238,8 @@ function saveState() {
   s._pricingMode = currentPricingMode;
   s._storePlan = currentStorePlan;
   s._compCurrency = compShippingCurrency;
+  const _euWaiverEl = document.getElementById('euFedexCardWaiver');
+  if (_euWaiverEl) s._euFedexWaiver = _euWaiverEl.checked;
   localStorage.setItem(SAVE_KEY, JSON.stringify(s));
 }
 
@@ -3157,6 +3252,8 @@ function restoreState() {
     if (s._pricingMode) setPricingMode(s._pricingMode);
     if (s._storePlan) setStorePlan(s._storePlan);
     if (s._compCurrency) setCompShippingCurrency(s._compCurrency);
+    const _euWaiverEl = document.getElementById('euFedexCardWaiver');
+    if (_euWaiverEl && s._euFedexWaiver !== undefined) _euWaiverEl.checked = !!s._euFedexWaiver;
     return true;
   } catch(e) { return false; }
 }
