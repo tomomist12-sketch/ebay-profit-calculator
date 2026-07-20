@@ -2286,8 +2286,16 @@ function calculate() {
     // 発送不可(cost<=0)の行には加算しない。Economy・日本郵便は getEuDutyYen が0を返す。
     const euDuty = getEuDutyYen(groupId, cc, declaredUsdForDuty, rate);
     if (euDuty > 0 && m.cost > 0) {
+      const baseCost = m.cost;
       m.cost += euDuty;
-      m.feeDetails = [...(m.feeDetails || []), {charges:'EU関税（€3）＋手数料', chargesEn:'EU Flat Duty', freight:euDuty}];
+      // eLogi等は buildDutyFeeDetails が米国関税0のときnullを返すため明細を持たない。
+      // その場合は送料の行を自前で作り、CPaSSと同じ見え方に揃える。
+      const baseLabel = groupId.indexOf('elogi') === 0 ? '配送料（サーチャージ込）' : '運送料金';
+      const details = (m.feeDetails && m.feeDetails.length)
+        ? [...m.feeDetails]
+        : [{charges: baseLabel, chargesEn: 'Shipping Rate', freight: baseCost}];
+      details.push({charges:'EU関税（€3）＋手数料', chargesEn:'EU Flat Duty', freight:euDuty});
+      m.feeDetails = details;
     }
     const g = groups.find(g => g.id === groupId);
     if (g) g.methods.push(m);
