@@ -1790,6 +1790,13 @@ function setPricingMode(mode) {
   saveState();
 }
 
+// 出品価格の「商品価格 ＋ US送料（関税分）」分割比率（商品価格に対して掛ける割合）。
+// US送料でアメリカ向け関税と、それに伴う処理手数料まで回収するのが狙い。
+// 関税10%時代は12%＝関税率の1.2倍。関税が12.5%に上がったので同じ考え方で 12.5% × 1.2 = 15%。
+// （関税は送料込みの総額に対してかかるため、単純に2.5ポイント足した14.5%では関税を回収しきれない）
+const US_SHIPPING_SPLIT_RATE = 0.15;
+const US_SHIPPING_SPLIT_DIVISOR = 1 + US_SHIPPING_SPLIT_RATE;
+
 function getEffectiveSellingPrice() {
   const selling = getVal('sellingPrice');
   if (currentPricingMode === 'us') {
@@ -1798,9 +1805,9 @@ function getEffectiveSellingPrice() {
     const compTotal = selling + compShipping;
     if (compTotal <= 0) return 0;
     const total = Math.round((compTotal - 0.01) * 100) / 100;
-    // 配送先がアメリカ以外の場合、商品価格（÷1.12）のみが収入
+    // 配送先がアメリカ以外の場合、商品価格（÷1.15）のみが収入
     if (currentCountry !== 'us' && total <= 2499.99) {
-      return Math.round((total / 1.12) * 100) / 100;
+      return Math.round((total / US_SHIPPING_SPLIT_DIVISOR) * 100) / 100;
     }
     return total;
   } else {
@@ -1823,13 +1830,13 @@ function updatePricingDisplay() {
     const compShipping = getCompShippingUsd();
     const compTotal = selling + compShipping;
     const total = compTotal > 0 ? Math.round((compTotal - 0.01) * 100) / 100 : 0;
-    // ÷1.12分割（$2,500超は分割しない）
+    // ÷1.15分割（$2,500超は分割しない）
     if (total > 0) {
       if (total > 2499.99) {
         document.getElementById('listPrice').textContent = '$' + fmtD(total);
         document.getElementById('listShipping').textContent = '$0.00';
       } else {
-        const itemPrice = Math.round((total / 1.12) * 100) / 100;
+        const itemPrice = Math.round((total / US_SHIPPING_SPLIT_DIVISOR) * 100) / 100;
         const usShipping = Math.round((total - itemPrice) * 100) / 100;
         document.getElementById('listPrice').textContent = '$' + fmtD(itemPrice);
         document.getElementById('listShipping').textContent = '$' + fmtD(usShipping);
