@@ -2021,7 +2021,6 @@ function debouncedFetchSpeedpak() {
 // 発送後にキャリアから追加請求される。利益計算では最初から乗せて赤字を防ぐ。
 const US_DUTY_ACTUAL_RATE = 0.125;  // 実際に課される関税率
 const US_DUTY_CPASS_RATE = 0.10;    // CPaSSが見積もりに使う関税率（据え置き）
-const US_DUTY_TOPUP_LABEL = '追加関税（12.5%との差額2.5%）';
 
 // CPaSSの dutyAmount（関税＋推定関税処理手数料2.1%）に対する上乗せ額を返す。
 // 比例配分なので、処理手数料込みで正しい差額になる。アメリカ宛以外は常に0。
@@ -2091,6 +2090,25 @@ function buildDutyFeeDetails(shippingLabel, shippingCost, dutyInfo) {
   }
   return details;
 }
+// アメリカ向け追加関税を明細に反映するヘルパー。
+// 行を増やすと生徒が混乱するため、既存の「推定関税及び税金料金」の行に足し込んで1行にまとめる。
+function mergeUsDutyTopUp(details, apiDuty) {
+  const topUp = usDutyTopUp(apiDuty);
+  if (topUp <= 0) return details;
+  let merged = false;
+  const out = details.map(d => {
+    // chargesId 1113 = 推定関税及び税金料金
+    if (!merged && (d.chargesId === '1113' || d.chargesEn === 'Estimated Duty&Tax')) {
+      merged = true;
+      return {...d, freight: d.freight + topUp};
+    }
+    return d;
+  });
+  // 関税行が見つからない場合だけ行を足す（合計が送料と合わなくなるのを防ぐ）
+  if (!merged) out.push({charges: '推定関税及び税金料金', chargesEn: 'Estimated Duty&Tax', freight: topUp});
+  return out;
+}
+
 // SpeedPAK関税系feeDetails取得ヘルパー：関税・手数料の内訳を他の配送方法から取得
 function spDutyDetails() {
   if (!_speedpakRates) return [];
@@ -2098,9 +2116,7 @@ function spDutyDetails() {
     const r = _speedpakRates[key];
     if (r && r.dutyAmount > 0 && r.feeDetails) {
       const items = r.feeDetails.filter(d => d.freight > 0 && d.tariffCategoryType);
-      const topUp = usDutyTopUp(r.dutyAmount);
-      if (topUp > 0) items.push({charges: US_DUTY_TOPUP_LABEL, chargesEn: 'Additional Duty', freight: topUp});
-      return items;
+      return mergeUsDutyTopUp(items, r.dutyAmount);
     }
   }
   return [];
@@ -2110,12 +2126,8 @@ function spDutyDetails() {
 function spFeeDetails(apiKey) {
   const r = _speedpakRates && _speedpakRates[apiKey];
   if (r && r.feeDetails) {
-    // 関税込みの料金には、明細にもアメリカ向け追加関税の行を足す（spCostの合計と一致させる）
-    const topUp = usDutyTopUp(r.dutyAmount || 0);
-    if (topUp > 0) {
-      return [...r.feeDetails, {charges: US_DUTY_TOPUP_LABEL, chargesEn: 'Additional Duty', freight: topUp}];
-    }
-    return r.feeDetails;
+    // 関税込みの料金は、明細の関税額にも追加関税を足し込む（spCostの合計と一致させる）
+    return mergeUsDutyTopUp(r.feeDetails, r.dutyAmount || 0);
   }
   return null;
 }
@@ -2864,7 +2876,7 @@ function calculate() {
   // フッターノートの利益OK判定基準を動的更新
   const fnEl = document.getElementById('footerNote');
   if (fnEl) {
-    let dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担）。関税は12.5%で計算（CPaSSの見積もりは10%のままなので差額2.5%＋処理手数料を上乗せ済み）。' : '';
+    let dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担・関税12.5%で計算）。' : '';
     if (cc.euDuty) {
       dutyNote += isEuLowValue(cc, declaredUsdForDuty)
         ? '申告$' + fmtD(declaredUsdForDuty) + '（≒€' + Math.round(declaredUsdForDuty * getEurPerUsd()) + '）は150ユーロ以下のためEU定額関税€3の対象（DDP・セラー負担）。CPaSSは€3+2.1%、eLogiは€3+立替手数料を加算済み。'
