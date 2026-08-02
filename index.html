@@ -2015,35 +2015,16 @@ function debouncedFetchSpeedpak() {
   _speedpakDebounceTimer = setTimeout(fetchSpeedpakRates, 500);
 }
 
-// ========== アメリカ向け追加関税（CPaSSの推定10% ↔ 実際の12.5%の差額） ==========
+// ========== アメリカ向け関税 ==========
 // 2026-07：日本発アメリカ宛の関税が10% → 12.5% に引き上げ。
-// ただしCPaSS(SpeedPAK)は今後も10%で推定関税を出す方針のため、差額2.5%分は
-// 発送後にキャリアから追加請求される。利益計算では最初から乗せて赤字を防ぐ。
-const US_DUTY_ACTUAL_RATE = 0.125;  // 実際に課される関税率
-const US_DUTY_CPASS_RATE = 0.10;    // CPaSSが見積もりに使う関税率（据え置き）
-
-// CPaSSの dutyAmount（関税＋推定関税処理手数料2.1%）に対する上乗せ額を返す。
-// 比例配分なので、処理手数料込みで正しい差額になる。アメリカ宛以外は常に0。
-function usDutyTopUp(apiDuty) {
-  if (!(apiDuty > 0) || currentCountry !== 'us') return 0;
-  // 将来CPaSSが12.5%に切り替えた場合の二重計上を防ぐ。
-  // CPaSSの関税額から逆算した税率が10%と12.5%の中間を超えていれば、もう新税率とみなして上乗せしない。
-  const declaredUsd = getVal('sellingPrice');
-  const fxRate = getVal('exchangeRate');
-  if (declaredUsd > 0 && fxRate > 0) {
-    const impliedRate = apiDuty / (declaredUsd * fxRate);
-    if (impliedRate > (US_DUTY_CPASS_RATE + US_DUTY_ACTUAL_RATE) / 2) return 0;
-  }
-  return Math.round(apiDuty * (US_DUTY_ACTUAL_RATE / US_DUTY_CPASS_RATE - 1));
-}
+// 一時期CPaSS(SpeedPAK)の見積もりが10%のままだったため、差額2.5%をこちらで上乗せしていたが、
+// 2026-08にCPaSS側が12.5%に切り替わった（推定関税及び税金料金の defaultTaxRate が 12.5）。
+// そのため上乗せは廃止し、CPaSS APIが返す金額をそのまま使う従来の形に戻した。
 
 // SpeedPAK送料取得ヘルパー：totalAmount（関税込み合計）を返す
 function spCost(apiKey) {
-  const r = _speedpakRates && _speedpakRates[apiKey];
-  if (r && r.totalAmount !== undefined) {
-    // totalAmountに関税が含まれている料金のみ差額を上乗せする。
-    // Economyのように関税が含まれない料金は呼び出し側で関税を加算するので、ここでは触らない。
-    return r.totalAmount + usDutyTopUp(r.dutyAmount || 0);
+  if (_speedpakRates && _speedpakRates[apiKey] && _speedpakRates[apiKey].totalAmount !== undefined) {
+    return _speedpakRates[apiKey].totalAmount;
   }
   return null;
 }
@@ -2052,7 +2033,7 @@ function spDuty() {
   if (!_speedpakRates) return 0;
   for (const key of ['dhl','ip_pak','ip','dhl_envelope']) {
     const r = _speedpakRates[key];
-    if (r && r.dutyAmount > 0) return r.dutyAmount + usDutyTopUp(r.dutyAmount);
+    if (r && r.dutyAmount > 0) return r.dutyAmount;
   }
   return 0;
 }
@@ -2090,33 +2071,13 @@ function buildDutyFeeDetails(shippingLabel, shippingCost, dutyInfo) {
   }
   return details;
 }
-// アメリカ向け追加関税を明細に反映するヘルパー。
-// 行を増やすと生徒が混乱するため、既存の「推定関税及び税金料金」の行に足し込んで1行にまとめる。
-function mergeUsDutyTopUp(details, apiDuty) {
-  const topUp = usDutyTopUp(apiDuty);
-  if (topUp <= 0) return details;
-  let merged = false;
-  const out = details.map(d => {
-    // chargesId 1113 = 推定関税及び税金料金
-    if (!merged && (d.chargesId === '1113' || d.chargesEn === 'Estimated Duty&Tax')) {
-      merged = true;
-      return {...d, freight: d.freight + topUp};
-    }
-    return d;
-  });
-  // 関税行が見つからない場合だけ行を足す（合計が送料と合わなくなるのを防ぐ）
-  if (!merged) out.push({charges: '推定関税及び税金料金', chargesEn: 'Estimated Duty&Tax', freight: topUp});
-  return out;
-}
-
 // SpeedPAK関税系feeDetails取得ヘルパー：関税・手数料の内訳を他の配送方法から取得
 function spDutyDetails() {
   if (!_speedpakRates) return [];
   for (const key of ['dhl','ip_pak','ip','dhl_envelope']) {
     const r = _speedpakRates[key];
     if (r && r.dutyAmount > 0 && r.feeDetails) {
-      const items = r.feeDetails.filter(d => d.freight > 0 && d.tariffCategoryType);
-      return mergeUsDutyTopUp(items, r.dutyAmount);
+      return r.feeDetails.filter(d => d.freight > 0 && d.tariffCategoryType);
     }
   }
   return [];
@@ -2124,10 +2085,8 @@ function spDutyDetails() {
 
 // SpeedPAK送料内訳取得ヘルパー：feeDetails配列を返す
 function spFeeDetails(apiKey) {
-  const r = _speedpakRates && _speedpakRates[apiKey];
-  if (r && r.feeDetails) {
-    // 関税込みの料金は、明細の関税額にも追加関税を足し込む（spCostの合計と一致させる）
-    return mergeUsDutyTopUp(r.feeDetails, r.dutyAmount || 0);
+  if (_speedpakRates && _speedpakRates[apiKey] && _speedpakRates[apiKey].feeDetails) {
+    return _speedpakRates[apiKey].feeDetails;
   }
   return null;
 }
