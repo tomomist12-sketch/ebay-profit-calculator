@@ -1457,55 +1457,60 @@ const dhlEnvelopeRates = { 2:2111, 3:2111, 4:2439, 5:2342, 10:2454, 11:2439 };
 // ゾーン(fedexZone/dhlZone/jpZone/elogiZone/upsZone)はCPaSS取得失敗時のフォールバック＆
 // eLogi/日本郵便の比較用。従来の「🇪🇺 ヨーロッパ」と同じドイツ(DE)基準に統一している。
 const EU_ECO_SIZE = (L,W,H)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; };
+// ドロップダウンの optgroup 見出し（地域別にまとめて縦長リストを見やすくする）。
+// 英国(GB)は地理的に西欧なので西欧グループに同居させる（関税ルールは別で euDuty で判定）。
+const G_NA='北米', G_WEST='ヨーロッパ（英国・西欧）', G_NORTH='ヨーロッパ（北欧）',
+      G_SOUTH='ヨーロッパ（南欧）', G_EAST='ヨーロッパ（東欧）', G_OCE='オセアニア', G_ASIA='アジア';
+// EU27は地域順（西→北→南→東）に並べ、各国に optgroup 見出し(group)を付与。
 const EU_COUNTRIES = [
-  ['at','🇦🇹 オーストリア','AT','1010'],
-  ['be','🇧🇪 ベルギー','BE','1000'],
-  ['bg','🇧🇬 ブルガリア','BG','1000'],
-  ['cy','🇨🇾 キプロス','CY','1010'],
-  ['cz','🇨🇿 チェコ','CZ','11000'],
-  ['dk','🇩🇰 デンマーク','DK','1050'],
-  ['ee','🇪🇪 エストニア','EE','10111'],
-  ['es','🇪🇸 スペイン','ES','28001'],
-  ['fi','🇫🇮 フィンランド','FI','00100'],
-  ['fr','🇫🇷 フランス','FR','75001'],
-  ['gr','🇬🇷 ギリシャ','GR','10431'],
-  ['hr','🇭🇷 クロアチア','HR','10000'],
-  ['hu','🇭🇺 ハンガリー','HU','1051'],
-  ['ie','🇮🇪 アイルランド','IE','D01 F5P2'],
-  ['it','🇮🇹 イタリア','IT','00100'],
-  ['lt','🇱🇹 リトアニア','LT','01100'],
-  ['lu','🇱🇺 ルクセンブルク','LU','1009'],
-  ['lv','🇱🇻 ラトビア','LV','1050'],
-  ['mt','🇲🇹 マルタ','MT','VLT 1111'],
-  ['nl','🇳🇱 オランダ','NL','1011 AB'],
-  ['pl','🇵🇱 ポーランド','PL','00-001'],
-  ['pt','🇵🇹 ポルトガル','PT','1000-001'],
-  ['ro','🇷🇴 ルーマニア','RO','010011'],
-  ['sk','🇸🇰 スロバキア','SK','81101'],
-  ['si','🇸🇮 スロベニア','SI','1000'],
-  ['se','🇸🇪 スウェーデン','SE','11121'],
-  ['de','🇩🇪 ドイツ','DE','10115'],
-].map(([id,name,code,defaultZip]) => ({
-  id, name, code, euDuty:true, defaultZip,
+  ['de','🇩🇪 ドイツ','DE','10115',G_WEST],
+  ['fr','🇫🇷 フランス','FR','75001',G_WEST],
+  ['nl','🇳🇱 オランダ','NL','1011 AB',G_WEST],
+  ['be','🇧🇪 ベルギー','BE','1000',G_WEST],
+  ['at','🇦🇹 オーストリア','AT','1010',G_WEST],
+  ['ie','🇮🇪 アイルランド','IE','D01 F5P2',G_WEST],
+  ['lu','🇱🇺 ルクセンブルク','LU','1009',G_WEST],
+  ['se','🇸🇪 スウェーデン','SE','11121',G_NORTH],
+  ['dk','🇩🇰 デンマーク','DK','1050',G_NORTH],
+  ['fi','🇫🇮 フィンランド','FI','00100',G_NORTH],
+  ['ee','🇪🇪 エストニア','EE','10111',G_NORTH],
+  ['lv','🇱🇻 ラトビア','LV','1050',G_NORTH],
+  ['lt','🇱🇹 リトアニア','LT','01100',G_NORTH],
+  ['it','🇮🇹 イタリア','IT','00100',G_SOUTH],
+  ['es','🇪🇸 スペイン','ES','28001',G_SOUTH],
+  ['pt','🇵🇹 ポルトガル','PT','1000-001',G_SOUTH],
+  ['gr','🇬🇷 ギリシャ','GR','10431',G_SOUTH],
+  ['hr','🇭🇷 クロアチア','HR','10000',G_SOUTH],
+  ['si','🇸🇮 スロベニア','SI','1000',G_SOUTH],
+  ['cy','🇨🇾 キプロス','CY','1010',G_SOUTH],
+  ['mt','🇲🇹 マルタ','MT','VLT 1111',G_SOUTH],
+  ['pl','🇵🇱 ポーランド','PL','00-001',G_EAST],
+  ['cz','🇨🇿 チェコ','CZ','11000',G_EAST],
+  ['hu','🇭🇺 ハンガリー','HU','1051',G_EAST],
+  ['ro','🇷🇴 ルーマニア','RO','010011',G_EAST],
+  ['sk','🇸🇰 スロバキア','SK','81101',G_EAST],
+  ['bg','🇧🇬 ブルガリア','BG','1000',G_EAST],
+].map(([id,name,code,defaultZip,group]) => ({
+  id, name, code, euDuty:true, defaultZip, group,
   fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6,
   economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
   ecoSizeCheck:EU_ECO_SIZE, ecoSurcharge:()=>0,
 }));
 
 const COUNTRIES = [
-  { id:'us', name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
+  { id:'us', group:G_NA, name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
-  { id:'ca', name:'🇨🇦 カナダ', code:'CA', defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
-  { id:'uk', name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
+  { id:'ca', group:G_NA, name:'🇨🇦 カナダ', code:'CA', defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
+  { id:'uk', group:G_WEST, name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
   ...EU_COUNTRIES,
-  { id:'au', name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
+  { id:'au', group:G_OCE, name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'east_asia', name:'🌏 東アジア (韓国/台湾など)', code:'KR', defaultZip:'06100', fedexZone:null, dhlZone:null, jpZone:1, jpOk:true, elogiZone:null, upsZone:null, economy:false },
-  { id:'se_asia', name:'🌏 東南アジア (SG/TH/MY等)', code:'TH', defaultZip:'10100', fedexZone:null, dhlZone:null, jpZone:2, jpOk:true, elogiZone:null, upsZone:null, economy:false },
+  { id:'east_asia', group:G_ASIA, name:'🌏 東アジア (韓国/台湾など)', code:'KR', defaultZip:'06100', fedexZone:null, dhlZone:null, jpZone:1, jpOk:true, elogiZone:null, upsZone:null, economy:false },
+  { id:'se_asia', group:G_ASIA, name:'🌏 東南アジア (SG/TH/MY等)', code:'TH', defaultZip:'10100', fedexZone:null, dhlZone:null, jpZone:2, jpOk:true, elogiZone:null, upsZone:null, economy:false },
 ];
 
 function getFicpTable(zone) { return zone==='M'?ficpZoneM:zone==='U'?ficpZoneU:speedpakFicpRates; }
@@ -1800,11 +1805,24 @@ function getCompShippingUsd() {
 
 function initCountrySelector() {
   const sel = document.getElementById('destCountry');
+  // group が変わるたびに optgroup 見出しを作り、その中に option を入れる（地域別にまとめる）。
+  // group 未指定の国は select 直下に置く。option の value は従来どおり国ID（選択ロジックは不変）。
+  let currentGroup = null, container = sel;
   COUNTRIES.forEach(c => {
+    if (c.group) {
+      if (c.group !== currentGroup) {
+        container = document.createElement('optgroup');
+        container.label = c.group;
+        sel.appendChild(container);
+        currentGroup = c.group;
+      }
+    } else {
+      container = sel; currentGroup = null;
+    }
     const opt = document.createElement('option');
     opt.value = c.id;
     opt.textContent = c.name;
-    sel.appendChild(opt);
+    container.appendChild(opt);
   });
   sel.value = 'us';
 }
