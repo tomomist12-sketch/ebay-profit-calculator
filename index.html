@@ -123,6 +123,23 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .group-header .g-label{white-space:nowrap;color:#888;font-size:12px;font-weight:500}
 .group-header .g-note{font-size:.72rem;font-weight:400;color:#aaa;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* 宛先セレクタ（検索付き）。国数が増えてもパネルは常に小さいまま（max-height＋スクロール）。
+   実体の <select id="destCountry"> は非表示で残してあり、値の保存・復元はそちら基準 */
+.cpick{position:relative}
+.cpick-btn{height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--text)}
+.cpick-btn:hover{background:#f1f5f9}
+.cpick-caret{color:var(--text3);font-size:.75rem;flex-shrink:0}
+.cpick-panel{position:absolute;z-index:50;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow2);padding:8px}
+.cpick-search{width:100%;height:32px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.9rem;margin-bottom:6px;font-family:inherit}
+.cpick-list{max-height:300px;overflow-y:auto}
+.cpick-head{font-size:.7rem;color:var(--text3);padding:6px 6px 2px;font-weight:600}
+.cpick-row{padding:7px 8px;border-radius:6px;cursor:pointer;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cpick-row:hover{background:#f1f5f9}
+.cpick-row.selected{background:#eff6ff;color:#1d4ed8;font-weight:700}
+.cpick-more{width:100%;margin-top:6px;padding:7px;border:1px dashed var(--border);border-radius:6px;background:none;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit}
+.cpick-more:hover{background:#f8fafc}
+.cpick-empty{padding:10px;color:var(--text3);font-size:.85rem;text-align:center}
+
 .group-grid{display:grid;grid-template-columns:1fr;gap:8px}
 
 /* ===== Method Card ===== */
@@ -650,8 +667,16 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 <div class="card">
   <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
   <div style="margin-bottom:10px">
-    <select id="destCountry" style="height:36px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.95rem;width:100%;background:#fafafa;cursor:pointer;font-weight:600">
-    </select>
+    <div class="cpick" id="countryPicker">
+      <button type="button" class="cpick-btn" id="countryBtn" aria-haspopup="listbox" aria-expanded="false">
+        <span id="countryBtnLabel">🇺🇸 アメリカ</span><span class="cpick-caret">▼</span>
+      </button>
+      <div class="cpick-panel" id="countryPanel" hidden>
+        <input type="text" id="countrySearch" class="cpick-search" placeholder="🔍 国名で検索（例: フランス / FR）" autocomplete="off">
+        <div class="cpick-list" id="countryList"></div>
+      </div>
+      <select id="destCountry" style="display:none"></select>
+    </div>
   </div>
   <div id="resultsContainer"></div>
 </div>
@@ -1825,6 +1850,117 @@ function initCountrySelector() {
     container.appendChild(opt);
   });
   sel.value = 'us';
+}
+
+// ========== 宛先セレクタ（主要国は常時表示・それ以外は検索） ==========
+// 元々あった宛先。ここは検索せずワンクリックで選べるようにしておく（'de' は旧「🇪🇺 ヨーロッパ」枠）
+const PRIMARY_COUNTRY_IDS = ['us','ca','uk','de','au','east_asia','se_asia'];
+let _cpickShowAll = false;
+
+// 検索用の正規化：国旗絵文字を除去し、カタカナ→ひらがな、小文字化（「フラ」「ふら」「FR」いずれでも当たる）
+function cpickNorm(s) {
+  return (s || '').toLowerCase()
+    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '')
+    .replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60))
+    .replace(/\s+/g, '');
+}
+
+function renderCountryList() {
+  const list = document.getElementById('countryList');
+  const sel = document.getElementById('destCountry');
+  const q = cpickNorm(document.getElementById('countrySearch').value);
+  list.innerHTML = '';
+  const mkRow = (c) => {
+    const row = document.createElement('div');
+    row.className = 'cpick-row' + (c.id === sel.value ? ' selected' : '');
+    row.dataset.id = c.id;
+    row.textContent = c.name;
+    row.onclick = () => pickCountry(c.id);
+    return row;
+  };
+  const mkHead = (t) => { const h = document.createElement('div'); h.className = 'cpick-head'; h.textContent = t; return h; };
+
+  if (q) {
+    // 検索中：全33ヶ国から国名・国コード・IDで絞り込み
+    const hits = COUNTRIES.filter(c => cpickNorm(c.name + c.code + c.id).includes(q));
+    if (!hits.length) {
+      const e = document.createElement('div'); e.className = 'cpick-empty'; e.textContent = '該当する国がありません'; list.appendChild(e);
+    } else {
+      hits.forEach(c => list.appendChild(mkRow(c)));
+    }
+    return;
+  }
+  if (_cpickShowAll) {
+    let g = null;
+    COUNTRIES.forEach(c => { if (c.group !== g) { list.appendChild(mkHead(c.group)); g = c.group; } list.appendChild(mkRow(c)); });
+    return;
+  }
+  list.appendChild(mkHead('主要な宛先'));
+  PRIMARY_COUNTRY_IDS.forEach(id => { const c = COUNTRIES.find(x => x.id === id); if (c) list.appendChild(mkRow(c)); });
+  const more = document.createElement('button');
+  more.type = 'button'; more.className = 'cpick-more';
+  more.textContent = 'すべての国を表示（' + COUNTRIES.length + 'ヶ国）';
+  // クリックでリストを描き直すとこのボタン自身がDOMから消え、外側クリック判定に
+  // 引っかかってパネルが閉じてしまうため、ここで伝播を止める
+  more.onclick = (e) => { e.stopPropagation(); _cpickShowAll = true; renderCountryList(); };
+  list.appendChild(more);
+}
+
+// 選択確定：実体の <select> に値を入れて change を発火（以降の処理は従来どおり）
+function pickCountry(id) {
+  const sel = document.getElementById('destCountry');
+  if (sel.value !== id) {
+    sel.value = id;
+    sel.dispatchEvent(new Event('change'));
+  }
+  syncCountryPicker();
+  closeCountryPanel();
+}
+
+// ボタンの表示を実体の <select> の値に合わせる（復元・フォールバック後にも呼ぶ）
+function syncCountryPicker() {
+  const sel = document.getElementById('destCountry');
+  const c = COUNTRIES.find(x => x.id === sel.value);
+  const label = document.getElementById('countryBtnLabel');
+  if (label) label.textContent = c ? c.name : '宛先を選択';
+}
+
+function openCountryPanel() {
+  const search = document.getElementById('countrySearch');
+  document.getElementById('countryPanel').hidden = false;
+  document.getElementById('countryBtn').setAttribute('aria-expanded', 'true');
+  search.value = '';
+  _cpickShowAll = false;
+  renderCountryList();
+  search.focus();
+}
+function closeCountryPanel() {
+  document.getElementById('countryPanel').hidden = true;
+  document.getElementById('countryBtn').setAttribute('aria-expanded', 'false');
+}
+
+function initCountryPicker() {
+  const btn = document.getElementById('countryBtn');
+  const search = document.getElementById('countrySearch');
+  btn.addEventListener('click', () => {
+    document.getElementById('countryPanel').hidden ? openCountryPanel() : closeCountryPanel();
+  });
+  search.addEventListener('input', renderCountryList);
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { // 先頭の候補を確定
+      const first = document.querySelector('#countryList .cpick-row');
+      if (first) pickCountry(first.dataset.id);
+      e.preventDefault();
+    } else if (e.key === 'Escape') {
+      closeCountryPanel();
+    }
+  });
+  // パネルの外をクリックしたら閉じる
+  document.addEventListener('click', (e) => {
+    const picker = document.getElementById('countryPicker');
+    if (picker && !picker.contains(e.target)) closeCountryPanel();
+  });
+  syncCountryPicker();
 }
 
 function onCountryChange() {
@@ -3500,6 +3636,7 @@ const restored = restoreState();
   if (!validIds.includes(sel.value)) sel.value = 'us';
   currentCountry = sel.value;
 }
+initCountryPicker(); // 検索付き宛先セレクタ（実体の <select> の値を確定させた後に表示を同期）
 onCategoryNoInput(); // 常にカテゴリNo.から手数料を自動判定
 updateFeeDescription();
 loadThresholdFromCache(); // しきい値: まずlocalStorageキャッシュから即座に復元
