@@ -1452,6 +1452,46 @@ const dhlZone11 = [
 const dhlEnvelopeRates = { 2:2111, 3:2111, 4:2439, 5:2342, 10:2454, 11:2439 };
 
 // ========== Country Configuration ==========
+// EU加盟27ヶ国: SpeedPAK Economy対応。送料・関税はCPaSSが国コード(destCountry)別に返す。
+// euDuty:true でEU定額関税(€3+手数料)の対象にする(英GBはBrexitで対象外なので付けない)。
+// ゾーン(fedexZone/dhlZone/jpZone/elogiZone/upsZone)はCPaSS取得失敗時のフォールバック＆
+// eLogi/日本郵便の比較用。従来の「🇪🇺 ヨーロッパ」と同じドイツ(DE)基準に統一している。
+const EU_ECO_SIZE = (L,W,H)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; };
+const EU_COUNTRIES = [
+  ['at','🇦🇹 オーストリア','AT','1010'],
+  ['be','🇧🇪 ベルギー','BE','1000'],
+  ['bg','🇧🇬 ブルガリア','BG','1000'],
+  ['cy','🇨🇾 キプロス','CY','1010'],
+  ['cz','🇨🇿 チェコ','CZ','11000'],
+  ['dk','🇩🇰 デンマーク','DK','1050'],
+  ['ee','🇪🇪 エストニア','EE','10111'],
+  ['es','🇪🇸 スペイン','ES','28001'],
+  ['fi','🇫🇮 フィンランド','FI','00100'],
+  ['fr','🇫🇷 フランス','FR','75001'],
+  ['gr','🇬🇷 ギリシャ','GR','10431'],
+  ['hr','🇭🇷 クロアチア','HR','10000'],
+  ['hu','🇭🇺 ハンガリー','HU','1051'],
+  ['ie','🇮🇪 アイルランド','IE','D01 F5P2'],
+  ['it','🇮🇹 イタリア','IT','00100'],
+  ['lt','🇱🇹 リトアニア','LT','01100'],
+  ['lu','🇱🇺 ルクセンブルク','LU','1009'],
+  ['lv','🇱🇻 ラトビア','LV','1050'],
+  ['mt','🇲🇹 マルタ','MT','VLT 1111'],
+  ['nl','🇳🇱 オランダ','NL','1011 AB'],
+  ['pl','🇵🇱 ポーランド','PL','00-001'],
+  ['pt','🇵🇹 ポルトガル','PT','1000-001'],
+  ['ro','🇷🇴 ルーマニア','RO','010011'],
+  ['sk','🇸🇰 スロバキア','SK','81101'],
+  ['si','🇸🇮 スロベニア','SI','1000'],
+  ['se','🇸🇪 スウェーデン','SE','11121'],
+  ['de','🇩🇪 ドイツ','DE','10115'],
+].map(([id,name,code,defaultZip]) => ({
+  id, name, code, euDuty:true, defaultZip,
+  fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6,
+  economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
+  ecoSizeCheck:EU_ECO_SIZE, ecoSurcharge:()=>0,
+}));
+
 const COUNTRIES = [
   { id:'us', name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
@@ -1460,9 +1500,7 @@ const COUNTRIES = [
   { id:'uk', name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
-  { id:'eu', name:'🇪🇺 ヨーロッパ (DE/FR等)', code:'DE', euDuty:true, defaultZip:'10115', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
-    ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
-    ecoSurcharge:()=>0 },
+  ...EU_COUNTRIES,
   { id:'au', name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
@@ -2283,7 +2321,7 @@ function calculate() {
     { id: 'fedex',    label: 'FedEx FICP（CPaSS）', tag: '推奨', primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
     { id: 'fedex-ip', label: 'FedEx IP（CPaSS）',   tag: '速達', primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
     { id: 'dhl',      label: 'DHL（CPaSS）',         tag: '推奨', primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
-    { id: 'speedpak', label: 'Economy（CPaSS）',     tag: cc.economy?'4ヶ国限定':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
+    { id: 'speedpak', label: 'Economy（CPaSS）',     tag: cc.economy?'':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
     { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     ...(getElogiUpsData(cc.upsZone) ? [
@@ -2796,7 +2834,6 @@ function calculate() {
       if (m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
       if (g.tag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
       if (g.tag === '比較用') tagItems.push('<span class="method-tag tag-compare">比較用</span>');
-      if (g.tag === '4ヶ国限定') tagItems.push('<span class="method-tag tag-limit">4ヶ国限定</span>');
       if (g.tag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
       if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
       const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
@@ -3441,6 +3478,7 @@ const restored = restoreState();
   // 復元された国IDが現在のリストに存在するか確認（旧ID 'uk','de'等→フォールバック）
   const sel = document.getElementById('destCountry');
   const validIds = COUNTRIES.map(c => c.id);
+  if (sel.value === 'eu') sel.value = 'de'; // 旧「🇪🇺 ヨーロッパ」(=ドイツ)保存を新DEエントリへ移行
   if (!validIds.includes(sel.value)) sel.value = 'us';
   currentCountry = sel.value;
 }
