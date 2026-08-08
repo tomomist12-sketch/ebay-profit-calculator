@@ -2473,7 +2473,7 @@ function calculate() {
 
   const groups = [
     { id: 'fedex',    label: 'FedEx FICP（CPaSS）', tag: '推奨', primary: true,  methods: [], note: '基本的にはこの配送方法でOK' },
-    { id: 'fedex-ip', label: 'FedEx IP（CPaSS）',   tag: '速達', primary: false, methods: [], collapsed: true, note: '早い配送方法、少し高い' },
+    { id: 'fedex-ip', label: 'FedEx IP（CPaSS）',   tag: '速達', primary: false, methods: [], collapsed: true, note: '早い配送方法。Pakは実重量課金なので軽くて嵩張る荷物は割安' },
     { id: 'dhl',      label: 'DHL（CPaSS）',         tag: '推奨', primary: true,  methods: [], note: '安ければ使用OK、基本的にはFedExが安い' },
     { id: 'speedpak', label: 'Economy（CPaSS）',     tag: cc.economy?'':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
     { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
@@ -2577,7 +2577,12 @@ function calculate() {
     const cs = weightG <= 2500;
     const c = cs ? spCost('ip_pak') : null;
     const canSend = cs && c !== null && c > 0;
-    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_pak'):null,reason:!cs?'2.5kg超過':(c===null?'送料取得中':''),loading:_loading});
+    // Pakは実重量課金でサイズによる加算は無いが、袋に入らない大きさだとCPaSSが
+    // 料金自体を返さない。取得が終わっているのに「送料取得中」と出さないよう区別する
+    let pakReason = '';
+    if (!cs) pakReason = '2.5kg超過';
+    else if (c === null) pakReason = _loading ? '送料取得中' : (!_speedpakRates ? '料金取得失敗' : 'Pakに入らないサイズ');
+    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_pak'):null,reason:pakReason,loading:_loading});
   }
 
   // --- SpeedPAK FedEx IP Package ---
@@ -2915,15 +2920,20 @@ function calculate() {
 
   groups.forEach(g => {
     const section = document.createElement('div');
+    // 推奨便（isBest）を含むグループは畳まない。畳むとサマリーバーの金額に対応する行が
+    // 画面から消え、どの配送方法が推奨なのか分からなくなるため
+    // （例：軽くて嵩張る荷物では実重量課金の FedEx IP Pak が推奨になるが、
+    //   IPグループは既定で折りたたみのため見えなくなっていた）
+    const collapsible = g.collapsed || (g.id === 'speedpak' && !cc.economy);
+    const hasBest = g.methods.some(m => m.isBest);
+    const isCollapsed = collapsible && !hasBest;
     let sectionCls = 'group-section';
-    if (g.id === 'speedpak' && !cc.economy) sectionCls += ' collapsed';
-    if (g.collapsed) sectionCls += ' collapsed';
+    if (isCollapsed) sectionCls += ' collapsed';
     section.className = sectionCls;
 
     let headerExtra = '';
-    const isCollapsed = g.collapsed || (g.id === 'speedpak' && !cc.economy);
-    if (isCollapsed) {
-      headerExtra = `<button class="group-toggle" onclick="this.closest('.group-section').classList.toggle('collapsed');this.textContent=this.closest('.group-section').classList.contains('collapsed')?'詳細 ▼':'閉じる ▲'">詳細 ▼</button>`;
+    if (collapsible) {
+      headerExtra = `<button class="group-toggle" onclick="this.closest('.group-section').classList.toggle('collapsed');this.textContent=this.closest('.group-section').classList.contains('collapsed')?'詳細 ▼':'閉じる ▲'">${isCollapsed ? '詳細 ▼' : '閉じる ▲'}</button>`;
     }
     // eLogi メリットリンク（比較用タグの横）
     let meritLink = '';
