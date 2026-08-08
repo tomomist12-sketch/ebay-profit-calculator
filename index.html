@@ -1548,25 +1548,25 @@ const EU_COUNTRIES = [
 ].map(([id,name,code,defaultZip,group]) => ({
   id, name, code, euDuty:true, defaultZip, group,
   fedexZone: FICP_ZONE_H.includes(id) ? 'H' : FICP_ZONE_I.includes(id) ? 'I' : 'M',
-  dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6,
+  dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, peakPerKg:162,
   economy:true, ecoMaxKg:25, ecoMaxVal:'€150', ecoDays:'7-11日',
   ecoSizeCheck:EU_ECO_SIZE, ecoSurcharge:()=>0,
 }));
 
 const COUNTRIES = [
-  { id:'us', group:G_NA, name:'🇺🇸 アメリカ', code:'US', defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
+  { id:'us', group:G_NA, name:'🇺🇸 アメリカ', code:'US', peakPerKg:65, defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'E', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
-  { id:'ca', group:G_NA, name:'🇨🇦 カナダ', code:'CA', defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
-  { id:'uk', group:G_WEST, name:'🇬🇧 イギリス', code:'GB', defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
+  { id:'ca', group:G_NA, name:'🇨🇦 カナダ', code:'CA', peakPerKg:65, defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
+  { id:'uk', group:G_WEST, name:'🇬🇧 イギリス', code:'GB', peakPerKg:162, defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'H', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
   ...EU_COUNTRIES,
-  { id:'au', group:G_OCE, name:'🇦🇺 オーストラリア', code:'AU', defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
+  { id:'au', group:G_OCE, name:'🇦🇺 オーストラリア', code:'AU', peakPerKg:0, defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'east_asia', group:G_ASIA, name:'🌏 東アジア (韓国/台湾など)', code:'KR', defaultZip:'06100', fedexZone:null, dhlZone:null, jpZone:1, jpOk:true, elogiZone:null, upsZone:null, economy:false },
-  { id:'se_asia', group:G_ASIA, name:'🌏 東南アジア (SG/TH/MY等)', code:'TH', defaultZip:'10100', fedexZone:null, dhlZone:null, jpZone:2, jpOk:true, elogiZone:null, upsZone:null, economy:false },
+  { id:'east_asia', group:G_ASIA, name:'🌏 東アジア (韓国/台湾など)', code:'KR', peakPerKg:0, defaultZip:'06100', fedexZone:null, dhlZone:null, jpZone:1, jpOk:true, elogiZone:null, upsZone:null, economy:false },
+  { id:'se_asia', group:G_ASIA, name:'🌏 東南アジア (SG/TH/MY等)', code:'TH', peakPerKg:0, defaultZip:'10100', fedexZone:null, dhlZone:null, jpZone:2, jpOk:true, elogiZone:null, upsZone:null, economy:false },
 ];
 
 function getFicpTable(zone) { return zone==='M'?ficpZoneM:zone==='H'?ficpZoneH:zone==='I'?ficpZoneI:zone==='U'?ficpZoneU:speedpakFicpRates; }
@@ -2165,9 +2165,27 @@ function initExchangeRate() {
 // 手動の燃油サーチャージ入力は廃止した。
 // 唯一、FedEx FICP で API が落ちた時のフォールバック概算でのみ燃油率を使うため、
 // その用途の固定値だけを定数で保持する（FedEx International 直近水準）。
-const FICP_FALLBACK_FUEL_RATE = 0.40; // 40%（FedEx Intl Export の上限付近）
-// SpeedPAK API が燃油率を返した場合はそれで上書きされる（フォールバック概算の精度向上用）
+// CPaSS実測: 燃料割増金 ＝(運送料金 ＋ 混雑時割増金)× 45.5%（宛先を問わず共通）
+const FICP_FALLBACK_FUEL_RATE = 0.455;
+// API取得に成功したら実際の明細から燃油率を割り出して上書きする（料金改定に自動追従）
 let _ficpFallbackFuelRate = FICP_FALLBACK_FUEL_RATE;
+
+// 直近のAPI応答の明細から、予備計算に使う燃油率を学習する
+function learnFuelRateFromRates(rates) {
+  const fd = {};
+  ((rates && rates.ficp && rates.ficp.feeDetails) || []).forEach(f => { fd[f.charges] = f.freight; });
+  const base = fd['運送料金'] || 0, peak = fd['混雑時割増金'] || 0, fuel = fd['燃料割増金'] || 0;
+  if (base > 0 && fuel > 0) {
+    const r = fuel / (base + peak);
+    if (r >= 0.1 && r <= 0.8) _ficpFallbackFuelRate = r;
+  }
+}
+// 料金表の重量枠（請求重量）をkgで返す。混雑時割増金はこの枠の重量に対して掛かる
+function lookupBracketKg(table, weightGrams) {
+  if (!table) return 0;
+  for (let i = 0; i < table.length; i++) if (weightGrams <= table[i][0]) return table[i][0] / 1000;
+  return 0;
+}
 
 // ========== SpeedPAK API Integration ==========
 const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
@@ -2227,10 +2245,8 @@ async function fetchSpeedpakRates() {
     if (data.success) {
       _speedpakRates = data.rates;
       // 燃油サーチャージは SpeedPAK API の送料に込みで返るため、手動フィールドは廃止。
-      // FICP フォールバック用に直近の燃油率があれば保持しておく（任意）。
-      if (data.fuelSurchargePercent !== undefined && data.fuelSurchargePercent >= 20 && data.fuelSurchargePercent <= 45) {
-        _ficpFallbackFuelRate = data.fuelSurchargePercent / 100;
-      }
+      // API取得失敗時の予備計算をCPaSSに合わせるため、実際の明細から燃油率を学習しておく。
+      learnFuelRateFromRates(data.rates);
     } else {
       _speedpakRates = null;
       _speedpakError = true;
@@ -2594,7 +2610,11 @@ function calculate() {
     if (cs && (c === null || c === 0)) {
       const baseRate = lookupRate(ficpTable, billableStandardG);
       if (baseRate > 0) {
-        const fuel = Math.round(baseRate * fuelSurchargeRate);
+        // CPaSSと同じ組み立てにする：
+        //   混雑時割増金 ＝ 料金表の重量枠(kg) × 国別単価（欧州162円/kg・北米65円/kg・豪亜0円）
+        //   燃料割増金   ＝(運送料金 ＋ 混雑時割増金)× 燃油率（実測45.5%。API成功時は実績値を学習）
+        const peak = Math.round(lookupBracketKg(ficpTable, billableStandardG) * (cc.peakPerKg || 0));
+        const fuel = Math.round((baseRate + peak) * fuelSurchargeRate);
         let duty = spDuty(); // 他の配送方法から関税額を取得
         let dutyEstimate = false;
         // CPaSS取得失敗などで関税が取れない場合、US(DDP)宛は 出品価格 × 12.5% × 為替 で概算する
@@ -2602,9 +2622,10 @@ function calculate() {
           duty = Math.round(selling * US_DUTY_FALLBACK_RATE * rate);
           dutyEstimate = true;
         }
-        c = baseRate + fuel + duty;
+        c = baseRate + peak + fuel + duty;
         details = [
           {charges:'運送料金', chargesEn:'Shipping Rate', freight:baseRate},
+          ...(peak > 0 ? [{charges:'混雑時割増金', chargesEn:'Demand Surcharge', freight:peak}] : []),
           {charges:'燃料割増金', chargesEn:'Fuel Surcharge', freight:fuel},
         ];
         // 関税系の内訳を他の配送方法から取得（関税+処理手数料）
