@@ -2303,8 +2303,9 @@ function spPakFeeDetails(apiKey) {
   return null;
 }
 // この荷物がFedEx Pakに入るとCPaSSが判断したか。
-// CPaSSはPakに収まらない寸法・2.5kg超だと IP Pak の料金自体を返さないので、それを判定に流用する
-// （実測: 30×25×20cmは可 / 30×30×20cmは不可、40×30×5cmのように平たければ可）
+// CPaSSはPakに収まらない寸法・2.5kg超だと IP Pak の料金自体を返さないので、それを判定に流用する。
+// FedEx公式仕様（容積15,400cm³以内 / 最大2.5kg / 最大のExtra Large Pakで内寸44.45×52.71cm）と
+// CPaSSの挙動が一致することを実測で確認済み（容積15,376は可・16,337は不可／50cmは可・55cmは不可）
 function fitsInFedexPak() {
   return !!(_speedpakRates && _speedpakRates.ip_pak && _speedpakRates.ip_pak.totalAmount > 0);
 }
@@ -2590,12 +2591,14 @@ function calculate() {
     addMethod('fedex',{name:'International Connect Plus',sub:'2-5日/'+_dutyType+'/最大68kg/体積÷5,000/燃油込' + subNote,cost:canSend?c:-1,canSend:canSend,feeDetails:details,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
 
     // --- 同じFICPをFedEx Pakで送る場合（実重量課金） ---
-    // Pakは体積重量ではなく実重量で課金されるため、軽くて嵩張る荷物は大幅に安くなる。
+    // FedEx公式: パックは容積15,400cm³以内なら容積重量が適用されない＝実重量課金になるため、
+    // 軽くて嵩張る荷物は大幅に安くなる。2.5kg超・$500超はパック自体が使えない。
     // CPaSSがPak可と判断した荷物だけ、かつ自分の箱より安い時だけ出す
-    if (fitsInFedexPak()) {
+    const pakVal = selling <= 0 || selling <= 500;
+    if (fitsInFedexPak() && pakVal) {
       const pakC = spPakCost('ficp');
       if (pakC !== null && pakC > 0 && (c === null || pakC < c)) {
-        addMethod('fedex',{name:'International Connect Plus（FedEx Pak）',sub:'2-5日/'+_dutyType+'/実重量課金/FedEx Pak(約44×53cm)に入れる場合/燃油込',cost:pakC,canSend:true,feeDetails:spPakFeeDetails('ficp'),loading:_loading});
+        addMethod('fedex',{name:'International Connect Plus（FedEx Pak）',sub:'2-5日/'+_dutyType+'/実重量課金/最大2.5kg/$500以下/FedEx Pak(内寸44.45×52.71cm)使用時/燃油込',cost:pakC,canSend:true,feeDetails:spPakFeeDetails('ficp'),loading:_loading});
       }
     }
   }
@@ -2618,15 +2621,20 @@ function calculate() {
 
   // --- SpeedPAK FedEx IP Pak ---
   {
-    const cs = weightG <= 2500;
+    const csW = weightG <= 2500;
+    // FedEx公式: 実際の価額または申告価額が$500を超える物品はPak（エンベロープ含む）で発送できない
+    const csVal = selling <= 0 || selling <= 500;
+    const cs = csW && csVal;
     const c = cs ? spCost('ip_pak') : null;
     const canSend = cs && c !== null && c > 0;
     // Pakは実重量課金でサイズによる加算は無いが、袋に入らない大きさだとCPaSSが
     // 料金自体を返さない。取得が終わっているのに「送料取得中」と出さないよう区別する
-    let pakReason = '';
-    if (!cs) pakReason = '2.5kg超過';
-    else if (c === null) pakReason = _loading ? '送料取得中' : (!_speedpakRates ? '料金取得失敗' : 'Pakに入らないサイズ');
-    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/実重量/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_pak'):null,reason:pakReason,loading:_loading});
+    const r2 = [];
+    if (!csW) r2.push('2.5kg超過');
+    if (!csVal) r2.push('申告価額$500超過');
+    let pakReason = r2.join(', ');
+    if (!pakReason && c === null) pakReason = _loading ? '送料取得中' : (!_speedpakRates ? '料金取得失敗' : 'Pakに入らないサイズ');
+    addMethod('fedex-ip',{name:'FedEx IP Pak',sub:'1-3日/'+_dutyType+'/最大2.5kg/実重量/$500以下/燃油込' + _subSuffix,cost:canSend?c:-1,canSend:canSend,feeDetails:canSend?spFeeDetails('ip_pak'):null,reason:pakReason,loading:_loading});
   }
 
   // --- SpeedPAK FedEx IP Package ---
