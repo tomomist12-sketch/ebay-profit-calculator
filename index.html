@@ -1966,6 +1966,7 @@ function initCountryPicker() {
 function onCountryChange() {
   currentCountry = document.getElementById('destCountry').value;
   _speedpakRates = null; // 前の国のレートをクリア
+  _speedpakPakRates = null;
   calculate();
   saveState();
   fetchSpeedpakRates(); // 国変更は即座にAPI取得（デバウンスなし）
@@ -2140,6 +2141,7 @@ let _ficpFallbackFuelRate = FICP_FALLBACK_FUEL_RATE;
 // ========== SpeedPAK API Integration ==========
 const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
 let _speedpakRates = null;      // APIレスポンスの rates オブジェクト
+let _speedpakPakRates = null;   // FedEx Pak（実重量課金）で問い合わせた rates
 let _speedpakLoading = false;   // API取得中フラグ
 let _speedpakError = false;     // 直近のCPaSS(SpeedPAK)取得が失敗したか（エラー or success:false）
 let _speedpakDebounceTimer = null;
@@ -2172,14 +2174,25 @@ async function fetchSpeedpakRates() {
       destZipCode: cc.defaultZip,
       declaredValueUsd: declaredUsd > 0 ? declaredUsd : undefined
     };
-    console.log('[SpeedPAK API Request]', reqBody);
-    const res = await fetch(SPEEDPAK_API_BASE + '/api/speedpak/estimate', {
+    // FedEx Pak（実重量課金）の料金も同時に取得する。
+    // CPaSSのAPIはパッケージ種別を受け取らず寸法から体積重量を出しているだけなので、
+    // 体積が無視できる寸法で問い合わせると「実重量課金」＝Pak使用時の料金になる。
+    // （CPaSS実画面の FedEx Reusable Padded Pak 見積もりと一致することを確認済み）
+    const volKg = (L * W * H) / 5000;
+    const wantPak = volKg > weightKg; // 体積重量が実重量を上回る時だけ差が出る
+    const post = (body) => fetch(SPEEDPAK_API_BASE + '/api/speedpak/estimate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reqBody)
-    });
-    const data = await res.json();
+      body: JSON.stringify(body)
+    }).then(r => r.json());
+
+    console.log('[SpeedPAK API Request]', reqBody);
+    const [data, pakData] = await Promise.all([
+      post(reqBody),
+      wantPak ? post({ ...reqBody, length: 1, width: 1, height: 1 }).catch(() => null) : Promise.resolve(null)
+    ]);
     console.log('[SpeedPAK API Response]', data);
+    _speedpakPakRates = (pakData && pakData.success) ? pakData.rates : null;
     if (data.success) {
       _speedpakRates = data.rates;
       // 燃油サーチャージは SpeedPAK API の送料に込みで返るため、手動フィールドは廃止。
@@ -2194,6 +2207,7 @@ async function fetchSpeedpakRates() {
   } catch(e) {
     console.warn('SpeedPAK API error:', e);
     _speedpakRates = null;
+    _speedpakPakRates = null;
     _speedpakError = true;
   } finally {
     _speedpakLoading = false;
@@ -2273,6 +2287,26 @@ function spDutyDetails() {
     }
   }
   return [];
+}
+
+// FedEx Pak（実重量課金）で問い合わせた送料を返す
+function spPakCost(apiKey) {
+  if (_speedpakPakRates && _speedpakPakRates[apiKey] && _speedpakPakRates[apiKey].totalAmount !== undefined) {
+    return _speedpakPakRates[apiKey].totalAmount;
+  }
+  return null;
+}
+function spPakFeeDetails(apiKey) {
+  if (_speedpakPakRates && _speedpakPakRates[apiKey] && _speedpakPakRates[apiKey].feeDetails) {
+    return _speedpakPakRates[apiKey].feeDetails;
+  }
+  return null;
+}
+// この荷物がFedEx Pakに入るとCPaSSが判断したか。
+// CPaSSはPakに収まらない寸法・2.5kg超だと IP Pak の料金自体を返さないので、それを判定に流用する
+// （実測: 30×25×20cmは可 / 30×30×20cmは不可、40×30×5cmのように平たければ可）
+function fitsInFedexPak() {
+  return !!(_speedpakRates && _speedpakRates.ip_pak && _speedpakRates.ip_pak.totalAmount > 0);
 }
 
 // SpeedPAK送料内訳取得ヘルパー：feeDetails配列を返す
@@ -2554,6 +2588,16 @@ function calculate() {
     }
     const canSend = cs && c !== null && c > 0;
     addMethod('fedex',{name:'International Connect Plus',sub:'2-5日/'+_dutyType+'/最大68kg/体積÷5,000/燃油込' + subNote,cost:canSend?c:-1,canSend:canSend,feeDetails:details,reason:!cs?'68kg超過':(c===null?'送料取得中':''),loading:_loading});
+
+    // --- 同じFICPをFedEx Pakで送る場合（実重量課金） ---
+    // Pakは体積重量ではなく実重量で課金されるため、軽くて嵩張る荷物は大幅に安くなる。
+    // CPaSSがPak可と判断した荷物だけ、かつ自分の箱より安い時だけ出す
+    if (fitsInFedexPak()) {
+      const pakC = spPakCost('ficp');
+      if (pakC !== null && pakC > 0 && (c === null || pakC < c)) {
+        addMethod('fedex',{name:'International Connect Plus（FedEx Pak）',sub:'2-5日/'+_dutyType+'/実重量課金/FedEx Pak(約44×53cm)に入れる場合/燃油込',cost:pakC,canSend:true,feeDetails:spPakFeeDetails('ficp'),loading:_loading});
+      }
+    }
   }
 
   // --- SpeedPAK FedEx IP Envelope ---
