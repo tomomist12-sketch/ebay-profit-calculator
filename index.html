@@ -2428,7 +2428,8 @@ const EU_FLAT_DUTY_EUR = 3;         // 内容品ごとの定額関税（HSコー
 const EU_DUTY_THRESHOLD_EUR = 150;  // この申告価格以下が対象。これを超えるとEU共通税率（買い手負担/DDU）
 const EU_DUTY_PROCESS_RATE = 0.021; // CPaSSの推定関税処理手数料
 // IOSS利用の国際郵便物が差出停止中の国（2026/7/24〜、8月頃再開見込み）。eBay販売はIOSS利用のため影響を受ける
-const EU_IOSS_SUSPENDED = ['オーストリア','デンマーク','ドイツ','フィンランド','フランス','ベルギー','ポルトガル','ルクセンブルク'];
+// 国コードで持つ（AT/DK/DE/FI/FR/BE/PT/LU）。宛先がこの中の時だけ注意書きを出す
+const EU_IOSS_SUSPENDED = ['AT','DK','DE','FI','FR','BE','PT','LU'];
 
 function isEuLowValue(cc, declaredUsd) {
   if (!cc || !cc.euDuty || !(declaredUsd > 0)) return false;
@@ -3076,11 +3077,11 @@ function calculate() {
       grid.appendChild(upsNote);
     }
 
-    // EU宛の日本郵便: IOSS利用の郵便物が一部の国あてで差出停止中（日本郵便 2026-07 周知）
-    if (g.id === 'jppost' && cc.euDuty) {
+    // 日本郵便: IOSS利用の郵便物が差出停止中の国あてのみ注意書きを出す（日本郵便 2026-07 周知）
+    if (g.id === 'jppost' && EU_IOSS_SUSPENDED.includes(cc.code)) {
       const iossNote = document.createElement('div');
       iossNote.style.cssText = 'font-size:.72rem;color:#b91c1c;padding:4px 12px;margin-bottom:6px;line-height:1.4';
-      iossNote.textContent = '⚠ 2026/7/24〜 ' + EU_IOSS_SUSPENDED.join('・') + 'あてはIOSS利用の郵便物を差し出せません（8月頃再開見込み）。eBay販売はIOSS利用のため、これらの国はCPaSS/eLogiを使ってください。';
+      iossNote.textContent = '⚠ 2026/7/24〜 ' + cc.name + 'あてはIOSS利用の郵便物を差し出せません（8月頃再開見込み）。eBay販売はIOSS利用のため、CPaSS/eLogiを使ってください。';
       grid.appendChild(iossNote);
     }
 
