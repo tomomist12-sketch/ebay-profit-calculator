@@ -1708,6 +1708,7 @@ const G_NA='北米', G_WEST='ヨーロッパ（英国・西欧）', G_NORTH='ヨ
       G_SOUTH='ヨーロッパ（南欧）', G_EAST='ヨーロッパ（東欧）', G_EUO='ヨーロッパ（その他）',
       G_OCE='オセアニア', G_ASIA='アジア', G_ME='中東', G_LATAM='中南米', G_AFR='アフリカ';
 // EU27は地域順（西→北→南→東）に並べ、各国に optgroup 見出し(group)を付与。
+const ELG_DHL_ZONE_EU = {at:6, be:6, bg:6, cy:6, cz:6, de:6, dk:6, ee:6, es:6, fi:6, fr:6, gr:6, hr:6, hu:6, ie:6, it:6, lt:6, lu:6, lv:6, mt:6, nl:6, pl:6, pt:6, ro:6, se:6, si:6, sk:6};
 const EU_COUNTRIES = [
   ['de','🇩🇪 ドイツ','DE','10115',G_WEST],
   ['fr','🇫🇷 フランス','FR','75001',G_WEST],
@@ -1739,6 +1740,8 @@ const EU_COUNTRIES = [
 ].map(([id,name,code,defaultZip,group]) => ({
   id, name, code, euDuty:true, defaultZip, group,
   fedexZone: FICP_ZONE_H.includes(id) ? 'H' : FICP_ZONE_I.includes(id) ? 'I' : 'M',
+  // eLogi DHLだけはFedExと別体系のZone1〜9。公式ゾーン表から抽出した実データ
+  elogiDhlZone: ELG_DHL_ZONE_EU[id] || 6,
   // eLogiはFedExと同じゾーン記号を使うため、常に同じ値にする
   elogiZone: FICP_ZONE_H.includes(id) ? 'H' : FICP_ZONE_I.includes(id) ? 'I' : 'M',
   dhlZone:3, jpZone:3, jpOk:true, upsZone:6, peakPerKg:162,
@@ -1747,48 +1750,48 @@ const EU_COUNTRIES = [
 }));
 
 const COUNTRIES = [
-  { id:'us', group:G_NA, name:'🇺🇸 アメリカ', code:'US', peakPerKg:65, defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiZone:'F', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
+  { id:'us', group:G_NA, name:'🇺🇸 アメリカ', code:'US', peakPerKg:65, defaultZip:'10001', fedexZone:'F', dhlZone:10, jpZone:4, jpOk:true, elogiDhlZone:5, elogiZone:'F', upsZone:5, economy:true, ecoMaxKg:25, ecoMaxVal:'$1,300', ecoDays:'8-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=66 && (d[0]+2*(d[1]+d[2]))<=274; },
     ecoSurcharge:(L,W,H,vol)=>(Math.max(L,W,H)>55.88||vol>55000?2475:0)+245 },
-  { id:'ca', group:G_NA, name:'🇨🇦 カナダ', code:'CA', peakPerKg:65, defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:5, economy:false },
-  { id:'uk', group:G_WEST, name:'🇬🇧 イギリス', code:'GB', peakPerKg:162, defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiZone:'M', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
+  { id:'ca', group:G_NA, name:'🇨🇦 カナダ', code:'CA', peakPerKg:65, defaultZip:'M5V 2T6', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiDhlZone:5, elogiZone:'F', upsZone:5, economy:false },
+  { id:'uk', group:G_WEST, name:'🇬🇧 イギリス', code:'GB', peakPerKg:162, defaultZip:'SW1A 1AA', fedexZone:'M', dhlZone:3, jpZone:3, jpOk:true, elogiDhlZone:6, elogiZone:'M', upsZone:6, economy:true, ecoMaxKg:25, ecoRealMaxKg:15, ecoMaxVal:'£135', ecoDays:'7-10日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=110 && d[1]<=50 && d[2]<=50; },
     ecoSurcharge:()=>0 },
   ...EU_COUNTRIES,
-  { id:'au', group:G_OCE, name:'🇦🇺 オーストラリア', code:'AU', peakPerKg:0, defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
+  { id:'au', group:G_OCE, name:'🇦🇺 オーストラリア', code:'AU', peakPerKg:0, defaultZip:'2000', fedexZone:'U', dhlZone:11, jpZone:3, jpOk:true, elogiDhlZone:4, elogiZone:'U', upsZone:'au', economy:true, ecoMaxKg:22.5, ecoRealMaxKg:22, ecoMaxVal:'AUD1,000', ecoDays:'6-12日',
     ecoSizeCheck:(L,W,H,g)=>{ const d=[L,W,H].sort((a,b)=>b-a); return d[0]<=105 && (d[0]*d[1]*d[2])<=180000; },
     ecoSurcharge:()=>0 },
-  { id:'cn', group:G_ASIA, name:'🇨🇳 中国', code:'CN', peakPerKg:0, defaultZip:'100000', fedexZone:'W', dhlZone:2, jpZone:1, jpOk:true, elogiZone:'W', upsZone:null, economy:false },
-  { id:'kr', group:G_ASIA, name:'🇰🇷 韓国', code:'KR', peakPerKg:0, defaultZip:'06100', fedexZone:'Z', dhlZone:1, jpZone:1, jpOk:true, elogiZone:'Z', upsZone:null, economy:false },
-  { id:'tw', group:G_ASIA, name:'🇹🇼 台湾', code:'TW', peakPerKg:0, defaultZip:'100', fedexZone:'X', dhlZone:1, jpZone:1, jpOk:true, elogiZone:'X', upsZone:null, economy:false },
-  { id:'hk', group:G_ASIA, name:'🇭🇰 香港', code:'HK', peakPerKg:0, defaultZip:'999077', fedexZone:'V', dhlZone:2, jpZone:2, jpOk:true, elogiZone:'V', upsZone:null, economy:false },
-  { id:'mo', group:G_ASIA, name:'🇲🇴 マカオ', code:'MO', peakPerKg:0, defaultZip:'999078', fedexZone:'A', dhlZone:2, jpZone:2, jpOk:true, elogiZone:'A', upsZone:null, economy:false },
-  { id:'sg', group:G_ASIA, name:'🇸🇬 シンガポール', code:'SG', peakPerKg:0, defaultZip:'018956', fedexZone:'Y', dhlZone:3, jpZone:2, jpOk:true, elogiZone:'Y', upsZone:null, economy:false },
-  { id:'th', group:G_ASIA, name:'🇹🇭 タイ', code:'TH', peakPerKg:0, defaultZip:'10100', fedexZone:'R', dhlZone:3, jpZone:2, jpOk:true, elogiZone:'R', upsZone:null, economy:false },
-  { id:'my', group:G_ASIA, name:'🇲🇾 マレーシア', code:'MY', peakPerKg:0, defaultZip:'50000', fedexZone:'Q', dhlZone:3, jpZone:2, jpOk:true, elogiZone:'Q', upsZone:null, economy:false },
-  { id:'ph', group:G_ASIA, name:'🇵🇭 フィリピン', code:'PH', peakPerKg:0, defaultZip:'1000', fedexZone:'S', dhlZone:3, jpZone:2, jpOk:true, elogiZone:'S', upsZone:null, economy:false },
-  { id:'vn', group:G_ASIA, name:'🇻🇳 ベトナム', code:'VN', peakPerKg:0, defaultZip:'100000', fedexZone:'N', dhlZone:3, jpZone:2, jpOk:true, elogiZone:'N', upsZone:null, economy:false },
-  { id:'id', group:G_ASIA, name:'🇮🇩 インドネシア', code:'ID', peakPerKg:0, defaultZip:'10110', fedexZone:'T', dhlZone:3, jpZone:2, jpOk:true, elogiZone:'T', upsZone:null, economy:false },
-  { id:'in', group:G_ASIA, name:'🇮🇳 インド', code:'IN', peakPerKg:0, defaultZip:'110001', fedexZone:'O', dhlZone:4, jpZone:2, jpOk:true, elogiZone:'O', upsZone:null, economy:false },
-  { id:'nz', group:G_OCE, name:'🇳🇿 ニュージーランド', code:'NZ', peakPerKg:0, defaultZip:'1010', fedexZone:'U', dhlZone:4, jpZone:3, jpOk:true, elogiZone:'U', upsZone:null, economy:false },
-  { id:'ch', group:G_EUO, name:'🇨🇭 スイス', code:'CH', peakPerKg:162, defaultZip:'8001', fedexZone:'H', dhlZone:6, jpZone:3, jpOk:true, elogiZone:'H', upsZone:null, economy:false },
-  { id:'no', group:G_EUO, name:'🇳🇴 ノルウェー', code:'NO', peakPerKg:162, defaultZip:'0150', fedexZone:'H', dhlZone:6, jpZone:3, jpOk:true, elogiZone:'H', upsZone:null, economy:false },
-  { id:'is', group:G_EUO, name:'🇮🇸 アイスランド', code:'IS', peakPerKg:0, defaultZip:'101', fedexZone:'I', dhlZone:7, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'rs', group:G_EUO, name:'🇷🇸 セルビア', code:'RS', peakPerKg:162, defaultZip:'11000', fedexZone:'I', dhlZone:7, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'tr', group:G_EUO, name:'🇹🇷 トルコ', code:'TR', peakPerKg:162, defaultZip:'34000', fedexZone:'I', dhlZone:6, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'mx', group:G_NA, name:'🇲🇽 メキシコ', code:'MX', peakPerKg:65, defaultZip:'06000', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiZone:'F', upsZone:null, economy:false },
-  { id:'br', group:G_LATAM, name:'🇧🇷 ブラジル', code:'BR', peakPerKg:65, defaultZip:'01310-100', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiZone:'G', upsZone:null, economy:false },
-  { id:'ar', group:G_LATAM, name:'🇦🇷 アルゼンチン', code:'AR', peakPerKg:65, defaultZip:'C1001', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiZone:'G', upsZone:null, economy:false },
-  { id:'cl', group:G_LATAM, name:'🇨🇱 チリ', code:'CL', peakPerKg:65, defaultZip:'8320000', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiZone:'G', upsZone:null, economy:false },
-  { id:'co', group:G_LATAM, name:'🇨🇴 コロンビア', code:'CO', peakPerKg:65, defaultZip:'110111', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiZone:'G', upsZone:null, economy:false },
-  { id:'pe', group:G_LATAM, name:'🇵🇪 ペルー', code:'PE', peakPerKg:65, defaultZip:'15001', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiZone:'G', upsZone:null, economy:false },
-  { id:'il', group:G_ME, name:'🇮🇱 イスラエル', code:'IL', peakPerKg:162, defaultZip:'6100000', fedexZone:'H', dhlZone:8, jpZone:3, jpOk:true, elogiZone:'H', upsZone:null, economy:false },
-  { id:'ae', group:G_ME, name:'🇦🇪 アラブ首長国連邦', code:'AE', peakPerKg:0, defaultZip:'00000', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'sa', group:G_ME, name:'🇸🇦 サウジアラビア', code:'SA', peakPerKg:0, defaultZip:'11564', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'qa', group:G_ME, name:'🇶🇦 カタール', code:'QA', peakPerKg:0, defaultZip:'00000', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'kw', group:G_ME, name:'🇰🇼 クウェート', code:'KW', peakPerKg:0, defaultZip:'00000', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'za', group:G_AFR, name:'🇿🇦 南アフリカ', code:'ZA', peakPerKg:0, defaultZip:'8001', fedexZone:'I', dhlZone:9, jpZone:5, jpOk:true, elogiZone:'I', upsZone:null, economy:false },
-  { id:'eg', group:G_AFR, name:'🇪🇬 エジプト', code:'EG', peakPerKg:0, defaultZip:'11511', fedexZone:'J', dhlZone:9, jpZone:5, jpOk:true, elogiZone:'J', upsZone:null, economy:false },
+  { id:'cn', group:G_ASIA, name:'🇨🇳 中国', code:'CN', peakPerKg:0, defaultZip:'100000', fedexZone:'W', dhlZone:2, jpZone:1, jpOk:true, elogiDhlZone:2, elogiZone:'W', upsZone:null, economy:false },
+  { id:'kr', group:G_ASIA, name:'🇰🇷 韓国', code:'KR', peakPerKg:0, defaultZip:'06100', fedexZone:'Z', dhlZone:1, jpZone:1, jpOk:true, elogiDhlZone:1, elogiZone:'Z', upsZone:null, economy:false },
+  { id:'tw', group:G_ASIA, name:'🇹🇼 台湾', code:'TW', peakPerKg:0, defaultZip:'100', fedexZone:'X', dhlZone:1, jpZone:1, jpOk:true, elogiDhlZone:1, elogiZone:'X', upsZone:null, economy:false },
+  { id:'hk', group:G_ASIA, name:'🇭🇰 香港', code:'HK', peakPerKg:0, defaultZip:'999077', fedexZone:'V', dhlZone:2, jpZone:2, jpOk:true, elogiDhlZone:2, elogiZone:'V', upsZone:null, economy:false },
+  { id:'mo', group:G_ASIA, name:'🇲🇴 マカオ', code:'MO', peakPerKg:0, defaultZip:'999078', fedexZone:'A', dhlZone:2, jpZone:2, jpOk:true, elogiDhlZone:2, elogiZone:'A', upsZone:null, economy:false },
+  { id:'sg', group:G_ASIA, name:'🇸🇬 シンガポール', code:'SG', peakPerKg:0, defaultZip:'018956', fedexZone:'Y', dhlZone:3, jpZone:2, jpOk:true, elogiDhlZone:3, elogiZone:'Y', upsZone:null, economy:false },
+  { id:'th', group:G_ASIA, name:'🇹🇭 タイ', code:'TH', peakPerKg:0, defaultZip:'10100', fedexZone:'R', dhlZone:3, jpZone:2, jpOk:true, elogiDhlZone:3, elogiZone:'R', upsZone:null, economy:false },
+  { id:'my', group:G_ASIA, name:'🇲🇾 マレーシア', code:'MY', peakPerKg:0, defaultZip:'50000', fedexZone:'Q', dhlZone:3, jpZone:2, jpOk:true, elogiDhlZone:3, elogiZone:'Q', upsZone:null, economy:false },
+  { id:'ph', group:G_ASIA, name:'🇵🇭 フィリピン', code:'PH', peakPerKg:0, defaultZip:'1000', fedexZone:'S', dhlZone:3, jpZone:2, jpOk:true, elogiDhlZone:3, elogiZone:'S', upsZone:null, economy:false },
+  { id:'vn', group:G_ASIA, name:'🇻🇳 ベトナム', code:'VN', peakPerKg:0, defaultZip:'100000', fedexZone:'N', dhlZone:3, jpZone:2, jpOk:true, elogiDhlZone:3, elogiZone:'N', upsZone:null, economy:false },
+  { id:'id', group:G_ASIA, name:'🇮🇩 インドネシア', code:'ID', peakPerKg:0, defaultZip:'10110', fedexZone:'T', dhlZone:3, jpZone:2, jpOk:true, elogiDhlZone:3, elogiZone:'T', upsZone:null, economy:false },
+  { id:'in', group:G_ASIA, name:'🇮🇳 インド', code:'IN', peakPerKg:0, defaultZip:'110001', fedexZone:'O', dhlZone:4, jpZone:2, jpOk:true, elogiDhlZone:4, elogiZone:'O', upsZone:null, economy:false },
+  { id:'nz', group:G_OCE, name:'🇳🇿 ニュージーランド', code:'NZ', peakPerKg:0, defaultZip:'1010', fedexZone:'U', dhlZone:4, jpZone:3, jpOk:true, elogiDhlZone:4, elogiZone:'U', upsZone:null, economy:false },
+  { id:'ch', group:G_EUO, name:'🇨🇭 スイス', code:'CH', peakPerKg:162, defaultZip:'8001', fedexZone:'H', dhlZone:6, jpZone:3, jpOk:true, elogiDhlZone:6, elogiZone:'H', upsZone:null, economy:false },
+  { id:'no', group:G_EUO, name:'🇳🇴 ノルウェー', code:'NO', peakPerKg:162, defaultZip:'0150', fedexZone:'H', dhlZone:6, jpZone:3, jpOk:true, elogiDhlZone:6, elogiZone:'H', upsZone:null, economy:false },
+  { id:'is', group:G_EUO, name:'🇮🇸 アイスランド', code:'IS', peakPerKg:0, defaultZip:'101', fedexZone:'I', dhlZone:7, jpZone:3, jpOk:true, elogiDhlZone:7, elogiZone:'I', upsZone:null, economy:false },
+  { id:'rs', group:G_EUO, name:'🇷🇸 セルビア', code:'RS', peakPerKg:162, defaultZip:'11000', fedexZone:'I', dhlZone:7, jpZone:3, jpOk:true, elogiDhlZone:7, elogiZone:'I', upsZone:null, economy:false },
+  { id:'tr', group:G_EUO, name:'🇹🇷 トルコ', code:'TR', peakPerKg:162, defaultZip:'34000', fedexZone:'I', dhlZone:6, jpZone:3, jpOk:true, elogiDhlZone:6, elogiZone:'I', upsZone:null, economy:false },
+  { id:'mx', group:G_NA, name:'🇲🇽 メキシコ', code:'MX', peakPerKg:65, defaultZip:'06000', fedexZone:'F', dhlZone:5, jpZone:3, jpOk:true, elogiDhlZone:5, elogiZone:'F', upsZone:null, economy:false },
+  { id:'br', group:G_LATAM, name:'🇧🇷 ブラジル', code:'BR', peakPerKg:65, defaultZip:'01310-100', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiDhlZone:8, elogiZone:'G', upsZone:null, economy:false },
+  { id:'ar', group:G_LATAM, name:'🇦🇷 アルゼンチン', code:'AR', peakPerKg:65, defaultZip:'C1001', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiDhlZone:8, elogiZone:'G', upsZone:null, economy:false },
+  { id:'cl', group:G_LATAM, name:'🇨🇱 チリ', code:'CL', peakPerKg:65, defaultZip:'8320000', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiDhlZone:8, elogiZone:'G', upsZone:null, economy:false },
+  { id:'co', group:G_LATAM, name:'🇨🇴 コロンビア', code:'CO', peakPerKg:65, defaultZip:'110111', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiDhlZone:8, elogiZone:'G', upsZone:null, economy:false },
+  { id:'pe', group:G_LATAM, name:'🇵🇪 ペルー', code:'PE', peakPerKg:65, defaultZip:'15001', fedexZone:'G', dhlZone:8, jpZone:5, jpOk:true, elogiDhlZone:8, elogiZone:'G', upsZone:null, economy:false },
+  { id:'il', group:G_ME, name:'🇮🇱 イスラエル', code:'IL', peakPerKg:162, defaultZip:'6100000', fedexZone:'H', dhlZone:8, jpZone:3, jpOk:true, elogiDhlZone:8, elogiZone:'H', upsZone:null, economy:false },
+  { id:'ae', group:G_ME, name:'🇦🇪 アラブ首長国連邦', code:'AE', peakPerKg:0, defaultZip:'00000', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiDhlZone:9, elogiZone:'I', upsZone:null, economy:false },
+  { id:'sa', group:G_ME, name:'🇸🇦 サウジアラビア', code:'SA', peakPerKg:0, defaultZip:'11564', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiDhlZone:9, elogiZone:'I', upsZone:null, economy:false },
+  { id:'qa', group:G_ME, name:'🇶🇦 カタール', code:'QA', peakPerKg:0, defaultZip:'00000', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiDhlZone:9, elogiZone:'I', upsZone:null, economy:false },
+  { id:'kw', group:G_ME, name:'🇰🇼 クウェート', code:'KW', peakPerKg:0, defaultZip:'00000', fedexZone:'I', dhlZone:9, jpZone:3, jpOk:true, elogiDhlZone:9, elogiZone:'I', upsZone:null, economy:false },
+  { id:'za', group:G_AFR, name:'🇿🇦 南アフリカ', code:'ZA', peakPerKg:0, defaultZip:'8001', fedexZone:'I', dhlZone:9, jpZone:5, jpOk:true, elogiDhlZone:9, elogiZone:'I', upsZone:null, economy:false },
+  { id:'eg', group:G_AFR, name:'🇪🇬 エジプト', code:'EG', peakPerKg:0, defaultZip:'11511', fedexZone:'J', dhlZone:9, jpZone:5, jpOk:true, elogiDhlZone:9, elogiZone:'J', upsZone:null, economy:false },
 ];
 
 // 同じグループの国が配列内で離れていると optgroup が分裂して見出しが二重に出るため、
@@ -1907,6 +1910,95 @@ const emsZone5 = [
 
 // ========== eLogi Rate Tables (US=Column E, サーチャージ込み) ==========
 
+
+
+// ===== eLogi DHL Express 全9ゾーン =====
+// eLogi公式「送料目安 2026/2/15版」＋「クーリエ別ゾーン表」から機械抽出。
+// DHLはFedExと別体系の Zone 1〜9（1:韓国台湾 2:中国香港マカオ 3:東南アジア 4:豪/印/太平洋
+//  5:北米 6:ヨーロッパ 7:東欧・北欧 8:南米/中南米 9:中東・アフリカ・その他）
+const elgDhl1 = [
+  [500,2800],[1000,2900],[1500,3200],[2000,3600],[2500,4400],[3000,4500],[3500,4600],[4000,4700],[4500,4800],[5000,4900],
+  [5500,5900],[6000,6900],[6500,7800],[7000,8800],[7500,9800],[8000,10700],[8500,11700],[9000,12700],[9500,13600],[10000,14600],
+  [10500,15200],[11000,15900],[11500,16500],[12000,17200],[12500,17800],[13000,18400],[13500,19100],[14000,19700],[14500,20400],[15000,21000],
+  [15500,21700],[16000,22300],[16500,22900],[17000,23600],[17500,24200],[18000,24900],[18500,25500],[19000,26100],[19500,26800],[20000,27400],
+  [20500,28000],[21000,28700],[21500,29300],[22000,29900],[22500,30500],[23000,31100],[23500,31700],[24000,32300],[24500,33000],[25000,33600],
+  [25500,34200],[26000,34800],[26500,35400],[27000,36000],[27500,36600],[28000,37300],[28500,37900],[29000,38500],[29500,39100],[30000,39700]
+];
+const elgDhl1PerKg = [[31,871],[70,872],[300,987],[99999,987]];
+const elgDhl2 = [
+  [500,2900],[1000,3000],[1500,3200],[2000,3600],[2500,4500],[3000,4600],[3500,4700],[4000,4800],[4500,4900],[5000,5000],
+  [5500,6000],[6000,6900],[6500,7900],[7000,8900],[7500,9800],[8000,10800],[8500,11800],[9000,12700],[9500,13700],[10000,14700],
+  [10500,15300],[11000,16000],[11500,16600],[12000,17200],[12500,17900],[13000,18500],[13500,19200],[14000,19800],[14500,20400],[15000,21100],
+  [15500,21700],[16000,22400],[16500,23000],[17000,23700],[17500,24300],[18000,24900],[18500,25600],[19000,26200],[19500,26900],[20000,27500],
+  [20500,28200],[21000,28900],[21500,29600],[22000,30300],[22500,31000],[23000,31800],[23500,32500],[24000,33200],[24500,33900],[25000,34600],
+  [25500,35300],[26000,36000],[26500,36700],[27000,37400],[27500,38100],[28000,38800],[28500,39500],[29000,40300],[29500,41000],[30000,41700]
+];
+const elgDhl2PerKg = [[31,836],[70,832],[300,987],[99999,987]];
+const elgDhl3 = [
+  [500,3000],[1000,3100],[1500,3300],[2000,3600],[2500,4900],[3000,5000],[3500,5100],[4000,5200],[4500,5300],[5000,5400],
+  [5500,6500],[6000,7600],[6500,8800],[7000,10000],[7500,11200],[8000,12400],[8500,13600],[9000,14800],[9500,16000],[10000,17300],
+  [10500,17500],[11000,17800],[11500,18400],[12000,19000],[12500,19600],[13000,20300],[13500,20900],[14000,21500],[14500,22100],[15000,22700],
+  [15500,23400],[16000,24000],[16500,24600],[17000,25200],[17500,25800],[18000,26400],[18500,27100],[19000,27700],[19500,28300],[20000,28900],
+  [20500,29600],[21000,30400],[21500,31100],[22000,31800],[22500,32500],[23000,33300],[23500,34000],[24000,34700],[24500,35400],[25000,36200],
+  [25500,36900],[26000,37600],[26500,38300],[27000,39100],[27500,39800],[28000,40500],[28500,41200],[29000,42000],[29500,42700],[30000,43400]
+];
+const elgDhl3PerKg = [[31,853],[70,861],[300,1016],[99999,1018]];
+const elgDhl4 = [
+  [500,3200],[1000,3400],[1500,3500],[2000,3700],[2500,5600],[3000,5600],[3500,5900],[4000,6000],[4500,6200],[5000,6300],
+  [5500,7600],[6000,9500],[6500,11500],[7000,13400],[7500,15400],[8000,17300],[8500,19300],[9000,21200],[9500,23200],[10000,25100],
+  [10500,25600],[11000,26100],[11500,26500],[12000,27000],[12500,27500],[13000,27900],[13500,28400],[14000,28900],[14500,29300],[15000,29800],
+  [15500,30300],[16000,30700],[16500,31200],[17000,31700],[17500,32100],[18000,32600],[18500,33100],[19000,33600],[19500,34000],[20000,34500],
+  [20500,35200],[21000,35900],[21500,36500],[22000,37200],[22500,37900],[23000,38600],[23500,39300],[24000,40000],[24500,40700],[25000,41400],
+  [25500,42000],[26000,42700],[26500,43400],[27000,44100],[27500,44800],[28000,45500],[28500,46200],[29000,46800],[29500,47500],[30000,48200]
+];
+const elgDhl4PerKg = [[31,1090],[70,1078],[300,1610],[99999,1609]];
+const elgDhl5 = [
+  [500,4400],[1000,4700],[1500,5000],[2000,5200],[2500,6700],[3000,7100],[3500,7600],[4000,8000],[4500,8600],[5000,9600],
+  [5500,10500],[6000,12400],[6500,14700],[7000,17000],[7500,19400],[8000,21700],[8500,24000],[9000,26300],[9500,28600],[10000,30900],
+  [10500,31200],[11000,31500],[11500,32100],[12000,32700],[12500,33300],[13000,33800],[13500,34400],[14000,35000],[14500,35600],[15000,36100],
+  [15500,36700],[16000,37300],[16500,37900],[17000,38400],[17500,39000],[18000,39600],[18500,40100],[19000,40700],[19500,41300],[20000,41900],
+  [20500,42600],[21000,43400],[21500,44100],[22000,44900],[22500,45700],[23000,46400],[23500,47200],[24000,47900],[24500,48700],[25000,49500],
+  [25500,50200],[26000,51000],[26500,51700],[27000,52500],[27500,53300],[28000,54000],[28500,54800],[29000,55600],[29500,56300],[30000,57100]
+];
+const elgDhl5PerKg = [[31,4813],[70,2034],[300,2132],[99999,2129]];
+const elgDhl6 = [
+  [500,3100],[1000,3300],[1500,3900],[2000,4500],[2500,6900],[3000,7100],[3500,7300],[4000,7600],[4500,7800],[5000,8000],
+  [5500,9600],[6000,13600],[6500,16500],[7000,19400],[7500,22300],[8000,25100],[8500,28000],[9000,30900],[9500,33800],[10000,36700],
+  [10500,36700],[11000,36800],[11500,37300],[12000,37800],[12500,38400],[13000,38900],[13500,39400],[14000,39900],[14500,40400],[15000,41000],
+  [15500,41500],[16000,42000],[16500,42500],[17000,43000],[17500,43500],[18000,44100],[18500,44600],[19000,45100],[19500,45600],[20000,46100],
+  [20500,47100],[21000,48000],[21500,48900],[22000,49900],[22500,50800],[23000,51800],[23500,52700],[24000,53600],[24500,54600],[25000,55500],
+  [25500,56400],[26000,57400],[26500,58300],[27000,59200],[27500,60200],[28000,61100],[28500,62100],[29000,63000],[29500,63900],[30000,64900]
+];
+const elgDhl6PerKg = [[31,4813],[70,1651],[300,1824],[99999,1824]];
+const elgDhl7 = [
+  [500,5700],[1000,5800],[1500,5900],[2000,6100],[2500,13800],[3000,14000],[3500,14100],[4000,14200],[4500,14400],[5000,14500],
+  [5500,17100],[6000,20400],[6500,23700],[7000,27000],[7500,30300],[8000,33600],[8500,36800],[9000,40100],[9500,43400],[10000,46700],
+  [10500,48500],[11000,50300],[11500,52200],[12000,54000],[12500,55800],[13000,57600],[13500,59500],[14000,61300],[14500,63100],[15000,64900],
+  [15500,66700],[16000,68600],[16500,70400],[17000,72200],[17500,74000],[18000,75800],[18500,77700],[19000,79500],[19500,81300],[20000,83100],
+  [20500,84700],[21000,86200],[21500,87800],[22000,89300],[22500,90800],[23000,92400],[23500,93900],[24000,95400],[24500,97000],[25000,98500],
+  [25500,100100],[26000,101600],[26500,103100],[27000,104700],[27500,106200],[28000,107800],[28500,109300],[29000,110800],[29500,112400],[30000,113900]
+];
+const elgDhl7PerKg = [[31,1703],[70,1697],[300,2775],[99999,2773]];
+const elgDhl8 = [
+  [500,6000],[1000,6100],[1500,6200],[2000,6400],[2500,14100],[3000,14300],[3500,14400],[4000,14600],[4500,14700],[5000,14800],
+  [5500,17600],[6000,21100],[6500,24500],[7000,28000],[7500,31400],[8000,34900],[8500,38400],[9000,41800],[9500,45300],[10000,48700],
+  [10500,50600],[11000,52500],[11500,54300],[12000,56200],[12500,58000],[13000,59900],[13500,61800],[14000,63600],[14500,65500],[15000,67300],
+  [15500,69200],[16000,71000],[16500,72900],[17000,74800],[17500,76600],[18000,78500],[18500,80300],[19000,82200],[19500,84100],[20000,85900],
+  [20500,87400],[21000,88800],[21500,90300],[22000,91700],[22500,93100],[23000,94600],[23500,96000],[24000,97500],[24500,98900],[25000,100400],
+  [25500,101800],[26000,103300],[26500,104700],[27000,106200],[27500,107600],[28000,109000],[28500,110500],[29000,111900],[29500,113400],[30000,114800]
+];
+const elgDhl8PerKg = [[31,2511],[70,2520],[300,3120],[99999,3120]];
+const elgDhl9 = [
+  [500,6300],[1000,6400],[1500,6600],[2000,6700],[2500,14500],[3000,14600],[3500,14700],[4000,14900],[4500,15000],[5000,15200],
+  [5500,18400],[6000,22200],[6500,26100],[7000,30000],[7500,33900],[8000,37800],[8500,41700],[9000,45600],[9500,49500],[10000,53400],
+  [10500,55100],[11000,56900],[11500,58600],[12000,60300],[12500,62100],[13000,63800],[13500,65500],[14000,67300],[14500,69000],[15000,70700],
+  [15500,72500],[16000,74200],[16500,75900],[17000,77700],[17500,79400],[18000,81100],[18500,82900],[19000,84600],[19500,86300],[20000,88100],
+  [20500,89700],[21000,91400],[21500,93000],[22000,94700],[22500,96300],[23000,98000],[23500,99600],[24000,101300],[24500,102900],[25000,104600],
+  [25500,106200],[26000,107900],[26500,109500],[27000,111200],[27500,112800],[28000,114500],[28500,116100],[29000,117700],[29500,119400],[30000,121000]
+];
+const elgDhl9PerKg = [[31,2545],[70,2541],[300,3274],[99999,3274]];
+const ELG_DHL={1:[elgDhl1,elgDhl1PerKg], 2:[elgDhl2,elgDhl2PerKg], 3:[elgDhl3,elgDhl3PerKg], 4:[elgDhl4,elgDhl4PerKg], 5:[elgDhl5,elgDhl5PerKg], 6:[elgDhl6,elgDhl6PerKg], 7:[elgDhl7,elgDhl7PerKg], 8:[elgDhl8,elgDhl8PerKg], 9:[elgDhl9,elgDhl9PerKg]};
+function getElogiDhlData(z) { return ELG_DHL[z] || null; }
 
 // ===== eLogi 全22ゾーン料金表 =====
 // eLogi公式「送料目安 2026/2/15版」PDFから機械抽出。ゾーン記号はFedEx公式ガイドと共通。
@@ -3465,6 +3557,9 @@ function calculate() {
     { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     { id: 'elogi-ie',   label: 'eLogi FedEx IE',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'エコノミー。IPより遅いが安い' },
+    ...(getElogiDhlData(cc.elogiDhlZone) ? [
+      { id: 'elogi-dhl', label: 'eLogi DHL Express', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSのDHLと比較用' },
+    ] : []),
     ...(getElogiUpsData(cc.upsZone) ? [
       { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
@@ -3758,6 +3853,20 @@ function calculate() {
         if (cs && c <= 0) r2.push('重量超過');
         { const shipOnly = canSend ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
         addMethod('elogi-ie',{name:'eLogi IE',sub:'4-6日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:totalCost,canSend:canSend,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
+      }
+      // eLogi DHL Express（FedEx系とは別のゾーン体系を使う）
+      {
+        const dhlD = getElogiDhlData(cc.elogiDhlZone);
+        if (dhlD) {
+          const cs = billableStandardG <= 30000;
+          const c = cs ? elogiLookup(dhlD[0], dhlD[1], billableStandardG) : -1;
+          const canSend = cs && c > 0;
+          const r2 = [];
+          if (!cs) r2.push('30kg超過');
+          if (cs && c <= 0) r2.push('重量超過');
+          { const shipOnly = canSend ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+          addMethod('elogi-dhl',{name:'eLogi DHL Express',sub:'2-4日/'+_dutyType+'/最大30kg/体積÷5,000/サーチャージ込',cost:totalCost,canSend:canSend,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
+        }
       }
       {
         const sorted = [L, W, H].sort((a,b) => b-a);
