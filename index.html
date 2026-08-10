@@ -2702,6 +2702,7 @@ const elogiUpsZone6PerKg = [[54,1391],[70,1364],[99,1253]];
 
 // eLogi zone lookup helpers
 function getElogiFicpData(z) { return ELG_FICP[z] || null; }
+function getElogiIeData(z) { return ELG_IE[z] || null; }
 function getElogiIpPkgData(z) { return ELG_IPPKG[z] || null; }
 function getElogiIpEnvRate(z) { return elgIpEnv[z] || 0; }
 function getElogiIpPakTable(z) { return ELG_IPPAK[z] || null; }
@@ -3463,6 +3464,7 @@ function calculate() {
     { id: 'speedpak', label: 'Economy（CPaSS）',     tag: cc.economy?'':'非対応', primary: false, methods: [], note: cc.economy?'配送が遅いので使用する場合はEconomy用のShipping Policyを作成してください':'この国はEconomy非対応です' },
     { id: 'elogi-ficp', label: 'eLogi FedEx FICP', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
     { id: 'elogi-ip',   label: 'eLogi FedEx IP',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'CPaSSと比較用' },
+    { id: 'elogi-ie',   label: 'eLogi FedEx IE',   tag: '比較用', primary: false, methods: [], collapsed: true, note: 'エコノミー。IPより遅いが安い' },
     ...(getElogiUpsData(cc.upsZone) ? [
       { id: 'elogi-ups', label: 'eLogi UPS Express Saver', tag: '比較用', primary: false, methods: [], collapsed: true, note: 'アジア・オーストラリア向けが安い' },
     ] : []),
@@ -3739,6 +3741,23 @@ function calculate() {
         if (cs && c <= 0) r2.push('重量超過');
         { const shipOnly = canSend ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
         addMethod('elogi-ficp',{name:'eLogi FICP',sub:'2-5日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:totalCost,canSend:canSend,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
+      }
+      // eLogi IE（フェデックス・インターナショナル・エコノミー）。FICPと同じゾーン記号・同じサイズ条件
+      const ieD = getElogiIeData(eZ);
+      if (ieD) {
+        const csW = billableStandardG <= 68000;
+        const csL = fxLength <= 274;
+        const csG = fxLpG <= 330;
+        const cs = csW && csL && csG;
+        const c = cs ? elogiLookup(ieD[0], ieD[1], billableStandardG) : -1;
+        const canSend = cs && c > 0;
+        const r2 = [];
+        if (!csW) r2.push('68kg超過');
+        if (!csL) r2.push('最長辺274cm超過');
+        if (!csG) r2.push('長さ+周囲330cm超過');
+        if (cs && c <= 0) r2.push('重量超過');
+        { const shipOnly = canSend ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
+        addMethod('elogi-ie',{name:'eLogi IE',sub:'4-6日/'+_dutyType+'/最大68kg/274cm/周囲330cm/体積÷5,000/サーチャージ込',cost:totalCost,canSend:canSend,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料（サーチャージ込）',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
       }
       {
         const sorted = [L, W, H].sort((a,b) => b-a);
