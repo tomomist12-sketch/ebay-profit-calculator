@@ -1576,7 +1576,10 @@ function getDhlEnvelopeRate(z) { return dhlEnvelopeRates[z]||2454; }
 function getEpacketLightTable(jpZone) { return jpZone===1?epacketLightZone1:jpZone===2?epacketLightZone2:jpZone===3?epacketLightZone3:jpZone===4?epacketLightZone4:null; }
 function getEmsTable(jpZone) { return jpZone===1?emsZone1:jpZone===2?emsZone2:jpZone===3?emsZone3:emsZone4; }
 
-// --- 日本郵便 eパケットライト (実重量, 最大2kg) ---
+// --- 日本郵便 国際エアパケット (実重量, 最大2kg) ---
+// 2026/6/1に「国際eパケットライト」から名称変更し、取扱国・地域が全世界へ拡大。
+// 料金は据え置きで、公式の第1〜4地帯と下表が一致することを確認済み（2026-08-09）。
+// 第5地帯（中南米(メキシコ除く)・アフリカ）が新設されたが、対象国が未登録のため表は持っていない。
 // 第1地帯: 中国・韓国・台湾
 const epacketLightZone1 = [
   [100,720],[200,820],[300,920],[400,1020],[500,1120],
@@ -2800,7 +2803,7 @@ function calculate() {
       if (eplTooLarge) r2.push('サイズ超過（最大60cm/3辺合計90cm）');
       if (!eplWeightOk) r2.push('2kg超過');
       { const shipOnly = cs&&c>0 ? c : -1; const totalCost = shipOnly > 0 ? shipOnly + usDutyAmount : -1;
-      addMethod('jppost',{name:'eパケットライト',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:totalCost,canSend:cs&&c>0,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
+      addMethod('jppost',{name:'国際エアパケット',sub:zoneName+'/追跡あり/最大2kg/実重量/⚠️ Economy用Shipping Policy要作成',cost:totalCost,canSend:cs&&c>0,reason:r2.join(', '),feeDetails:shipOnly>0?buildDutyFeeDetails('配送料',shipOnly,usDutyInfo):null,_dutyLoading:usDutyLoading}); }
     }
     {
       const emsDims = [L, W, H].sort((a,b) => b-a);
