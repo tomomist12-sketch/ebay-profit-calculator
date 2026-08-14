@@ -3179,6 +3179,30 @@ function lookupBracketKg(table, weightGrams) {
 
 // ========== SpeedPAK API Integration ==========
 const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
+
+// CPaSSのAPIに申告価額を送ると「従価料金（＝運送申告価額に対する任意の運送保険料）」が見積もりに乗る。
+// だが実際のeBayラベル作成画面には運送申告価額の入力欄が無く、CPaSSの請求書にも計上されない
+// （FedEx規定でも「エンベロープまたはパックのサービス利用時は運送申告価額を利用できない」）。
+// 申告価額の送信自体をやめると米国宛の関税が丸ごと返らなくなるため、送信は続けたうえで
+// この行だけ取り除いて実際の請求に合わせる。
+// 実測（0.5kg / 26×20×12）: ドイツ宛 4,045→3,705（実際3,709）、米国宛 6,706→6,366（実際6,366）
+const AD_VALOREM_CHARGES_ID = '128'; // 従価料金 / Declared Value Charge for Carriage
+function stripAdValorem(rates) {
+  if (!rates) return rates;
+  Object.keys(rates).forEach(key => {
+    const r = rates[key];
+    if (!r || !Array.isArray(r.feeDetails)) return;
+    let fee = 0;
+    r.feeDetails.forEach(f => { if (f.chargesId === AD_VALOREM_CHARGES_ID) fee += (f.freight || 0); });
+    r.feeDetails = r.feeDetails.filter(f => f.chargesId !== AD_VALOREM_CHARGES_ID);
+    if (fee > 0) {
+      if (r.totalAmount > 0) r.totalAmount = Math.max(0, r.totalAmount - fee);
+      if (r.shippingAmount > 0) r.shippingAmount = Math.max(0, r.shippingAmount - fee);
+    }
+  });
+  return rates;
+}
+
 let _speedpakRates = null;      // APIレスポンスの rates オブジェクト
 let _speedpakPakRates = null;   // FedEx Pak（実重量課金）で問い合わせた rates
 let _speedpakLoading = false;   // API取得中フラグ
@@ -3231,9 +3255,9 @@ async function fetchSpeedpakRates() {
       wantPak ? post({ ...reqBody, length: 1, width: 1, height: 1 }).catch(() => null) : Promise.resolve(null)
     ]);
     console.log('[SpeedPAK API Response]', data);
-    _speedpakPakRates = (pakData && pakData.success) ? pakData.rates : null;
+    _speedpakPakRates = (pakData && pakData.success) ? stripAdValorem(pakData.rates) : null;
     if (data.success) {
-      _speedpakRates = data.rates;
+      _speedpakRates = stripAdValorem(data.rates);
       // 燃油サーチャージは SpeedPAK API の送料に込みで返るため、手動フィールドは廃止。
       // API取得失敗時の予備計算をCPaSSに合わせるため、実際の明細から燃油率を学習しておく。
       learnFuelRateFromRates(data.rates);
