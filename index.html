@@ -204,6 +204,10 @@ body.ship-only .method-row .mr-right .val-cost{font-size:1.3rem}
 .ship-only-field{display:none}
 body.ship-only .ship-only-field{display:flex}
 .ship-value-hint{font-size:.68rem;color:var(--text3);line-height:1.4;margin-top:3px}
+/* 送料だけモードの平らな一覧: 行の頭の配送会社名と、行ごとの注意書き */
+.mr-provider{font-size:.66rem;font-weight:600;color:var(--text2);background:#f1f5f9;border:1px solid var(--border);border-radius:5px;padding:1px 6px;flex:0 0 auto;white-space:nowrap}
+.mr-note{font-size:.7rem;color:var(--text2);line-height:1.4;margin-top:2px}
+.mr-note-warn{color:#b45309}
 body.ship-only .ship-value-hint{display:block}
 .ship-note{font-size:.75rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:10px;line-height:1.5}
 .pricing-info{font-size:.78rem;color:var(--text2);padding:6px 8px;background:#f8fafc;border-radius:6px;margin-top:4px;line-height:1.5}
@@ -4237,6 +4241,122 @@ function calculate() {
   const container = document.getElementById('resultsContainer');
   container.innerHTML = '';
 
+  // 送料だけモードで行の頭に出す配送会社名（グループ見出しが無くなるため）
+  const SHIP_PROVIDER = {
+    fedex:'CPaSS', 'fedex-ip':'CPaSS', dhl:'CPaSS', speedpak:'CPaSS',
+    'elogi-ficp':'eLogi', 'elogi-ip':'eLogi', 'elogi-ie':'eLogi', 'elogi-dhl':'eLogi', 'elogi-ups':'eLogi',
+    jppost:'日本郵便'
+  };
+  const groupTagById = {};
+  groups.forEach(g => { groupTagById[g.id] = g.tag; });
+
+  // グループ見出しに出していた注意書きは、平らな一覧では行ごとに出す
+  function shipRowNote(m) {
+    if (m._groupId === 'elogi-ups') {
+      return '⚠ 個人宅手数料など後日追加請求される可能性が高く、一見安く見えても他と変わらないことが多い';
+    }
+    if (m._groupId === 'jppost') {
+      return EU_IOSS_SUSPENDED.includes(cc.code)
+        ? '⚠ ' + cc.name + 'あてはIOSS利用の郵便物を差し出せません（eBay販売はIOSS利用のためCPaSS/eLogiを使ってください）'
+        : 'CPaSS非対応・自分で発送手続きが必要';
+    }
+    if (m._groupId === 'speedpak' && m.canSend) {
+      return 'かなり遅い。eBayで使うならEconomy用のShipping Policyが必要';
+    }
+    return '';
+  }
+
+  function makeMethodRow(m, gTag) {
+    const row = document.createElement('div');
+    let cls = 'method-row';
+    if (shipMode) {
+      // 送料だけモード: 利益で薄くしない。最安を強調し、発送できない行だけ薄くする
+      if (m.isCheapest) cls += ' usable';
+      else if (!(m.canSend && m.cost > 0)) cls += ' dimmed';
+    } else if (m.isOk && m.canSend && m.cost > 0) {
+      // 出品OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
+      cls += ' usable';
+    } else {
+      cls += ' dimmed';
+    }
+    row.className = cls;
+
+    // dimmed理由の生成（サマリーバーと同じ文言をbuildNgReasonsで生成）
+    const dimReason = shipMode ? '' : buildNgReasons(m, profitTh, effectiveRateTh).join('、');
+
+    // Tags
+    const tagItems = [];
+    if (m.isCheapest) tagItems.push('<span class="method-tag tag-ok">最安</span>');
+    if (m.isBest) tagItems.push('<span class="method-tag tag-recommend">推奨</span>');
+    if (!shipMode && m.isOk) tagItems.push('<span class="method-tag tag-ok">出品OK</span>');
+    if (!shipMode && m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
+    if (gTag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
+    // 「比較用」は eLogi のバッジと重複するので、平らな一覧では出さない
+    if (gTag === '比較用' && !shipMode) tagItems.push('<span class="method-tag tag-compare">比較用</span>');
+    if (gTag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
+    if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
+    const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
+    const dimReasonHtml = dimReason ? `<span class="dim-reason" title="${dimReason}">${dimReason}</span>` : '';
+
+    let right;
+    if (shipMode && m.cost > 0) {
+      const detailBtn = m.feeDetails ? `<button class="fee-detail-btn" onclick="event.stopPropagation();toggleFeePopup(this)" title="送料内訳">明細</button>` : '';
+      let popupHtml = '';
+      if (m.feeDetails) {
+        const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
+        popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
+      }
+      right = `<div class="mr-right">
+        <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
+      </div>${popupHtml}`;
+    } else if (m.cost > 0 && m.profit !== null) {
+      const profitCls = m.profit < 0 ? 'val val-neg' : 'val val-profit';
+      const refundCls = m.profitWithRefund < 0 ? 'val val-neg' : 'val val-refund';
+      const profitTxt = m.profit < 0 ? '⚠ ¥' + fmt(m.profit) : '¥' + fmt(m.profit);
+      const refundTxt = m.profitWithRefund < 0 ? '⚠ ¥' + fmt(m.profitWithRefund) : '¥' + fmt(m.profitWithRefund);
+      const detailBtn = m.feeDetails ? `<button class="fee-detail-btn" onclick="event.stopPropagation();toggleFeePopup(this)" title="送料内訳">明細</button>` : '';
+      let popupHtml = '';
+      if (m.feeDetails) {
+        const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
+        popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
+      }
+      const dutyLoadingNote = m._dutyLoading ? '<div style="font-size:.65rem;color:var(--text3);text-align:right;margin-top:1px">関税取得中...</div>' : '';
+      right = `<div class="mr-right">
+        <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
+        <span class="lbl">利益</span><span class="${profitCls}">${profitTxt}</span>
+        <span class="lbl">還付込</span><span class="${refundCls}">${refundTxt}</span>
+      </div>${dutyLoadingNote}${popupHtml}`;
+    } else {
+      right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
+    }
+
+    const subTxt = shipMode ? stripDutyToken(m.sub) : m.sub;
+    const providerHtml = shipMode ? `<span class="mr-provider">${SHIP_PROVIDER[m._groupId] || ''}</span>` : '';
+    const rowNote = shipMode ? shipRowNote(m) : '';
+    const rowNoteHtml = rowNote
+      ? `<div class="mr-note${rowNote.indexOf('⚠') === 0 ? ' mr-note-warn' : ''}">${rowNote}</div>`
+      : '';
+    row.innerHTML = `<div class="mr-left"><div class="mr-name-row">${providerHtml}<div class="mr-name">${m.name}</div>${dimReasonHtml}</div><div class="mr-sub">${subTxt}</div>${rowNoteHtml}${tags}</div>${right}`;
+    return row;
+  }
+
+  if (shipMode) {
+    // 送料だけモードは配送会社をまたいで、まるごと安い順のひとつの表にする。
+    // グループに分けたままだと「Economy 2,215円」が「FICP 3,088円」より下に来てしまい、
+    // 上から順に見ても安い順にならない。発送できない行は末尾へ回す。
+    const flat = allMethods.slice().sort((a, b) => {
+      const ac = (a.canSend && a.cost > 0) ? a.cost : Infinity;
+      const bc = (b.canSend && b.cost > 0) ? b.cost : Infinity;
+      return ac - bc;
+    });
+    const section = document.createElement('div');
+    section.className = 'group-section';
+    const grid = document.createElement('div');
+    grid.className = 'group-grid';
+    flat.forEach(m => grid.appendChild(makeMethodRow(m, groupTagById[m._groupId] || '')));
+    section.appendChild(grid);
+    container.appendChild(section);
+  } else {
   groups.forEach(g => {
     const section = document.createElement('div');
     // 推奨便（isBest）を含むグループは畳まない。畳むとサマリーバーの金額に対応する行が
@@ -4245,8 +4365,7 @@ function calculate() {
     //   IPグループは既定で折りたたみのため見えなくなっていた）
     const collapsible = g.collapsed || (g.id === 'speedpak' && !cc.economy);
     const hasBest = g.methods.some(m => m.isBest);
-    // 送料だけモードは「バーっと全部見たい」ので畳まない
-    const isCollapsed = shipMode ? false : (collapsible && !hasBest);
+    const isCollapsed = collapsible && !hasBest;
     let sectionCls = 'group-section';
     if (isCollapsed) sectionCls += ' collapsed';
     section.className = sectionCls;
@@ -4300,77 +4419,12 @@ function calculate() {
       grid.appendChild(iossNote);
     }
 
-    g.methods.forEach(m => {
-      const row = document.createElement('div');
-      let cls = 'method-row';
-      if (shipMode) {
-        // 送料だけモード: 利益で薄くしない。最安を強調し、発送できない行だけ薄くする
-        if (m.isCheapest) cls += ' usable';
-        else if (!(m.canSend && m.cost > 0)) cls += ' dimmed';
-      } else if (m.isOk && m.canSend && m.cost > 0) {
-        // 出品OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
-        cls += ' usable';
-      } else {
-        cls += ' dimmed';
-      }
-      row.className = cls;
-
-      // dimmed理由の生成（サマリーバーと同じ文言をbuildNgReasonsで生成）
-      const dimReason = shipMode ? '' : buildNgReasons(m, profitTh, effectiveRateTh).join('、');
-
-      // Tags
-      const tagItems = [];
-      if (m.isCheapest) tagItems.push('<span class="method-tag tag-ok">最安</span>');
-      if (m.isBest) tagItems.push('<span class="method-tag tag-recommend">推奨</span>');
-      if (!shipMode && m.isOk) tagItems.push('<span class="method-tag tag-ok">出品OK</span>');
-      if (!shipMode && m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
-      if (g.tag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
-      if (g.tag === '比較用') tagItems.push('<span class="method-tag tag-compare">比較用</span>');
-      if (g.tag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
-      if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
-      const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
-      const dimReasonHtml = dimReason ? `<span class="dim-reason" title="${dimReason}">${dimReason}</span>` : '';
-
-      let right;
-      if (shipMode && m.cost > 0) {
-        const detailBtn = m.feeDetails ? `<button class="fee-detail-btn" onclick="event.stopPropagation();toggleFeePopup(this)" title="送料内訳">明細</button>` : '';
-        let popupHtml = '';
-        if (m.feeDetails) {
-          const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
-          popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
-        }
-        right = `<div class="mr-right">
-          <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
-        </div>${popupHtml}`;
-      } else if (m.cost > 0 && m.profit !== null) {
-        const profitCls = m.profit < 0 ? 'val val-neg' : 'val val-profit';
-        const refundCls = m.profitWithRefund < 0 ? 'val val-neg' : 'val val-refund';
-        const profitTxt = m.profit < 0 ? '⚠ ¥' + fmt(m.profit) : '¥' + fmt(m.profit);
-        const refundTxt = m.profitWithRefund < 0 ? '⚠ ¥' + fmt(m.profitWithRefund) : '¥' + fmt(m.profitWithRefund);
-        const detailBtn = m.feeDetails ? `<button class="fee-detail-btn" onclick="event.stopPropagation();toggleFeePopup(this)" title="送料内訳">明細</button>` : '';
-        let popupHtml = '';
-        if (m.feeDetails) {
-          const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
-          popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
-        }
-        const dutyLoadingNote = m._dutyLoading ? '<div style="font-size:.65rem;color:var(--text3);text-align:right;margin-top:1px">関税取得中...</div>' : '';
-        right = `<div class="mr-right">
-          <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
-          <span class="lbl">利益</span><span class="${profitCls}">${profitTxt}</span>
-          <span class="lbl">還付込</span><span class="${refundCls}">${refundTxt}</span>
-        </div>${dutyLoadingNote}${popupHtml}`;
-      } else {
-        right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
-      }
-
-      const subTxt = shipMode ? stripDutyToken(m.sub) : m.sub;
-      row.innerHTML = `<div class="mr-left"><div class="mr-name-row"><div class="mr-name">${m.name}</div>${dimReasonHtml}</div><div class="mr-sub">${subTxt}</div>${tags}</div>${right}`;
-      grid.appendChild(row);
-    });
+    g.methods.forEach(m => { grid.appendChild(makeMethodRow(m, g.tag)); });
 
     section.appendChild(grid);
     container.appendChild(section);
   });
+  }
 
   // 送料だけモードの案内文（商品の価格の下・一覧の上）
   if (shipMode) {
