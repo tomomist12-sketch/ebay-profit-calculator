@@ -190,6 +190,17 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 .mode-btn{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text3);text-align:center;transition:all .15s}
 .mode-btn:hover{border-color:var(--primary);color:var(--primary)}
 .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* ===== モード切替（利益計算 / 送料だけ） ===== */
+.app-mode-bar{display:flex;gap:4px;background:#e8edf4;border-radius:10px;padding:4px;margin-bottom:6px}
+.app-mode-btn{flex:1;padding:8px 12px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--text2);transition:all .15s}
+.app-mode-btn:hover{color:var(--primary)}
+.app-mode-btn.active{background:var(--card);color:var(--primary);box-shadow:var(--shadow)}
+.app-mode-hint{font-size:.72rem;color:var(--text3);text-align:center;margin-bottom:10px}
+/* 送料だけモード: 利益計算まわりを丸ごと隠して「重さ・サイズ → 送料」だけにする */
+body.ship-only .profit-only{display:none!important}
+body.ship-only .method-row .mr-right .val-cost{font-size:1.3rem}
+.ship-note{font-size:.75rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:10px;line-height:1.5}
 .pricing-info{font-size:.78rem;color:var(--text2);padding:6px 8px;background:#f8fafc;border-radius:6px;margin-top:4px;line-height:1.5}
 .pricing-info strong{color:var(--text);font-family:"SF Mono",Consolas,monospace}
 
@@ -344,14 +355,20 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 
 <div class="title-row">
   <h1>eBayリサーチツール</h1>
-  <button class="saved-calc-top" onclick="openCalcListModal()">📋 出品一覧</button>
+  <button class="saved-calc-top profit-only" onclick="openCalcListModal()">📋 出品一覧</button>
 </div>
 
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<div class="app-mode-bar">
+  <button type="button" class="app-mode-btn active" id="appModeProfit" onclick="setAppMode('profit')">💰 利益計算</button>
+  <button type="button" class="app-mode-btn" id="appModeShip" onclick="setAppMode('ship')">📦 送料だけ調べる</button>
+</div>
+<div class="app-mode-hint" id="appModeHint">仕入額・売値から利益と出品OK判定まで出します</div>
+
+<div class="profit-only" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
   <button class="toggle-btn active" id="toolBarToggle" onclick="toggleToolBar()" style="font-weight:600">🧰 リサーチツール <span id="toolBarArrow">▲</span></button>
   <span style="font-size:.7rem;color:var(--text3)">キーワード生成・eBay販売履歴・国内一括検索</span>
 </div>
-<div class="tool-bar" id="toolBar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+<div class="tool-bar profit-only" id="toolBar" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
   <!-- 1. キーワードガチャ -->
   <div style="background:var(--card);border-radius:8px;box-shadow:var(--shadow);padding:8px 12px;border-top:3px solid var(--primary)">
     <div style="font-size:.72rem;margin-bottom:4px"><span style="font-weight:700;color:var(--primary)">🎲 ランダムキーワード生成</span> <span style="color:var(--text3)">— キーワードを押すとコピーできます</span></div>
@@ -444,14 +461,14 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
   <!-- 商品情報 -->
   <div class="card">
     <div class="product-card-header">
-      <h2><span class="icon">📦</span> 商品情報</h2>
+      <h2><span class="icon">📦</span> <span id="productCardTitle">商品情報</span></h2>
       <div class="save-header-actions">
         <button class="copy-info-btn" onclick="copyProductInfo()">コピー</button>
         <button class="copy-info-btn" onclick="resetProductInfo()">リセット</button>
       </div>
     </div>
     <div id="headerActionStatus" class="inline-status header-action-status" role="status" aria-live="polite"></div>
-    <div class="product-id-section">
+    <div class="product-id-section profit-only">
       <label class="product-id-label"><span class="label-icon">🔍</span><span>eBay商品番号</span></label>
       <div class="product-id-row">
         <input type="text" inputmode="numeric" id="saveEbayItemId" placeholder="例: 123456789012">
@@ -460,11 +477,11 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       </div>
       <div id="loadStatus" class="inline-status load-status" role="status" aria-live="polite"></div>
     </div>
-    <div class="mode-bar">
+    <div class="mode-bar profit-only">
       <button class="mode-btn active" id="modeUs" onclick="setPricingMode('us')"><svg width="18" height="13" viewBox="0 0 18 13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px"><rect width="18" height="13" fill="#B22234"/><g fill="#fff"><rect y="1" width="18" height="1"/><rect y="3" width="18" height="1"/><rect y="5" width="18" height="1"/><rect y="7" width="18" height="1"/><rect y="9" width="18" height="1"/><rect y="11" width="18" height="1"/></g><rect width="8" height="7" fill="#3C3B6E"/></svg> アメリカ向け</button>
       <button class="mode-btn" id="modeOther" onclick="setPricingMode('other')"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="3" ry="7" fill="none" stroke="currentColor" stroke-width="1.3"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.3"/></svg> アメリカ以外</button>
     </div>
-    <div class="grid2" style="margin-bottom:6px">
+    <div class="grid2 profit-only" style="margin-bottom:6px">
       <div class="field">
         <label>仕入額 <span class="unit">(¥・税込)</span></label>
         <input type="text" inputmode="decimal" id="purchasePrice" value="0" class="highlight">
@@ -475,7 +492,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       </div>
     </div>
     <!-- アメリカ向け -->
-    <div id="usSection" style="margin-bottom:6px">
+    <div id="usSection" class="profit-only" style="margin-bottom:6px">
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px" id="compShippingRow">
         <div class="field" style="width:140px">
           <label>競合送料</label>
@@ -498,7 +515,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       </div>
     </div>
     <!-- アメリカ以外 -->
-    <div id="otherSection" style="display:none">
+    <div id="otherSection" class="profit-only" style="display:none">
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px">
         <div class="field" style="width:100px">
           <label>US送料 <span class="unit">(%)</span></label>
@@ -532,14 +549,14 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
       <span class="volume-weight-item">体積重量(÷5000): <strong id="volWeight" class="volume-weight-value">-</strong></span>
       <span class="volume-weight-item">Economy(÷8000): <strong id="volWeightEco" class="volume-weight-value">-</strong></span>
     </div>
-    <div class="product-save-footer">
+    <div class="product-save-footer profit-only">
       <div id="saveStatus" class="inline-status save-action-status" role="status" aria-live="polite"></div>
       <button class="copy-info-btn product-save-btn" id="saveCalcBtn" onclick="openSaveMemoModal()">💾 保存</button>
     </div>
   </div>
 
   <!-- 手数料設定 -->
-  <div class="card">
+  <div class="card profit-only">
     <h2><span class="icon">⚙️</span> 手数料・レート</h2>
     <!-- ストアプラン切替 -->
     <div class="mode-bar" style="margin-bottom:2px">
@@ -626,7 +643,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
     </div>
   </div>
 
-<div class="fee-detail-section" style="text-align:center">
+<div class="fee-detail-section profit-only" style="text-align:center">
   <button class="toggle-btn" id="feeToggle" onclick="toggleFeeDetail()">手数料内訳 ▼</button>
   <div class="settings-content" id="feeDetailContent">
     <div class="card" style="text-align:left;margin-top:8px;margin-bottom:0">
@@ -648,7 +665,7 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 
 <div class="right-column">
 <!-- ===== 利益サマリー ===== -->
-<div class="profit-summary">
+<div class="profit-summary profit-only">
   <div class="profit-summary-item" id="summaryProfit">
     <div class="p-label">推奨便 利益</div>
     <div class="p-val" id="bestProfitYen">-</div>
@@ -665,7 +682,8 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 <div style="display:none"><span id="bestProfitRate">-</span><span id="bestRateSub"></span></div>
 <!-- ===== 配送方法別 利益比較 ===== -->
 <div class="card">
-  <h2><span class="icon">🚚</span> 配送方法別 利益比較</h2>
+  <h2><span class="icon">🚚</span> <span id="resultsTitle">配送方法別 利益比較</span></h2>
+  <div class="ship-note" id="shipOnlyNote" style="display:none">重さとサイズだけで送料を安い順に並べています。関税・eBay手数料は含みません（商品価格が分からないと計算できないため）。</div>
   <div style="margin-bottom:10px">
     <div class="cpick" id="countryPicker">
       <button type="button" class="cpick-btn" id="countryBtn" aria-haspopup="listbox" aria-expanded="false">
@@ -3203,6 +3221,27 @@ function stripAdValorem(rates) {
   return rates;
 }
 
+// 送料だけモード用: CPaSSの見積もりから関税系（推定関税・関税処理手数料）を取り除く。
+// 申告価額を送らなければ米国宛の関税は元から0になるが、EU宛は逆に「送らない時こそ」
+// 定額関税(€3+手数料)が乗ってくる。ここで明細ごと落として totalAmount を純粋な送料に戻す。
+// 関税系の行は tariffCategoryType を持つ（spDutyDetails と同じ判定）。
+function stripEstimatedDuty(rates) {
+  if (!rates) return rates;
+  Object.keys(rates).forEach(key => {
+    const r = rates[key];
+    if (!r) return;
+    let duty = 0;
+    if (Array.isArray(r.feeDetails)) {
+      r.feeDetails.forEach(f => { if (f.tariffCategoryType) duty += (f.freight || 0); });
+      r.feeDetails = r.feeDetails.filter(f => !f.tariffCategoryType);
+    }
+    if (!(duty > 0) && r.dutyAmount > 0) duty = r.dutyAmount; // 明細が無い場合の保険
+    if (duty > 0 && r.totalAmount > 0) r.totalAmount = Math.max(0, r.totalAmount - duty);
+    r.dutyAmount = 0;
+  });
+  return rates;
+}
+
 let _speedpakRates = null;      // APIレスポンスの rates オブジェクト
 let _speedpakPakRates = null;   // FedEx Pak（実重量課金）で問い合わせた rates
 let _speedpakLoading = false;   // API取得中フラグ
@@ -3219,7 +3258,8 @@ async function fetchSpeedpakRates() {
 
   // declaredValue: CPaSSの実画面に合わせ、商品単価のみを申告（送料は含めない）
   // 関税は「商品の価値」に対してかかるもので、送料は対象外。
-  const rawSelling = getVal('sellingPrice');
+  // 送料だけモードは申告価額を送らない ＝ 関税抜きの純粋な送料が返る
+  const rawSelling = isShipOnlyMode() ? 0 : getVal('sellingPrice');
   const declaredUsd = rawSelling > 0 ? Math.round((rawSelling - 0.01) * 100) / 100 : 0;
   const cc = COUNTRIES.find(c => c.id === currentCountry) || COUNTRIES[0];
 
@@ -3256,11 +3296,14 @@ async function fetchSpeedpakRates() {
     ]);
     console.log('[SpeedPAK API Response]', data);
     _speedpakPakRates = (pakData && pakData.success) ? stripAdValorem(pakData.rates) : null;
+    if (isShipOnlyMode()) stripEstimatedDuty(_speedpakPakRates);
     if (data.success) {
       _speedpakRates = stripAdValorem(data.rates);
       // 燃油サーチャージは SpeedPAK API の送料に込みで返るため、手動フィールドは廃止。
       // API取得失敗時の予備計算をCPaSSに合わせるため、実際の明細から燃油率を学習しておく。
       learnFuelRateFromRates(data.rates);
+      // 送料だけモードは関税を含めない（学習は関税を落とす前の明細で済ませてある）
+      if (isShipOnlyMode()) stripEstimatedDuty(_speedpakRates);
     } else {
       _speedpakRates = null;
       _speedpakError = true;
@@ -3492,13 +3535,53 @@ function buildNgReasons(m, profitTh, rateTh) {
   return reasons;
 }
 
+// ========== モード切替（利益計算 / 送料だけ） ==========
+// 「利益はいらない、この荷物の送料だけ知りたい」向けのモード。
+// 仕入額・売値を 0 として扱うことで、関税（US 12.5% / EU定額€3）も自動的に外れ、
+// 純粋な運送料金（燃油・混雑割増込み）だけが並ぶ。
+const APP_MODE_KEY = 'ebayCalcAppMode';
+let currentAppMode = 'profit'; // 'profit' | 'ship'
+function isShipOnlyMode() { return currentAppMode === 'ship'; }
+
+function setAppMode(mode, skipRefresh) {
+  currentAppMode = (mode === 'ship') ? 'ship' : 'profit';
+  const ship = isShipOnlyMode();
+  document.body.classList.toggle('ship-only', ship);
+  const bp = document.getElementById('appModeProfit');
+  const bs = document.getElementById('appModeShip');
+  if (bp) bp.classList.toggle('active', !ship);
+  if (bs) bs.classList.toggle('active', ship);
+  const hint = document.getElementById('appModeHint');
+  if (hint) hint.textContent = ship
+    ? '重さとサイズを入れるだけ。宛先を選ぶと送料を安い順に並べます'
+    : '仕入額・売値から利益と出品OK判定まで出します';
+  const rt = document.getElementById('resultsTitle');
+  if (rt) rt.textContent = ship ? '配送方法別 送料比較' : '配送方法別 利益比較';
+  const pt = document.getElementById('productCardTitle');
+  if (pt) pt.textContent = ship ? '荷物の重さ・サイズ' : '商品情報';
+  const sn = document.getElementById('shipOnlyNote');
+  if (sn) sn.style.display = ship ? 'block' : 'none';
+  try { localStorage.setItem(APP_MODE_KEY, currentAppMode); } catch(_) {}
+  if (skipRefresh) return;
+  calculate();
+  // 申告価額の有無で CPaSS の見積もり（関税込み/抜き）が変わるため取り直す
+  fetchSpeedpakRates();
+}
+
+// 送料だけモードでは関税を含めないので、配送方法の説明から DDP/DDU の表記を外す
+function stripDutyToken(sub) {
+  return String(sub || '').split('/').filter(p => p !== 'DDP' && p !== 'DDU').join('/');
+}
+
 // ========== Main Calculation ==========
 
 function calculate() {
   updatePricingDisplay();
   updateFeeDescription();
-  const purchase = getVal('purchasePrice');
-  const selling = getEffectiveSellingPrice();
+  const shipMode = isShipOnlyMode();
+  // 送料だけモードは仕入額・売値を使わない。0にすることで関税（US/EU）も自動的に外れる
+  const purchase = shipMode ? 0 : getVal('purchasePrice');
+  const selling = shipMode ? 0 : getEffectiveSellingPrice();
   const weightKg = getVal('weight');
   const L = getVal('length');
   const W = getVal('width');
@@ -3592,6 +3675,7 @@ function calculate() {
 
   // EU関税の判定に使う申告価格。CPaSSへ送る declaredValue と同じ「商品単価のみ（送料除く）」に合わせる
   const declaredUsdForDuty = (() => {
+    if (shipMode) return 0; // 送料だけモードは関税なし
     const s = getVal('sellingPrice');
     return s > 0 ? Math.round((s - 0.01) * 100) / 100 : 0;
   })();
@@ -4062,9 +4146,24 @@ function calculate() {
     bestRateSubEl.textContent = purchase > 0 ? '仕入額 ¥' + fmt(purchase) + ' に対して' : '';
   }
 
-  // Sort by profit (descending)
+  // 送料だけモード: 全配送方法の中で一番安いものに「最安」を付ける（推奨便は出さない）
+  let cheapestMethod = null;
+  if (shipMode) {
+    allMethods.forEach(m => {
+      if (!m.canSend || !(m.cost > 0)) return;
+      if (!cheapestMethod || m.cost < cheapestMethod.cost) cheapestMethod = m;
+    });
+    allMethods.forEach(m => { m.isCheapest = (m === cheapestMethod); m.isBest = false; });
+  }
+
+  // 並び順: 利益計算モードは利益の高い順、送料だけモードは送料の安い順
   groups.forEach(g => {
     g.methods.sort((a,b) => {
+      if (shipMode) {
+        const ac = a.cost > 0 ? a.cost : Infinity;
+        const bc = b.cost > 0 ? b.cost : Infinity;
+        return ac - bc;
+      }
       const av = a.profit, bv = b.profit;
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
@@ -4085,7 +4184,8 @@ function calculate() {
     //   IPグループは既定で折りたたみのため見えなくなっていた）
     const collapsible = g.collapsed || (g.id === 'speedpak' && !cc.economy);
     const hasBest = g.methods.some(m => m.isBest);
-    const isCollapsed = collapsible && !hasBest;
+    // 送料だけモードは「バーっと全部見たい」ので畳まない
+    const isCollapsed = shipMode ? false : (collapsible && !hasBest);
     let sectionCls = 'group-section';
     if (isCollapsed) sectionCls += ' collapsed';
     section.className = sectionCls;
@@ -4142,19 +4242,27 @@ function calculate() {
     g.methods.forEach(m => {
       const row = document.createElement('div');
       let cls = 'method-row';
-      // 出品OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
-      if (m.isOk && m.canSend && m.cost > 0) cls += ' usable';
-      else cls += ' dimmed';
+      if (shipMode) {
+        // 送料だけモード: 利益で薄くしない。最安を強調し、発送できない行だけ薄くする
+        if (m.isCheapest) cls += ' usable';
+        else if (!(m.canSend && m.cost > 0)) cls += ' dimmed';
+      } else if (m.isOk && m.canSend && m.cost > 0) {
+        // 出品OKかつ送料取得済みで発送可能 → usable、それ以外 → dimmed
+        cls += ' usable';
+      } else {
+        cls += ' dimmed';
+      }
       row.className = cls;
 
       // dimmed理由の生成（サマリーバーと同じ文言をbuildNgReasonsで生成）
-      const dimReason = buildNgReasons(m, profitTh, effectiveRateTh).join('、');
+      const dimReason = shipMode ? '' : buildNgReasons(m, profitTh, effectiveRateTh).join('、');
 
       // Tags
       const tagItems = [];
+      if (m.isCheapest) tagItems.push('<span class="method-tag tag-ok">最安</span>');
       if (m.isBest) tagItems.push('<span class="method-tag tag-recommend">推奨</span>');
-      if (m.isOk) tagItems.push('<span class="method-tag tag-ok">出品OK</span>');
-      if (m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
+      if (!shipMode && m.isOk) tagItems.push('<span class="method-tag tag-ok">出品OK</span>');
+      if (!shipMode && m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
       if (g.tag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
       if (g.tag === '比較用') tagItems.push('<span class="method-tag tag-compare">比較用</span>');
       if (g.tag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
@@ -4163,7 +4271,17 @@ function calculate() {
       const dimReasonHtml = dimReason ? `<span class="dim-reason" title="${dimReason}">${dimReason}</span>` : '';
 
       let right;
-      if (m.cost > 0 && m.profit !== null) {
+      if (shipMode && m.cost > 0) {
+        const detailBtn = m.feeDetails ? `<button class="fee-detail-btn" onclick="event.stopPropagation();toggleFeePopup(this)" title="送料内訳">明細</button>` : '';
+        let popupHtml = '';
+        if (m.feeDetails) {
+          const rows = m.feeDetails.filter(d => d.freight > 0).map(d => `<div class="fp-row"><span class="fp-name">${d.charges}</span><span class="fp-val">¥${fmt(d.freight)}</span></div>`).join('');
+          popupHtml = `<div class="fee-popup" style="display:none"><div class="fp-header">送料内訳</div>${rows}<div class="fp-row fp-total"><span class="fp-name">合計</span><span class="fp-val">¥${fmt(m.cost)}</span></div></div>`;
+        }
+        right = `<div class="mr-right">
+          <span class="lbl">送料 ${detailBtn}</span><span class="val val-cost">¥${fmt(m.cost)}</span>
+        </div>${popupHtml}`;
+      } else if (m.cost > 0 && m.profit !== null) {
         const profitCls = m.profit < 0 ? 'val val-neg' : 'val val-profit';
         const refundCls = m.profitWithRefund < 0 ? 'val val-neg' : 'val val-refund';
         const profitTxt = m.profit < 0 ? '⚠ ¥' + fmt(m.profit) : '¥' + fmt(m.profit);
@@ -4184,7 +4302,8 @@ function calculate() {
         right = `<div class="mr-na">${m.reason || '発送不可'}</div>`;
       }
 
-      row.innerHTML = `<div class="mr-left"><div class="mr-name-row"><div class="mr-name">${m.name}</div>${dimReasonHtml}</div><div class="mr-sub">${m.sub}</div>${tags}</div>${right}`;
+      const subTxt = shipMode ? stripDutyToken(m.sub) : m.sub;
+      row.innerHTML = `<div class="mr-left"><div class="mr-name-row"><div class="mr-name">${m.name}</div>${dimReasonHtml}</div><div class="mr-sub">${subTxt}</div>${tags}</div>${right}`;
       grid.appendChild(row);
     });
 
@@ -4194,7 +4313,9 @@ function calculate() {
 
   // フッターノートの利益OK判定基準を動的更新
   const fnEl = document.getElementById('footerNote');
-  if (fnEl) {
+  if (fnEl && shipMode) {
+    fnEl.textContent = '※送料のみの表示です（関税・eBay手数料は含みません）。CPaSS系はAPIからリアルタイム取得（燃油サーチャージ込み）、eLogi・日本郵便は固定の料金表です。';
+  } else if (fnEl) {
     let dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担・関税12.5%で計算）。' : '';
     if (cc.euDuty) {
       dutyNote += isEuLowValue(cc, declaredUsdForDuty)
@@ -4810,6 +4931,8 @@ onCategoryNoInput(); // 常にカテゴリNo.から手数料を自動判定
 updateFeeDescription();
 loadThresholdFromCache(); // しきい値: まずlocalStorageキャッシュから即座に復元
 initExchangeRate();
+// 前回のモード（利益計算 / 送料だけ）を復元してから初回計算する
+try { setAppMode(localStorage.getItem(APP_MODE_KEY) || 'profit', true); } catch(_) { setAppMode('profit', true); }
 calculate();
 fetchSpeedpakRates(); // 初回のSpeedPAK API呼び出し
 loadThresholdFromDB(); // しきい値: DBから正本を取得（到着後に再calculate）
