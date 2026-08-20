@@ -200,6 +200,11 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0 2px;font-weight:700}
 /* 送料だけモード: 利益計算まわりを丸ごと隠して「重さ・サイズ → 送料」だけにする */
 body.ship-only .profit-only{display:none!important}
 body.ship-only .method-row .mr-right .val-cost{font-size:1.3rem}
+/* 送料だけモードでだけ出す欄（商品の価格） */
+.ship-only-field{display:none}
+body.ship-only .ship-only-field{display:flex}
+.ship-value-hint{font-size:.68rem;color:var(--text3);line-height:1.4;margin-top:3px}
+body.ship-only .ship-value-hint{display:block}
 .ship-note{font-size:.75rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:10px;line-height:1.5}
 .pricing-info{font-size:.78rem;color:var(--text2);padding:6px 8px;background:#f8fafc;border-radius:6px;margin-top:4px;line-height:1.5}
 .pricing-info strong{color:var(--text);font-family:"SF Mono",Consolas,monospace}
@@ -549,6 +554,18 @@ body.ship-only .method-row .mr-right .val-cost{font-size:1.3rem}
       <span class="volume-weight-item">体積重量(÷5000): <strong id="volWeight" class="volume-weight-value">-</strong></span>
       <span class="volume-weight-item">Economy(÷8000): <strong id="volWeightEco" class="volume-weight-value">-</strong></span>
     </div>
+    <!-- 送料だけモード用: 関税を含めた「実際に払う金額」を出すための申告価格 -->
+    <div class="ship-only-field" style="gap:6px;align-items:flex-end;margin-top:8px">
+      <div class="field" style="flex:1;min-width:0">
+        <label>商品の価格 <span class="unit">(関税の計算用・任意)</span></label>
+        <input type="text" inputmode="decimal" id="shipValue" value="0" class="highlight">
+      </div>
+      <div style="display:flex;gap:2px;margin-bottom:1px">
+        <button class="mode-btn active" id="shipValCurrJpy" onclick="setShipValueCurrency('jpy')" style="padding:4px 10px;font-size:.78rem;min-width:32px">¥</button>
+        <button class="mode-btn" id="shipValCurrUsd" onclick="setShipValueCurrency('usd')" style="padding:4px 10px;font-size:.78rem;min-width:32px">$</button>
+      </div>
+    </div>
+    <div class="ship-value-hint ship-only-field" id="shipValueHint"></div>
     <div class="product-save-footer profit-only">
       <div id="saveStatus" class="inline-status save-action-status" role="status" aria-live="polite"></div>
       <button class="copy-info-btn product-save-btn" id="saveCalcBtn" onclick="openSaveMemoModal()">💾 保存</button>
@@ -3247,6 +3264,9 @@ let _speedpakPakRates = null;   // FedEx Pak（実重量課金）で問い合わ
 let _speedpakLoading = false;   // API取得中フラグ
 let _speedpakError = false;     // 直近のCPaSS(SpeedPAK)取得が失敗したか（エラー or success:false）
 let _speedpakDebounceTimer = null;
+// 問い合わせの通し番号。入力を続けると問い合わせが重なり、遅れて返ってきた古い応答が
+// 新しい応答を上書きして「入れた金額と合わない送料」が出てしまうため、最新の番号以外は捨てる。
+let _speedpakReqSeq = 0;
 
 async function fetchSpeedpakRates() {
   const weightKg = getVal('weight');
@@ -3258,11 +3278,17 @@ async function fetchSpeedpakRates() {
 
   // declaredValue: CPaSSの実画面に合わせ、商品単価のみを申告（送料は含めない）
   // 関税は「商品の価値」に対してかかるもので、送料は対象外。
-  // 送料だけモードは申告価額を送らない ＝ 関税抜きの純粋な送料が返る
-  const rawSelling = isShipOnlyMode() ? 0 : getVal('sellingPrice');
-  const declaredUsd = rawSelling > 0 ? Math.round((rawSelling - 0.01) * 100) / 100 : 0;
+  // 利益計算モードの売値はeBay出品価格なので $0.01 引いて申告額にする（CPaSS実画面と同じ）。
+  // 送料だけモードは「商品の価格」がそのまま申告額。未入力なら送らない＝関税抜きの送料が返る。
+  const rawSelling = isShipOnlyMode() ? getShipValueUsd() : getVal('sellingPrice');
+  const declaredUsd = isShipOnlyMode()
+    ? rawSelling
+    : (rawSelling > 0 ? Math.round((rawSelling - 0.01) * 100) / 100 : 0);
+  // 申告額を送らない送料だけモードでは、EU宛だけCPaSSが勝手に定額関税を乗せてくるので落とす
+  const stripDuty = isShipOnlyMode() && !(declaredUsd > 0);
   const cc = COUNTRIES.find(c => c.id === currentCountry) || COUNTRIES[0];
 
+  const myReq = ++_speedpakReqSeq;
   _speedpakLoading = true;
   _speedpakError = false;
   calculate(); // ローディング状態を反映
@@ -3295,28 +3321,34 @@ async function fetchSpeedpakRates() {
       wantPak ? post({ ...reqBody, length: 1, width: 1, height: 1 }).catch(() => null) : Promise.resolve(null)
     ]);
     console.log('[SpeedPAK API Response]', data);
+    if (myReq !== _speedpakReqSeq) return; // 追い越された古い応答は捨てる
     _speedpakPakRates = (pakData && pakData.success) ? stripAdValorem(pakData.rates) : null;
-    if (isShipOnlyMode()) stripEstimatedDuty(_speedpakPakRates);
+    if (stripDuty) stripEstimatedDuty(_speedpakPakRates);
     if (data.success) {
       _speedpakRates = stripAdValorem(data.rates);
       // 燃油サーチャージは SpeedPAK API の送料に込みで返るため、手動フィールドは廃止。
       // API取得失敗時の予備計算をCPaSSに合わせるため、実際の明細から燃油率を学習しておく。
       learnFuelRateFromRates(data.rates);
-      // 送料だけモードは関税を含めない（学習は関税を落とす前の明細で済ませてある）
-      if (isShipOnlyMode()) stripEstimatedDuty(_speedpakRates);
+      // 商品の価格が未入力の送料だけモードは関税を含めない
+      // （燃油率の学習は関税を落とす前の明細で済ませてある）
+      if (stripDuty) stripEstimatedDuty(_speedpakRates);
     } else {
       _speedpakRates = null;
       _speedpakError = true;
     }
   } catch(e) {
+    if (myReq !== _speedpakReqSeq) return; // 古い問い合わせのエラーで最新の結果を消さない
     console.warn('SpeedPAK API error:', e);
     _speedpakRates = null;
     _speedpakPakRates = null;
     _speedpakError = true;
   } finally {
-    _speedpakLoading = false;
-    calculate();
-    saveState();
+    // 新しい問い合わせが走っている間は「取得中」のままにする
+    if (myReq === _speedpakReqSeq) {
+      _speedpakLoading = false;
+      calculate();
+      saveState();
+    }
   }
 }
 
@@ -3568,6 +3600,32 @@ function setAppMode(mode, skipRefresh) {
   fetchSpeedpakRates();
 }
 
+// 送料だけモードの「商品の価格」。関税は商品の価値にかかるので、入れてもらえれば
+// 関税込みの“実際に払う金額”が出せる。未入力(0)なら関税なしの純粋な送料になる。
+let shipValueCurrency = 'jpy'; // 'jpy' | 'usd'
+function setShipValueCurrency(curr, skipRefresh) {
+  shipValueCurrency = (curr === 'usd') ? 'usd' : 'jpy';
+  const bj = document.getElementById('shipValCurrJpy');
+  const bu = document.getElementById('shipValCurrUsd');
+  if (bj) bj.classList.toggle('active', shipValueCurrency === 'jpy');
+  if (bu) bu.classList.toggle('active', shipValueCurrency === 'usd');
+  calculate();
+  saveState();
+  // 円⇔ドルで申告額が変わる＝CPaSSへの問い合わせ内容も変わるので取り直す
+  // （復元時は初回の fetchSpeedpakRates があるので二重に投げない）
+  if (!skipRefresh) debouncedFetchSpeedpak();
+}
+// 申告価額(USD)。円入力なら為替レートで換算する
+function getShipValueUsd() {
+  const v = getVal('shipValue');
+  if (!(v > 0)) return 0;
+  if (shipValueCurrency === 'jpy') {
+    const rate = getVal('exchangeRate');
+    return rate > 0 ? Math.round(v / rate * 100) / 100 : 0;
+  }
+  return Math.round(v * 100) / 100;
+}
+
 // 送料だけモードでは関税を含めないので、配送方法の説明から DDP/DDU の表記を外す
 function stripDutyToken(sub) {
   return String(sub || '').split('/').filter(p => p !== 'DDP' && p !== 'DDU').join('/');
@@ -3579,9 +3637,12 @@ function calculate() {
   updatePricingDisplay();
   updateFeeDescription();
   const shipMode = isShipOnlyMode();
-  // 送料だけモードは仕入額・売値を使わない。0にすることで関税（US/EU）も自動的に外れる
+  // 送料だけモードは仕入額を使わない。売値の代わりに「商品の価格」を申告価額として扱い、
+  // 関税（US 12.5% / EU定額€3）や $500 制限（Pak・Envelope）の判定に回す。
+  // 未入力(0)なら関税は付かず、純粋な送料だけが出る。
+  const shipValueUsd = shipMode ? getShipValueUsd() : 0;
   const purchase = shipMode ? 0 : getVal('purchasePrice');
-  const selling = shipMode ? 0 : getEffectiveSellingPrice();
+  const selling = shipMode ? shipValueUsd : getEffectiveSellingPrice();
   const weightKg = getVal('weight');
   const L = getVal('length');
   const W = getVal('width');
@@ -3675,7 +3736,7 @@ function calculate() {
 
   // EU関税の判定に使う申告価格。CPaSSへ送る declaredValue と同じ「商品単価のみ（送料除く）」に合わせる
   const declaredUsdForDuty = (() => {
-    if (shipMode) return 0; // 送料だけモードは関税なし
+    if (shipMode) return shipValueUsd; // 送料だけモードは「商品の価格」がそのまま申告額
     const s = getVal('sellingPrice');
     return s > 0 ? Math.round((s - 0.01) * 100) / 100 : 0;
   })();
@@ -4311,10 +4372,45 @@ function calculate() {
     container.appendChild(section);
   });
 
+  // 送料だけモードの案内文（商品の価格の下・一覧の上）
+  if (shipMode) {
+    const euLow = !!cc.euDuty && isEuLowValue(cc, declaredUsdForDuty);
+    const dutyIncluded = shipValueUsd > 0 && (cc.code === 'US' || euLow);
+    const hintEl = document.getElementById('shipValueHint');
+    if (hintEl) {
+      if (shipValueUsd <= 0) {
+        hintEl.textContent = '入れると関税込みの金額になります（アメリカ・EU宛）。未入力なら関税なしの送料です。';
+      } else {
+        const valTxt = '$' + fmtD(shipValueUsd) + '（≒¥' + fmt(shipValueUsd * rate) + '）';
+        if (cc.code === 'US') {
+          hintEl.textContent = valTxt + ' を申告価格として、アメリカの関税を含めた金額を出しています。';
+        } else if (euLow) {
+          hintEl.textContent = valTxt + ' を申告価格として、EUの定額関税（€3）を含めた金額を出しています。';
+        } else if (cc.euDuty) {
+          hintEl.textContent = valTxt + ' は150ユーロ超なので関税は買い手負担（DDU）。送料に関税は含みません。';
+        } else {
+          hintEl.textContent = valTxt + ' で計算。この宛先は関税が買い手負担（DDU）なので、送料は変わりません。';
+        }
+      }
+    }
+    const snEl = document.getElementById('shipOnlyNote');
+    if (snEl) {
+      snEl.textContent = dutyIncluded
+        ? '商品の価格 $' + fmtD(shipValueUsd) + ' で計算した、関税込みの送料です。安い順に並べています。'
+        : (shipValueUsd > 0
+          ? 'この宛先は関税が買い手負担なので、送料だけを安い順に並べています。'
+          : '重さとサイズだけで送料を安い順に並べています。関税は含みません（「商品の価格」を入れると関税込みになります）。');
+    }
+  }
+
   // フッターノートの利益OK判定基準を動的更新
   const fnEl = document.getElementById('footerNote');
   if (fnEl && shipMode) {
-    fnEl.textContent = '※送料のみの表示です（関税・eBay手数料は含みません）。CPaSS系はAPIからリアルタイム取得（燃油サーチャージ込み）、eLogi・日本郵便は固定の料金表です。';
+    const euLowF = !!cc.euDuty && isEuLowValue(cc, declaredUsdForDuty);
+    fnEl.textContent = '※eBay手数料は含みません（送料のみ）。CPaSS系はAPIからリアルタイム取得（燃油サーチャージ込み）、eLogi・日本郵便は固定の料金表です。'
+      + (shipValueUsd > 0 && (cc.code === 'US' || euLowF)
+        ? '関税は申告価格 $' + fmtD(shipValueUsd) + ' で概算しています。'
+        : '関税は含みません（この宛先は買い手負担、または商品の価格が未入力）。');
   } else if (fnEl) {
     let dutyNote = cc.code === 'US' ? 'アメリカ向けは全配送方法で関税込み（セラー負担・関税12.5%で計算）。' : '';
     if (cc.euDuty) {
@@ -4362,6 +4458,7 @@ function resetProductInfo() {
     purchasePrice: '0',
     sellingPrice: '0',
     compShipping: '0',
+    shipValue: '0',
     usShippingPct: '0',
     weight: '0',
     length: '0',
@@ -4733,7 +4830,7 @@ async function deleteSavedProfitCalculation(id) {
 }
 
 const SAVE_KEY = 'ebayCalcState';
-const SAVE_FIELDS = ['saveEbayItemId','saveMemo','purchasePrice','sellingPrice','compShipping','weight','length','width','height',
+const SAVE_FIELDS = ['saveEbayItemId','saveMemo','purchasePrice','sellingPrice','compShipping','shipValue','weight','length','width','height',
   'categoryNo','exchangeRate','usShippingPct',
   'ebayFeeRate','feeThreshold','ebayFeeRate2','perOrderFee',
   'promotedRate','intlFeeRate','payoneerRate','taxRate','euDisbursementFee'];
@@ -4745,6 +4842,7 @@ function saveState() {
   s._pricingMode = currentPricingMode;
   s._storePlan = currentStorePlan;
   s._compCurrency = compShippingCurrency;
+  s._shipValueCurrency = shipValueCurrency;
   const _euWaiverEl = document.getElementById('euFedexCardWaiver');
   if (_euWaiverEl) s._euFedexWaiver = _euWaiverEl.checked;
   localStorage.setItem(SAVE_KEY, JSON.stringify(s));
@@ -4759,6 +4857,7 @@ function restoreState() {
     if (s._pricingMode) setPricingMode(s._pricingMode);
     if (s._storePlan) setStorePlan(s._storePlan);
     if (s._compCurrency) setCompShippingCurrency(s._compCurrency);
+    if (s._shipValueCurrency) setShipValueCurrency(s._shipValueCurrency, true);
     const _euWaiverEl = document.getElementById('euFedexCardWaiver');
     if (_euWaiverEl && s._euFedexWaiver !== undefined) _euWaiverEl.checked = !!s._euFedexWaiver;
     return true;
