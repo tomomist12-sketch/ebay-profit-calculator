@@ -208,6 +208,9 @@ body.ship-only .ship-only-field{display:flex}
 .mr-provider{font-size:.66rem;font-weight:600;color:var(--text2);background:#f1f5f9;border:1px solid var(--border);border-radius:5px;padding:1px 6px;flex:0 0 auto;white-space:nowrap}
 .mr-note{font-size:.7rem;color:var(--text2);line-height:1.4;margin-top:2px}
 .mr-note-warn{color:#b45309}
+/* eLogi（比較用）の見出しの注意書きは、狭い画面でも切れないよう折り返す */
+body.ship-only .group-header{align-items:flex-start}
+body.ship-only .group-header .g-note{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.4}
 body.ship-only .ship-value-hint{display:block}
 .ship-note{font-size:.75rem;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:10px;line-height:1.5}
 .pricing-info{font-size:.78rem;color:var(--text2);padding:6px 8px;background:#f8fafc;border-radius:6px;margin-top:4px;line-height:1.5}
@@ -3630,9 +3633,15 @@ function getShipValueUsd() {
   return Math.round(v * 100) / 100;
 }
 
-// 送料だけモードでは関税を含めないので、配送方法の説明から DDP/DDU の表記を外す
+// 送料だけモードでは関税を含めないので、配送方法の説明から DDP/DDU の表記を外す。
+// Economyだけは「.../DDP（取得中...）」のように取得状況がくっついて来るので、
+// 丸ごと一致ではなく先頭一致で落とす（完全一致だと DDP が残ってしまう）。
 function stripDutyToken(sub) {
-  return String(sub || '').split('/').filter(p => p !== 'DDP' && p !== 'DDU').join('/');
+  return String(sub || '')
+    .split('/')
+    .map(p => p.replace(/^(DDP|DDU)/, ''))
+    .filter(p => p !== '')
+    .join('/');
 }
 
 // ========== Main Calculation ==========
@@ -4216,6 +4225,9 @@ function calculate() {
   if (shipMode) {
     allMethods.forEach(m => {
       if (!m.canSend || !(m.cost > 0)) return;
+      // eLogiは比較用として畳んでいる（＝既定では見えない）ので最安の対象から外す。
+      // 固定の料金表なので、古い料金で「最安」を名乗ってしまうのも避けたい。
+      if (m._groupId.indexOf('elogi') === 0) return;
       if (!cheapestMethod || m.cost < cheapestMethod.cost) cheapestMethod = m;
     });
     allMethods.forEach(m => { m.isCheapest = (m === cheapestMethod); m.isBest = false; });
@@ -4250,20 +4262,21 @@ function calculate() {
   const groupTagById = {};
   groups.forEach(g => { groupTagById[g.id] = g.tag; });
 
-  // グループ見出しに出していた注意書きは、平らな一覧では行ごとに出す
-  function shipRowNote(m) {
+  // グループ見出しに出していた注意書きは、平らな一覧では行ごとに出す（複数出ることがある）
+  function shipRowNotes(m) {
+    const notes = [];
     if (m._groupId === 'elogi-ups') {
-      return '⚠ 個人宅手数料など後日追加請求される可能性が高く、一見安く見えても他と変わらないことが多い';
+      notes.push('⚠ 個人宅手数料など後日追加請求される可能性が高く、一見安く見えても他と変わらないことが多い');
     }
     if (m._groupId === 'jppost') {
-      return EU_IOSS_SUSPENDED.includes(cc.code)
+      notes.push(EU_IOSS_SUSPENDED.includes(cc.code)
         ? '⚠ ' + cc.name + 'あてはIOSS利用の郵便物を差し出せません（eBay販売はIOSS利用のためCPaSS/eLogiを使ってください）'
-        : 'CPaSS非対応・自分で発送手続きが必要';
+        : 'CPaSS非対応・自分で発送手続きが必要');
     }
     if (m._groupId === 'speedpak' && m.canSend) {
-      return 'かなり遅い。eBayで使うならEconomy用のShipping Policyが必要';
+      notes.push('かなり遅い。eBayで使うならEconomy用のShipping Policyが必要');
     }
-    return '';
+    return notes;
   }
 
   function makeMethodRow(m, gTag) {
@@ -4291,8 +4304,7 @@ function calculate() {
     if (!shipMode && m.isOk) tagItems.push('<span class="method-tag tag-ok">出品OK</span>');
     if (!shipMode && m.sub && m.sub.includes('DDP')) tagItems.push('<span class="method-tag tag-ddp">DDP</span>');
     if (gTag === '速達') tagItems.push('<span class="method-tag tag-fast">速達</span>');
-    // 「比較用」は eLogi のバッジと重複するので、平らな一覧では出さない
-    if (gTag === '比較用' && !shipMode) tagItems.push('<span class="method-tag tag-compare">比較用</span>');
+    if (gTag === '比較用') tagItems.push('<span class="method-tag tag-compare">比較用</span>');
     if (gTag === '非対応') tagItems.push('<span class="method-tag tag-ng">非対応</span>');
     if (m.reason) tagItems.push(`<span class="method-tag tag-limit">${m.reason}</span>`);
     const tags = tagItems.length ? `<div class="mr-tags">${tagItems.join('')}</div>` : '';
@@ -4332,30 +4344,46 @@ function calculate() {
 
     const subTxt = shipMode ? stripDutyToken(m.sub) : m.sub;
     const providerHtml = shipMode ? `<span class="mr-provider">${SHIP_PROVIDER[m._groupId] || ''}</span>` : '';
-    const rowNote = shipMode ? shipRowNote(m) : '';
-    const rowNoteHtml = rowNote
-      ? `<div class="mr-note${rowNote.indexOf('⚠') === 0 ? ' mr-note-warn' : ''}">${rowNote}</div>`
-      : '';
+    const rowNotes = shipMode ? shipRowNotes(m) : [];
+    const rowNoteHtml = rowNotes
+      .map(t => `<div class="mr-note${t.indexOf('⚠') === 0 ? ' mr-note-warn' : ''}">${t}</div>`)
+      .join('');
     row.innerHTML = `<div class="mr-left"><div class="mr-name-row">${providerHtml}<div class="mr-name">${m.name}</div>${dimReasonHtml}</div><div class="mr-sub">${subTxt}</div>${rowNoteHtml}${tags}</div>${right}`;
     return row;
   }
 
   if (shipMode) {
     // 送料だけモードは配送会社をまたいで、まるごと安い順のひとつの表にする。
-    // グループに分けたままだと「Economy 2,215円」が「FICP 3,088円」より下に来てしまい、
+    // グループに分けたままだと「Economy 3,484円」が「FICP 4,112円」より下に来てしまい、
     // 上から順に見ても安い順にならない。発送できない行は末尾へ回す。
-    const flat = allMethods.slice().sort((a, b) => {
+    const byCost = (a, b) => {
       const ac = (a.canSend && a.cost > 0) ? a.cost : Infinity;
       const bc = (b.canSend && b.cost > 0) ? b.cost : Infinity;
       return ac - bc;
-    });
+    };
+    const isElogi = (m) => m._groupId.indexOf('elogi') === 0;
+    // eLogiは比較用（固定の料金表）なので本編には混ぜず、下に畳んで置く
+    const mainList = allMethods.filter(m => !isElogi(m)).sort(byCost);
+    const elogiList = allMethods.filter(isElogi).sort(byCost);
+
     const section = document.createElement('div');
     section.className = 'group-section';
     const grid = document.createElement('div');
     grid.className = 'group-grid';
-    flat.forEach(m => grid.appendChild(makeMethodRow(m, groupTagById[m._groupId] || '')));
+    mainList.forEach(m => grid.appendChild(makeMethodRow(m, groupTagById[m._groupId] || '')));
     section.appendChild(grid);
     container.appendChild(section);
+
+    if (elogiList.length) {
+      const elogiSec = document.createElement('div');
+      elogiSec.className = 'group-section collapsed';
+      elogiSec.innerHTML = `<div class="group-header"><span class="g-label">eLogi（比較用）</span><span class="g-note">— 固定の料金表から計算しているので、最新の料金と違う可能性があります</span><button class="group-toggle" onclick="this.closest('.group-section').classList.toggle('collapsed');this.textContent=this.closest('.group-section').classList.contains('collapsed')?'詳細 ▼':'閉じる ▲'">詳細 ▼</button></div>`;
+      const elogiGrid = document.createElement('div');
+      elogiGrid.className = 'group-grid';
+      elogiList.forEach(m => elogiGrid.appendChild(makeMethodRow(m, groupTagById[m._groupId] || '')));
+      elogiSec.appendChild(elogiGrid);
+      container.appendChild(elogiSec);
+    }
   } else {
   groups.forEach(g => {
     const section = document.createElement('div');
