@@ -204,6 +204,8 @@ body.ship-only .method-row .mr-right .val-cost{font-size:1.3rem}
 .ship-only-field{display:none}
 body.ship-only .ship-only-field{display:flex}
 .ship-value-hint{font-size:.68rem;color:var(--text3);line-height:1.4;margin-top:3px}
+.ship-remote-row{align-items:center;gap:6px;margin-top:8px;font-size:.8rem;font-weight:600;color:var(--text2);cursor:pointer}
+.ship-remote-row input{cursor:pointer;flex:0 0 auto}
 /* 送料だけモードの平らな一覧: 行の頭の配送会社名と、行ごとの注意書き */
 .mr-provider{font-size:.66rem;font-weight:600;color:var(--text2);background:#f1f5f9;border:1px solid var(--border);border-radius:5px;padding:1px 6px;flex:0 0 auto;white-space:nowrap}
 .mr-note{font-size:.7rem;color:var(--text2);line-height:1.4;margin-top:2px}
@@ -573,6 +575,11 @@ body.ship-only .ship-value-hint{display:block}
       </div>
     </div>
     <div class="ship-value-hint ship-only-field" id="shipValueHint"></div>
+    <label class="ship-only-field ship-remote-row" for="shipRemote">
+      <input type="checkbox" id="shipRemote">
+      <span>遠隔地あて（地域外配達料を足す）</span>
+    </label>
+    <div class="ship-value-hint ship-only-field" id="shipRemoteHint"></div>
     <div class="product-save-footer profit-only">
       <div id="saveStatus" class="inline-status save-action-status" role="status" aria-live="polite"></div>
       <button class="copy-info-btn product-save-btn" id="saveCalcBtn" onclick="openSaveMemoModal()">💾 保存</button>
@@ -3228,15 +3235,18 @@ const SPEEDPAK_API_BASE = 'https://speedpak-api.vercel.app';
 // 申告価額の送信自体をやめると米国宛の関税が丸ごと返らなくなるため、送信は続けたうえで
 // この行だけ取り除いて実際の請求に合わせる。
 // 実測（0.5kg / 26×20×12）: ドイツ宛 4,045→3,705（実際3,709）、米国宛 6,706→6,366（実際6,366）
-const AD_VALOREM_CHARGES_ID = '128'; // 従価料金 / Declared Value Charge for Carriage
+// 128=従価料金（FedEx系）/ 514=運送保険（DHL）。どちらも申告価額を送った時だけ乗る保険で、
+// 実際のeBay見積もり画面には出ない。2026-08-21にカナダ宛13.9kgの実見積もりで確認：
+//   実際 = 運送料金13,430 + 遠隔地配達手数料1,000 + 燃料割増金4,545 = 18,975（運送保険2,500は無し）
+const AD_VALOREM_CHARGES_IDS = ['128', '514'];
 function stripAdValorem(rates) {
   if (!rates) return rates;
   Object.keys(rates).forEach(key => {
     const r = rates[key];
     if (!r || !Array.isArray(r.feeDetails)) return;
     let fee = 0;
-    r.feeDetails.forEach(f => { if (f.chargesId === AD_VALOREM_CHARGES_ID) fee += (f.freight || 0); });
-    r.feeDetails = r.feeDetails.filter(f => f.chargesId !== AD_VALOREM_CHARGES_ID);
+    r.feeDetails.forEach(f => { if (AD_VALOREM_CHARGES_IDS.includes(f.chargesId)) fee += (f.freight || 0); });
+    r.feeDetails = r.feeDetails.filter(f => !AD_VALOREM_CHARGES_IDS.includes(f.chargesId));
     if (fee > 0) {
       if (r.totalAmount > 0) r.totalAmount = Math.max(0, r.totalAmount - fee);
       if (r.shippingAmount > 0) r.shippingAmount = Math.max(0, r.shippingAmount - fee);
@@ -3633,6 +3643,41 @@ function getShipValueUsd() {
   return Math.round(v * 100) / 100;
 }
 
+// ========== 地域外配達料（遠隔地あて） ==========
+// 届け先が遠隔地だと、実際のCPaSS見積もりには FedEx系「地域外配達料」/ DHL「遠隔地配達手数料」が
+// 1行入る。CPaSSのAPIは郵便番号を見ておらず（どの郵便番号で投げても同額）この費目を返さないため、
+// チェックが入っている時だけこちらで足す。燃油はこの割増にもかかる。
+// 実測(2026-08-21 カナダ宛 13.9kg / 26×19×17):
+//   FICP 12,289+混雑910+地域外2,990 → ×1.435(燃油43.5%) = 23,231（実際と一致）
+//   IP   13,035+混雑910+地域外2,990 → ×1.435             = 24,302（一致）
+//   DHL  13,430      +遠隔地1,000  → ×1.315(燃油31.5%) = 18,975（一致）
+const REMOTE_AREA_FEE = { fedex: 2990, 'fedex-ip': 2990, dhl: 1000 };
+function isRemoteAreaChecked() {
+  const el = document.getElementById('shipRemote');
+  return !!(el && el.checked);
+}
+// その便の明細から実際の燃油率を出し、割増にも同じ率をかけて返す（関税の行は燃油の対象外）
+function getRemoteAreaFeeYen(groupId, m) {
+  if (!isShipOnlyMode() || !isRemoteAreaChecked()) return 0;
+  const base = REMOTE_AREA_FEE[groupId];
+  if (!base || !(m.cost > 0)) return 0;
+  let fuel = 0, other = 0, rate = null;
+  (m.feeDetails || []).forEach(d => {
+    const f = d.freight || 0;
+    if (d.chargesId === '104') {
+      fuel += f;
+      if (d.unitPrice > 0) rate = d.unitPrice / 100; // CPaSSが明細に入れてくる燃油率（例 43.5）
+    } else if (!d.tariffCategoryType) {
+      other += f; // 関税の行は燃油の対象外なので除く
+    }
+  });
+  if (rate === null) rate = other > 0 ? fuel / other : 0;
+  // CPaSSと同じ順序で出す：燃油は「運送料金＋各種割増の合計」にかかり、最後に一度だけ丸められる。
+  // 割増ぶんを別々に丸めると1円ずれるので、燃油を計算し直して差分を取る。
+  const newFuel = Math.round((other + base) * rate);
+  return base + Math.max(0, newFuel - fuel);
+}
+
 // 送料だけモードでは関税を含めないので、配送方法の説明から DDP/DDU の表記を外す。
 // Economyだけは「.../DDP（取得中...）」のように取得状況がくっついて来るので、
 // 丸ごと一致ではなく先頭一致で落とす（完全一致だと DDP が残ってしまう）。
@@ -3771,6 +3816,14 @@ function calculate() {
       details.push({charges:'EU関税（€3）＋手数料', chargesEn:'EU Flat Duty', freight:euDuty});
       m.feeDetails = details;
     }
+    // 遠隔地あて: CPaSSのFedEx系・DHLに地域外配達料（燃油込）を足す
+    const remoteFee = getRemoteAreaFeeYen(groupId, m);
+    if (remoteFee > 0) {
+      m.cost += remoteFee;
+      if (m.feeDetails && m.feeDetails.length) {
+        m.feeDetails = [...m.feeDetails, {charges:'地域外配達料（遠隔地あて・燃油込）', chargesEn:'Out of Delivery Area', freight:remoteFee}];
+      }
+    }
     const g = groups.find(g => g.id === groupId);
     if (g) g.methods.push(m);
   }
@@ -3896,7 +3949,10 @@ function calculate() {
 
   // --- SpeedPAK DHL Express Worldwide ---
   {
-    const maxW = cc.dhlZone === 10 ? 70000 : 30000;
+    // CPaSSのDHLは宛先を問わず70kgまで。以前は米国以外を30kgとしていたため、
+    // 30〜70kgの荷物でDHLが「30kg超過」となって選択肢から消えていた。
+    // 実測(2026-08-21): US/CA/DE/GB/AU/FR/SG/BR いずれも70kgは料金が返り、71kgは返らない。
+    const maxW = 70000;
     const cs = billableStandardG <= maxW;
     const c = cs ? spCost('dhl') : null;
     const canSend = cs && c !== null && c > 0;
@@ -4475,6 +4531,12 @@ function calculate() {
         }
       }
     }
+    const rhEl = document.getElementById('shipRemoteHint');
+    if (rhEl) {
+      rhEl.textContent = isRemoteAreaChecked()
+        ? 'CPaSSのFedEx（+¥2,990）とDHL（+¥1,000）に燃油込みで加算しています。eLogi・日本郵便には加算していません。'
+        : '届け先が離島・郊外などの遠隔地だと、実際の請求には地域外配達料が付きます（CPaSSの見積もりAPIは住所を見ないので出てきません）。';
+    }
     const snEl = document.getElementById('shipOnlyNote');
     if (snEl) {
       snEl.textContent = dutyIncluded
@@ -4925,6 +4987,8 @@ function saveState() {
   s._storePlan = currentStorePlan;
   s._compCurrency = compShippingCurrency;
   s._shipValueCurrency = shipValueCurrency;
+  const _remoteEl = document.getElementById('shipRemote');
+  if (_remoteEl) s._shipRemote = _remoteEl.checked;
   const _euWaiverEl = document.getElementById('euFedexCardWaiver');
   if (_euWaiverEl) s._euFedexWaiver = _euWaiverEl.checked;
   localStorage.setItem(SAVE_KEY, JSON.stringify(s));
@@ -4940,6 +5004,8 @@ function restoreState() {
     if (s._storePlan) setStorePlan(s._storePlan);
     if (s._compCurrency) setCompShippingCurrency(s._compCurrency);
     if (s._shipValueCurrency) setShipValueCurrency(s._shipValueCurrency, true);
+    const _remoteEl = document.getElementById('shipRemote');
+    if (_remoteEl && s._shipRemote !== undefined) _remoteEl.checked = !!s._shipRemote;
     const _euWaiverEl = document.getElementById('euFedexCardWaiver');
     if (_euWaiverEl && s._euFedexWaiver !== undefined) _euWaiverEl.checked = !!s._euFedexWaiver;
     return true;
